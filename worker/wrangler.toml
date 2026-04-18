@@ -1,0 +1,13 @@
+name = "cbre-workplace-tools-api"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+# After deploying, add your GitHub Pages URL to ALLOWED_ORIGINS_EXTRA:
+# wrangler secret put ALLOWED_ORIGINS_EXTRA
+# Enter: https://YOUR-ORG.github.io
+
+# Your Anthropic API key (set via CLI, never put in this file):
+# wrangler secret put ANTHROPIC_API_KEY
+
+# Optional team password:
+# wrangler secret put ACCESS_PASSWORD
