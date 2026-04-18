@@ -391,22 +391,24 @@
       </div>
     </a>
 
-    <!-- ── COMING SOON ─────────────────────────────── -->
-    <div class="tool-card coming-soon">
+    <a class="tool-card ready" href="tools/executive-visioning.html">
       <div class="tool-icon">🔭</div>
       <div class="tool-body">
         <div class="tool-name">Executive Visioning Session</div>
-        <div class="tool-desc">Synthesize visioning workshop outputs into strategic workplace principles, priority themes, and a leadership alignment summary.</div>
+        <div class="tool-desc">Upload pre-reads, workshop notes, and Mentimeter exports. Claude synthesizes principles, priorities, and a client-facing narrative appendix.</div>
         <div class="tool-outputs" style="margin-top:10px;">
-          <span class="output-pill">Principles deck</span>
-          <span class="output-pill">Alignment summary</span>
+          <span class="output-pill">Workplace principles</span>
+          <span class="output-pill">Strategic priorities</span>
+          <span class="output-pill">.pptx export</span>
         </div>
       </div>
       <div class="tool-footer">
-        <span class="tool-tag tag-soon">Coming soon</span>
+        <span class="tool-tag tag-ready">Ready</span>
+        <span class="tool-arrow">→</span>
       </div>
-    </div>
+    </a>
 
+    <!-- ── COMING SOON ─────────────────────────────── -->
     <div class="tool-card coming-soon">
       <div class="tool-icon">📐</div>
       <div class="tool-body">
@@ -526,8 +528,6 @@
 </footer>
 
 <script type="module">
-  // ── Worker health check ─────────────────────────────────
-  // Update this URL after you deploy the Worker
   const WORKER_URL = 'https://cbre-workplace-tools-api.YOUR-SUBDOMAIN.workers.dev';
 
   async function checkWorker() {
@@ -547,7 +547,6 @@
 
   checkWorker();
 
-  // ── Update counts ───────────────────────────────────────
   const readyCards = document.querySelectorAll('.tool-card.ready').length;
   const soonCards  = document.querySelectorAll('.tool-card.coming-soon').length;
   document.getElementById('ready-count').textContent = readyCards;

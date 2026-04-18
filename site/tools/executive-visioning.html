@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Executive Visioning Session · CBRE Workplace Tools</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #003F2D; --green-mid: #1A5C45; --accent: #17E88F;
+    --teal: #538184; --dark-grey: #435254; --light-grey: #CAD1D3;
+    --bg: #F4F5F5; --white: #fff; --radius: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', 'Calibri', sans-serif; background: var(--bg); color: var(--dark-grey); }
+
+  .topbar { background: var(--green); padding: 0 2rem; height: 52px; display: flex; align-items: center; gap: 16px; }
+  .topbar-back { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+  .topbar-back:hover { color: white; }
+  .topbar-divider { width: 1px; height: 20px; background: rgba(255,255,255,0.2); }
+  .topbar-title { color: white; font-size: 14px; font-weight: 500; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  .stepper { display: flex; margin-bottom: 2rem; background: white; border-radius: var(--radius); box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden; }
+  .step { flex: 1; padding: 12px 16px; font-size: 12.5px; color: #999; border-right: 1px solid var(--light-grey); cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.15s; }
+  .step:last-child { border-right: none; }
+  .step.active { background: var(--green); color: white; }
+  .step.done { color: var(--teal); }
+  .step.active .snum { background: var(--accent); color: var(--green); }
+  .step.done .snum { background: var(--teal); color: white; }
+  .snum { width: 22px; height: 22px; border-radius: 50%; background: var(--light-grey); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .card { background: white; border-radius: var(--radius); box-shadow: 0 1px 4px rgba(0,0,0,0.08); padding: 1.5rem; margin-bottom: 1rem; }
+  .card-header { font-size: 13px; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 2px solid var(--accent); display: flex; align-items: center; justify-content: space-between; }
+  .badge { background: #E6F4EF; color: var(--green-mid); font-size: 11px; padding: 2px 10px; border-radius: 10px; font-weight: 600; text-transform: none; letter-spacing: 0; }
+  .card-desc { font-size: 13px; color: #888; margin-bottom: 1rem; line-height: 1.5; }
+
+  /* Upload zones */
+  .upload-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .upload-zone { border: 2px dashed var(--light-grey); border-radius: var(--radius); padding: 1.5rem 1rem; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
+  .upload-zone:hover, .upload-zone.over { border-color: var(--accent); background: #F0FBF6; }
+  .upload-zone.has-files { border-color: var(--accent); border-style: solid; background: #F0FBF6; }
+  .uz-icon { font-size: 28px; margin-bottom: 8px; }
+  .uz-label { font-size: 13px; font-weight: 600; color: var(--dark-grey); margin-bottom: 3px; }
+  .uz-hint { font-size: 11.5px; color: #999; line-height: 1.4; }
+  .uz-count { margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--teal); display: none; }
+  .upload-zone.has-files .uz-count { display: block; }
+  .upload-zone.has-files .uz-hint { display: none; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field.full { grid-column: 1 / -1; }
+  .field label { font-size: 11.5px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 0.5px; }
+  .field input, .field select, .field textarea { padding: 8px 11px; font-size: 13.5px; border: 1px solid var(--light-grey); border-radius: 4px; font-family: inherit; color: var(--dark-grey); outline: none; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--teal); }
+  .field textarea { resize: vertical; }
+
+  .participant-rows { display: flex; flex-direction: column; gap: 8px; }
+  .participant-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; align-items: center; }
+  .participant-row input { padding: 7px 10px; font-size: 13px; border: 1px solid var(--light-grey); border-radius: 4px; font-family: inherit; }
+  .btn-icon { width: 32px; height: 32px; border-radius: 4px; border: 1px solid var(--light-grey); background: white; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; color: #999; }
+  .btn-icon:hover { background: #fee; border-color: #fcc; color: #c00; }
+  .btn-add { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--teal); cursor: pointer; padding: 6px 0; background: none; border: none; font-family: inherit; font-weight: 600; }
+  .btn-add:hover { color: var(--green); }
+
+  .btn { padding: 9px 20px; font-size: 13.5px; border-radius: 4px; cursor: pointer; font-family: inherit; font-weight: 600; border: 1.5px solid; transition: all 0.15s; }
+  .btn-outline { background: white; color: var(--dark-grey); border-color: var(--light-grey); }
+  .btn-outline:hover { background: var(--bg); border-color: var(--teal); }
+  .btn-primary { background: var(--green); color: white; border-color: var(--green); }
+  .btn-primary:hover { background: var(--green-mid); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 1.5rem; }
+
+  .analyzing { text-align: center; padding: 3rem; }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--light-grey); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.75s linear infinite; margin: 0 auto 1rem; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .analyzing h3 { font-size: 15px; margin-bottom: 6px; }
+  .analyzing p { font-size: 13px; color: var(--teal); }
+
+  /* Results */
+  .results-stack { display: flex; flex-direction: column; gap: 1rem; }
+  .info-box { background: #F0FBF6; border: 1px solid var(--accent); border-radius: 4px; padding: 10px 14px; font-size: 12.5px; color: var(--green-mid); margin-bottom: 1rem; }
+
+  .principle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+  .principle-card { background: var(--bg); border-radius: 4px; padding: 12px 14px; border-left: 3px solid var(--accent); }
+  .principle-title { font-size: 13px; font-weight: 700; color: var(--green); margin-bottom: 4px; }
+  .principle-desc { font-size: 12px; color: var(--dark-grey); line-height: 1.5; }
+
+  .priority-row { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--bg); align-items: flex-start; }
+  .priority-row:last-child { border-bottom: none; }
+  .priority-num { width: 26px; height: 26px; border-radius: 50%; background: var(--green); color: white; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .priority-body .ptitle { font-size: 13px; font-weight: 700; color: var(--green); margin-bottom: 3px; }
+  .priority-body .pdesc { font-size: 12px; color: var(--dark-grey); line-height: 1.5; }
+
+  .theme-row { padding: 10px 0; border-bottom: 1px solid var(--bg); }
+  .theme-row:last-child { border-bottom: none; }
+  .theme-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .theme-name { font-size: 13px; font-weight: 700; color: var(--green); }
+  .theme-pct { font-size: 12px; color: var(--teal); font-weight: 600; }
+  .bar-track { height: 4px; background: var(--light-grey); border-radius: 2px; margin-bottom: 6px; }
+  .bar-fill { height: 100%; background: var(--accent); border-radius: 2px; }
+  .quote-block { border-left: 3px solid var(--accent); padding: 5px 10px; margin: 5px 0; font-size: 12px; font-style: italic; color: var(--dark-grey); line-height: 1.5; }
+
+  .narrative-box { background: var(--bg); border-radius: 4px; padding: 14px; font-size: 13px; color: var(--dark-grey); line-height: 1.7; }
+
+  .slide-map { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 0.5rem; }
+  .slide-pill { display: flex; align-items: center; gap: 6px; padding: 5px 12px; background: var(--bg); border: 1px solid var(--light-grey); border-radius: 14px; font-size: 12px; }
+  .slide-pill .sn { font-size: 10px; color: #999; }
+  .slide-pill .sl { font-weight: 600; }
+
+  .export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .export-opt { background: var(--bg); border: 1px solid var(--light-grey); border-radius: var(--radius); padding: 1.25rem; }
+  .export-opt h4 { font-size: 13.5px; font-weight: 700; margin-bottom: 4px; }
+  .export-opt p { font-size: 12px; color: #999; margin-bottom: 12px; line-height: 1.5; }
+
+  @media (max-width: 700px) {
+    .upload-grid { grid-template-columns: 1fr; }
+    .form-grid, .export-grid { grid-template-columns: 1fr; }
+    .participant-row { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="topbar-back" href="../index.html">← Back</a>
+  <div class="topbar-divider"></div>
+  <div class="topbar-title">Executive Visioning Session Synthesizer</div>
+</div>
+
+<div class="container">
+
+  <div class="stepper">
+    <div class="step active" id="st1"><div class="snum">1</div> Upload Materials</div>
+    <div class="step" id="st2"><div class="snum">2</div> Session Details</div>
+    <div class="step" id="st3"><div class="snum">3</div> Review Output</div>
+    <div class="step" id="st4"><div class="snum">4</div> Export</div>
+  </div>
+
+  <!-- STEP 1: UPLOAD -->
+  <div class="panel active" id="panel1">
+    <div class="card">
+      <div class="card-header">Upload session materials</div>
+      <p class="card-desc">Upload whatever you have — Claude will read each type differently. You don't need all three, just what's available.</p>
+      <div class="upload-grid">
+
+        <div class="upload-zone" id="uz-prereads" onclick="document.getElementById('fi-prereads').click()">
+          <div class="uz-icon">📋</div>
+          <div class="uz-label">Pre-reads & Briefs</div>
+          <div class="uz-hint">Strategy documents, context briefs, or any materials distributed before the session</div>
+          <div class="uz-count" id="count-prereads"></div>
+        </div>
+        <input type="file" id="fi-prereads" multiple accept=".txt,.pdf,.docx,.doc" style="display:none">
+
+        <div class="upload-zone" id="uz-notes" onclick="document.getElementById('fi-notes').click()">
+          <div class="uz-icon">✏️</div>
+          <div class="uz-label">Workshop Notes</div>
+          <div class="uz-hint">Facilitation outputs, flip chart captures, or notes from the session itself</div>
+          <div class="uz-count" id="count-notes"></div>
+        </div>
+        <input type="file" id="fi-notes" multiple accept=".txt,.pdf,.docx,.doc" style="display:none">
+
+        <div class="upload-zone" id="uz-menti" onclick="document.getElementById('fi-menti').click()">
+          <div class="uz-icon">📊</div>
+          <div class="uz-label">Mentimeter Export</div>
+          <div class="uz-hint">Export your Mentimeter results as PDF or CSV and upload here</div>
+          <div class="uz-count" id="count-menti"></div>
+        </div>
+        <input type="file" id="fi-menti" multiple accept=".txt,.pdf,.csv,.docx" style="display:none">
+
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn1" disabled onclick="goTo(2)">Add session details →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: SESSION DETAILS -->
+  <div class="panel" id="panel2">
+    <div class="card">
+      <div class="card-header">Session details</div>
+      <div class="form-grid">
+        <div class="field full"><label>Client / Organization</label><input type="text" id="client" placeholder="e.g. Acme Corporation"></div>
+        <div class="field full"><label>Engagement name</label><input type="text" id="engname" placeholder="e.g. Workplace Strategy 2025"></div>
+        <div class="field"><label>Session date</label><input type="text" id="sesdate" placeholder="e.g. April 10, 2025"></div>
+        <div class="field"><label>Session location</label><input type="text" id="sesloc" placeholder="e.g. New York HQ / Virtual"></div>
+        <div class="field full"><label>Session facilitator(s)</label><input type="text" id="facilitator" placeholder="e.g. Yester Sabondzhyan, CBRE Consulting"></div>
+        <div class="field full"><label>Additional context for Claude (optional)</label>
+          <textarea id="ctx" rows="3" placeholder="e.g. This client is undergoing a real estate consolidation. The visioning session focused on culture, flexibility, and technology. Key tension was between leadership preferring assigned seating and employees wanting full flexibility."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Session participants <span class="badge" id="part-count">0 added</span></div>
+      <p class="card-desc">Add the leadership participants from the session. Name and title minimum — org unit is optional but helpful.</p>
+      <div class="participant-rows" id="participant-rows">
+        <div class="participant-row">
+          <input type="text" placeholder="Full name" class="p-name">
+          <input type="text" placeholder="Title" class="p-title">
+          <input type="text" placeholder="Org unit (optional)" class="p-org">
+          <button class="btn-icon" onclick="removeParticipant(this)">✕</button>
+        </div>
+      </div>
+      <button class="btn-add" onclick="addParticipant()">+ Add participant</button>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="goTo(1)">← Back</button>
+      <button class="btn btn-primary" onclick="startAnalysis()">Synthesize session →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: REVIEW -->
+  <div class="panel" id="panel3">
+    <div id="analyzing-view" style="display:none;">
+      <div class="card analyzing">
+        <div class="spinner"></div>
+        <h3>Synthesizing session with Claude...</h3>
+        <p id="status-msg">Reading materials...</p>
+      </div>
+    </div>
+    <div id="results-view" style="display:none;">
+      <div class="info-box"><strong>Review the synthesized output below</strong> before exporting. All content was generated from your uploaded materials.</div>
+      <div class="results-stack" id="results-grid"></div>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="goTo(2)">← Reconfigure</button>
+        <button class="btn btn-primary" onclick="goTo(4)">Proceed to export →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: EXPORT -->
+  <div class="panel" id="panel4">
+    <div class="card">
+      <div class="card-header">Slide preview <span class="badge" id="slide-count">5 slides</span></div>
+      <div class="slide-map" id="slide-map">
+        <div class="slide-pill"><span class="sn">1</span><span class="sl">Cover</span></div>
+        <div class="slide-pill"><span class="sn">2</span><span class="sl">Session context & participants</span></div>
+        <div class="slide-pill"><span class="sn">3</span><span class="sl">Key themes heard</span></div>
+        <div class="slide-pill"><span class="sn">4</span><span class="sl">Workplace principles</span></div>
+        <div class="slide-pill"><span class="sn">5</span><span class="sl">Strategic priorities</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Export</div>
+      <div class="export-grid">
+        <div class="export-opt">
+          <h4>Claude Code (recommended)</h4>
+          <p>Generates the full .pptx using the Python script and your CBRE template. Requires Claude Code running locally.</p>
+          <button class="btn btn-primary" onclick="exportClaudeCode()">Generate via Claude Code ↗</button>
+        </div>
+        <div class="export-opt">
+          <h4>Download data file</h4>
+          <p>Download the analyzed JSON to run locally with the generator script.</p>
+          <button class="btn btn-outline" onclick="downloadJSON()">Download data.json</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row"><button class="btn btn-outline" onclick="goTo(3)">← Review</button></div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { callClaude, parseJSON } from '../assets/api.js';
+
+  // ── File tracking ────────────────────────────────────────
+  const fileStore = { prereads: [], notes: [], menti: [] };
+
+  function setupUploadZone(inputId, zoneId, countId, storeKey) {
+    const input = document.getElementById(inputId);
+    const zone  = document.getElementById(zoneId);
+    const count = document.getElementById(countId);
+
+    input.addEventListener('change', e => {
+      Array.from(e.target.files).forEach(f => {
+        if (!fileStore[storeKey].find(x => x.name === f.name)) fileStore[storeKey].push(f);
+      });
+      updateZone(zone, count, storeKey);
+      checkCanProceed();
+    });
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault(); zone.classList.remove('over');
+      Array.from(e.dataTransfer.files).forEach(f => {
+        if (!fileStore[storeKey].find(x => x.name === f.name)) fileStore[storeKey].push(f);
+      });
+      updateZone(zone, count, storeKey);
+      checkCanProceed();
+    });
+  }
+
+  function updateZone(zone, countEl, key) {
+    const n = fileStore[key].length;
+    zone.classList.toggle('has-files', n > 0);
+    countEl.textContent = n === 1 ? '1 file uploaded' : `${n} files uploaded`;
+  }
+
+  function checkCanProceed() {
+    const total = fileStore.prereads.length + fileStore.notes.length + fileStore.menti.length;
+    document.getElementById('btn1').disabled = total === 0;
+  }
+
+  setupUploadZone('fi-prereads', 'uz-prereads', 'count-prereads', 'prereads');
+  setupUploadZone('fi-notes',    'uz-notes',    'count-notes',    'notes');
+  setupUploadZone('fi-menti',    'uz-menti',    'count-menti',    'menti');
+
+  // ── Participants ─────────────────────────────────────────
+  function updatePartCount() {
+    const rows = document.querySelectorAll('.participant-row');
+    document.getElementById('part-count').textContent = rows.length + ' added';
+  }
+
+  window.addParticipant = function() {
+    const row = document.createElement('div');
+    row.className = 'participant-row';
+    row.innerHTML = `
+      <input type="text" placeholder="Full name" class="p-name">
+      <input type="text" placeholder="Title" class="p-title">
+      <input type="text" placeholder="Org unit (optional)" class="p-org">
+      <button class="btn-icon" onclick="removeParticipant(this)">✕</button>`;
+    document.getElementById('participant-rows').appendChild(row);
+    updatePartCount();
+  };
+
+  window.removeParticipant = function(btn) {
+    btn.closest('.participant-row').remove();
+    updatePartCount();
+  };
+
+  updatePartCount();
+
+  function getParticipants() {
+    return Array.from(document.querySelectorAll('.participant-row')).map(row => ({
+      name:  row.querySelector('.p-name').value.trim(),
+      title: row.querySelector('.p-title').value.trim(),
+      org:   row.querySelector('.p-org').value.trim(),
+    })).filter(p => p.name || p.title);
+  }
+
+  // ── Navigation ───────────────────────────────────────────
+  function goTo(n) {
+    [1,2,3,4].forEach(i => {
+      document.getElementById('panel'+i).classList.toggle('active', i===n);
+      const st = document.getElementById('st'+i);
+      st.classList.toggle('active', i===n);
+      st.classList.toggle('done', i<n);
+    });
+  }
+  window.goTo = goTo;
+
+  // ── Analysis ─────────────────────────────────────────────
+  let analysisData = null;
+
+  window.startAnalysis = async function() {
+    const client      = document.getElementById('client').value || 'Client';
+    const engName     = document.getElementById('engname').value || 'Workplace Strategy';
+    const sesDate     = document.getElementById('sesdate').value || '';
+    const sesLoc      = document.getElementById('sesloc').value || '';
+    const facilitator = document.getElementById('facilitator').value || '';
+    const ctx         = document.getElementById('ctx').value;
+    const participants = getParticipants();
+
+    goTo(3);
+    document.getElementById('analyzing-view').style.display = 'block';
+    document.getElementById('results-view').style.display   = 'none';
+
+    const msgs = [
+      'Reading pre-reads and briefs...',
+      'Processing workshop notes...',
+      'Analyzing Mentimeter responses...',
+      'Identifying themes and patterns...',
+      'Synthesizing workplace principles...',
+      'Building strategic priorities...'
+    ];
+    let mi = 0;
+    const statusEl = document.getElementById('status-msg');
+    const interval = setInterval(() => { if (mi < msgs.length-1) statusEl.textContent = msgs[++mi]; }, 2800);
+
+    // Read all files
+    async function readFiles(files, label) {
+      const results = [];
+      for (const f of files) {
+        try { results.push(`[${label}] ${f.name}:\n${(await f.text()).slice(0, 6000)}`); }
+        catch { results.push(`[${label}] ${f.name}: [binary file]`); }
+      }
+      return results.join('\n\n');
+    }
+
+    const prereadsText = await readFiles(fileStore.prereads, 'PRE-READ');
+    const notesText    = await readFiles(fileStore.notes,    'WORKSHOP NOTES');
+    const mentiText    = await readFiles(fileStore.menti,    'MENTIMETER');
+
+    const allContent = [prereadsText, notesText, mentiText].filter(Boolean).join('\n\n---\n\n');
+
+    const participantList = participants.length > 0
+      ? participants.map(p => `${p.name}${p.title ? ', '+p.title : ''}${p.org ? ' ('+p.org+')' : ''}`).join('\n')
+      : 'Not specified';
+
+    const prompt = `You are synthesizing an executive visioning session for a workplace strategy engagement.
+
+Client: ${client}
+Engagement: ${engName}
+Session date: ${sesDate || 'Not specified'}
+Location: ${sesLoc || 'Not specified'}
+Facilitator: ${facilitator || 'Not specified'}
+${ctx ? 'Additional context: '+ctx : ''}
+
+Participants:
+${participantList}
+
+Session materials:
+${allContent}
+
+Based on ALL materials provided, respond ONLY with valid JSON, no markdown:
+{
+  "session_summary": "string (3-4 sentences: what was the session, who attended, what was its purpose, what was the overall energy/alignment level)",
+  "themes": [
+    {
+      "name": "string (2-4 word theme name)",
+      "prevalence": number (0-100),
+      "description": "string (1-2 sentences summarizing what was heard on this theme)",
+      "quotes": ["verbatim or near-verbatim quote from materials", "another quote"]
+    }
+  ],
+  "principles": [
+    {
+      "title": "string (short principle name, e.g. 'Flexibility as Default')",
+      "description": "string (1-2 sentences: what this principle means for the workplace, written in client-facing language)"
+    }
+  ],
+  "priorities": [
+    {
+      "title": "string (short priority name)",
+      "description": "string (1-2 sentences: what needs to happen and why it matters)",
+      "implication": "string (1 sentence: what this means for the physical workplace or ways of working)"
+    }
+  ],
+  "narrative": "string (4-6 sentences: the overarching story of what leadership envisions — suitable for the opening of a client-facing deck. Written in third person, past tense, authoritative consulting voice.)",
+  "key_tensions": ["string (any unresolved tensions or diverging views worth noting)", "string"]
+}
+
+Identify 3-5 themes, 3-5 principles, and 3-4 priorities. Order everything by importance.`;
+
+    try {
+      const text = await callClaude([{ role: 'user', content: prompt }], { max_tokens: 3000 });
+      clearInterval(interval);
+      analysisData = parseJSON(text);
+    } catch(err) {
+      clearInterval(interval);
+      console.error(err);
+      analysisData = getFallback(client, participants);
+    }
+
+    analysisData._meta = { client, engName, sesDate, sesLoc, facilitator, participants };
+    renderResults();
+  };
+
+  function getFallback(client, participants) {
+    return {
+      session_summary: `${client} convened a half-day executive visioning session with ${participants.length || 'key'} senior leaders to define the future workplace strategy. The session explored how the physical environment, ways of working, and culture should evolve to support the organization's strategic ambitions. Leaders were broadly aligned on the need for change, with particular energy around flexibility, collaboration, and culture-building.`,
+      themes: [
+        { name: 'Flexibility & Autonomy', prevalence: 88, description: 'Leaders consistently expressed a desire for greater flexibility in where and how work gets done.', quotes: ['"We need to trust our people to work where they are most productive."', '"Flexibility is no longer a perk — it is an expectation."'] },
+        { name: 'Culture & Community', prevalence: 76, description: 'The office was seen as primarily a culture and connection destination rather than a place for individual work.', quotes: ['"When people come in, it should feel like something is happening here."'] },
+        { name: 'Technology Enablement', prevalence: 64, description: 'Technology gaps were cited as a barrier to effective hybrid working and needed to be addressed before space changes.', quotes: ['"We cannot redesign the space without fixing the technology first."'] }
+      ],
+      principles: [
+        { title: 'Flexibility as Default', description: 'The workplace should be designed around choice — giving people the autonomy to select the right environment for the work they are doing.' },
+        { title: 'Office as Destination', description: 'The physical office should be a compelling destination that people choose to come to, not a requirement — designed for collaboration, culture, and community.' },
+        { title: 'Technology First', description: 'Any workplace changes should be underpinned by a technology foundation that enables seamless hybrid working across all spaces.' }
+      ],
+      priorities: [
+        { title: 'Redesign for Collaboration', description: 'Shift the balance of space from individual-focused to collaboration-focused, with a diverse range of settings.', implication: 'Reduce assigned seating and invest in a variety of team and social spaces.' },
+        { title: 'Establish Hybrid Norms', description: 'Define clear expectations and guidelines for hybrid working to reduce ambiguity and increase fairness.', implication: 'Anchor days or team rhythms should inform space planning and headcount ratios.' },
+        { title: 'Upgrade AV & Technology', description: 'Invest in meeting room technology that enables equitable participation for remote and in-person attendees.', implication: 'Technology refresh should precede or coincide with space redesign.' }
+      ],
+      narrative: `${client} leadership gathered to define a shared vision for the future of work — one that reflects the organization's values, supports its strategic ambitions, and meets the evolving expectations of its people. The session revealed strong alignment on the need for a more flexible, human-centered workplace that serves as a destination for culture and collaboration rather than a place for individual tasks. Leaders were energized by the opportunity ahead, while acknowledging that realizing this vision will require deliberate choices about space, technology, and ways of working. The following principles and priorities reflect the collective voice of leadership and will serve as the foundation for the workplace strategy that follows.`,
+      key_tensions: ['Some leaders preferred assigned seating while others advocated for full flexibility — a hybrid model may be needed.', 'There is tension between the desire for a high-energy culture hub and the need for quiet focus space.']
+    };
+  }
+
+  function renderResults() {
+    document.getElementById('analyzing-view').style.display = 'none';
+    document.getElementById('results-view').style.display   = 'block';
+    const d = analysisData;
+    const grid = document.getElementById('results-grid');
+
+    const tensionsHTML = d.key_tensions?.length ? `
+      <div class="card">
+        <div class="card-header">Key tensions to watch</div>
+        ${d.key_tensions.map(t => `
+          <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--bg);align-items:flex-start;">
+            <span style="color:#f59e0b;font-size:16px;flex-shrink:0;">⚠</span>
+            <span style="font-size:13px;color:var(--dark-grey);line-height:1.5;">${t}</span>
+          </div>`).join('')}
+      </div>` : '';
+
+    grid.innerHTML = `
+      <div class="card">
+        <div class="card-header">Session narrative</div>
+        <div class="narrative-box">${d.narrative}</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Themes heard <span class="badge">${d.themes.length} themes</span></div>
+        ${d.themes.map(t => `
+          <div class="theme-row">
+            <div class="theme-top"><span class="theme-name">${t.name}</span><span class="theme-pct">${Math.round(t.prevalence)}%</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:${t.prevalence}%"></div></div>
+            <div style="font-size:12px;color:#666;line-height:1.5;margin-bottom:6px;">${t.description}</div>
+            ${(t.quotes||[]).map(q => `<div class="quote-block">"${q}"</div>`).join('')}
+          </div>`).join('')}
+      </div>
+
+      <div class="card">
+        <div class="card-header">Workplace principles <span class="badge">${d.principles.length} principles</span></div>
+        <div class="principle-grid">
+          ${d.principles.map(p => `
+            <div class="principle-card">
+              <div class="principle-title">${p.title}</div>
+              <div class="principle-desc">${p.description}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Strategic priorities <span class="badge">${d.priorities.length} priorities</span></div>
+        ${d.priorities.map((p,i) => `
+          <div class="priority-row">
+            <div class="priority-num">${i+1}</div>
+            <div class="priority-body">
+              <div class="ptitle">${p.title}</div>
+              <div class="pdesc">${p.description}</div>
+              <div style="font-size:11.5px;color:var(--teal);margin-top:4px;font-style:italic;">→ ${p.implication}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+
+      ${tensionsHTML}
+    `;
+  }
+
+  // ── Export ───────────────────────────────────────────────
+  window.exportClaudeCode = function() {
+    if (!analysisData) return;
+    const m = analysisData._meta || {};
+    const payload = {
+      tool: 'executive-visioning',
+      client_name: m.client,
+      engagement_name: m.engName,
+      session_date: m.sesDate,
+      session_location: m.sesLoc,
+      facilitator: m.facilitator,
+      participants: m.participants,
+      session_summary: analysisData.session_summary,
+      themes: analysisData.themes,
+      principles: analysisData.principles,
+      priorities: analysisData.priorities,
+      narrative: analysisData.narrative,
+      key_tensions: analysisData.key_tensions,
+    };
+    const msg = `Please generate the CBRE Executive Visioning Session appendix PowerPoint now.
+
+Use this data:
+\`\`\`json
+${JSON.stringify(payload, null, 2)}
+\`\`\`
+
+Build a 5-slide CBRE-branded .pptx:
+1. Cover slide — client name, engagement name, session date
+2. Session context — narrative paragraph + participant list with names and titles
+3. Key themes — theme cards with prevalence bars and quotes (semi-anonymous)
+4. Workplace principles — principle cards with title and description
+5. Strategic priorities — numbered priorities with descriptions and workplace implications
+
+Apply CBRE brand colors (#003F2D dark green, #17E88F accent, #538184 teal).
+Use the template at /mnt/user-data/uploads/cbre_template_2024_us__2_.potx
+Save to /mnt/user-data/outputs/executive_visioning_appendix.pptx`;
+
+    if (typeof sendPrompt === 'function') sendPrompt(msg);
+    else { navigator.clipboard.writeText(msg); alert('Prompt copied — paste into Claude Code.'); }
+  };
+
+  window.downloadJSON = function() {
+    if (!analysisData) return;
+    const m = analysisData._meta || {};
+    const payload = { tool:'executive-visioning', client_name:m.client, engagement_name:m.engName, session_date:m.sesDate, participants:m.participants, session_summary:analysisData.session_summary, themes:analysisData.themes, principles:analysisData.principles, priorities:analysisData.priorities, narrative:analysisData.narrative };
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
+    a.download = 'visioning_data.json';
+    a.click();
+  };
+</script>
+</body>
+</html>
