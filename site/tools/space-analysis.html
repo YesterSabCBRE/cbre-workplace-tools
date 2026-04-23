@@ -126,7 +126,7 @@
   .results.active { display: block; }
 
   /* STAT DASHBOARD */
-  .stat-dashboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2.5rem; }
+  .stat-dashboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 2.5rem; }
   .stat-card {
     background: var(--card-bg); border: 1px solid var(--card-border);
     border-radius: var(--radius); padding: 1.25rem 1rem; text-align: center;
@@ -237,7 +237,7 @@
   .export-btn-secondary:hover { border-color: rgba(23,232,143,0.3); color: var(--accent); }
 
   @media (max-width: 640px) {
-    .stat-dashboard { grid-template-columns: repeat(2, 1fr); }
+    .stat-dashboard { grid-template-columns: repeat(3, 1fr); }
     .meta-grid { grid-template-columns: 1fr; }
     .space-types-grid { grid-template-columns: 1fr; }
     .floor-card-body { grid-template-columns: 1fr; }
@@ -321,22 +321,22 @@
         <div class="space-type-card">
           <div class="space-type-label">01 · Individual Space</div>
           <div class="space-type-title">Heads-down & focused work</div>
-          <div class="space-type-items">Private offices · Workstations · Phone rooms</div>
+          <div class="space-type-items">Private offices · Shared offices · Workstations · Phone rooms (CL_Phone) · Focus rooms</div>
         </div>
         <div class="space-type-card">
           <div class="space-type-label">02 · Collaboration Space</div>
           <div class="space-type-title">Team interaction & meetings</div>
-          <div class="space-type-items">Conference rooms · Huddle rooms · Open collaboration areas</div>
+          <div class="space-type-items"><strong style="color:var(--text);font-weight:500">Enclosed (CL_):</strong> Huddle · Small / Medium / Large Conf · Project Room<br><strong style="color:var(--text);font-weight:500">Open (OP_):</strong> Open Collab · Open Seating · Lounge · Library</div>
         </div>
         <div class="space-type-card">
           <div class="space-type-label">03 · Support Space</div>
           <div class="space-type-title">Workplace infrastructure</div>
-          <div class="space-type-items">Copy/print · File storage · Server rooms · Mail rooms</div>
+          <div class="space-type-items">Copy/print · File storage · Storage · Server room · IT room · Mail room · Supply room</div>
         </div>
         <div class="space-type-card">
           <div class="space-type-label">04 · Amenity Space</div>
           <div class="space-type-title">Shared workplace experience</div>
-          <div class="space-type-items">Break rooms · Multi-purpose rooms · Reception</div>
+          <div class="space-type-items">Reception · Break room · Pantry · Café · Wellness room · Mother's room · Elevator lobby</div>
         </div>
       </div>
     </div>
@@ -443,13 +443,28 @@ ${contextNotes ? `Additional context: ${contextNotes}` : ''}
 Space Inventory Data:
 ${combinedContent}
 
-Space type definitions:
-- Individual Space: private offices, workstations, phone rooms
-- Collaboration Space: conference rooms, huddle rooms, open collaboration areas
-- Support Space: copy/print areas, file storage, server rooms, mail rooms, data rooms
-- Amenity Space: break rooms, multi-purpose rooms, reception, lobby
+CBRE SPACE TYPE NOMENCLATURE — use these to classify spaces:
 
-Return ONLY a valid JSON object with this exact structure:
+Individual Space (Me Space):
+- Private Office, Shared Office, Workstation (benching, assigned desk)
+- Phone Room / Focus Room (small 1-person enclosed rooms for calls/focus)
+
+Collaboration Space (We Space) — two sub-types:
+- ENCLOSED (CL_ prefix): CL_Huddle (3-4 seat), CL_Small Conference Room (<155 SF), CL_Medium Conference Room (155-245 SF), CL_Large Conference Room (246-384 SF), CL_Project/Work Room (800-1500 SF), CL_Training Room, any named conference room
+- OPEN (OP_ prefix): OP_Open Collaboration (soft seating, casual), OP_Open Seating (tables+chairs for work/collab), Library Zone, Lounge
+
+Support Space:
+- Copy/Print, File Storage, Storage, Server Room, Computer Room, Electrical Room, IT Room, Mail Room, Coat Closet, Supply Room
+
+Amenity Space:
+- Reception, Break Room, Pantry, Café/Cafeteria, Wellness Room, Mother's Room, Fitness, Elevator Lobby
+
+Core Space (excluded from USF):
+- Stairwells, Bathrooms/Restrooms, Elevator shafts, Vertical Penetrations
+
+The data may use a "Source" sheet format with columns: Space Category | Floor | Raw Area | Space Type | Rounded Area. Parse accordingly.
+
+Return ONLY a valid JSON object:
 {
   "_meta": {
     "client_name": "${clientName}",
@@ -458,16 +473,17 @@ Return ONLY a valid JSON object with this exact structure:
     "headcount": ${headcount || 0}
   },
   "totals": {
-    "rsf": <total rentable SF as number>,
-    "usf": <total usable SF as number>,
-    "offices": <count>,
-    "workstations": <count>,
+    "rsf": <total rentable SF>,
+    "usf": <total usable SF>,
+    "usf_per_seat": <USF divided by total individual seats, rounded to nearest whole number>,
+    "offices": <private + shared office count>,
+    "workstations": <workstation count>,
     "total_individual_seats": <offices + workstations>,
-    "phone_rooms": <count>,
-    "collab_seats": <total collaboration seats>,
-    "collab_ratio": "<e.g. 0.8 : 1.0>",
+    "phone_rooms": <phone room + focus room count>,
+    "collab_seats": <total enclosed + open collab seats>,
+    "collab_ratio": "<conf seats : workspace seats, e.g. 0.6 : 1.0>",
     "office_workstation_split": { "offices_pct": <number>, "workstations_pct": <number> },
-    "total_meeting_spaces": <count>
+    "total_meeting_spaces": <enclosed collab space count>
   },
   "floors": [
     {
@@ -475,30 +491,32 @@ Return ONLY a valid JSON object with this exact structure:
       "rsf": <number>,
       "usf": <number>,
       "offices": <count>,
-      "office_avg_sf": <avg SF per office or null>,
+      "office_avg_sf": <avg SF or null>,
       "workstations": <count>,
-      "workstation_avg_sf": <avg SF per workstation or null>,
-      "total_individual_seats": <count>,
-      "phone_rooms": <count>,
-      "collab_seats": <count>,
+      "workstation_avg_sf": <avg SF or null>,
+      "total_individual_seats": <offices + workstations>,
+      "phone_rooms": <phone room + focus room count>,
+      "collab_seats": <enclosed + open collab seats>,
+      "enclosed_collab_spaces": <count of CL_ rooms>,
+      "open_collab_spaces": <count of OP_ areas>,
       "collab_ratio": "<e.g. 0.6 : 1.0>",
-      "total_meeting_spaces": <count>,
-      "amenities": ["<amenity name>"],
+      "total_meeting_spaces": <enclosed collab count>,
+      "amenities": ["<amenity type name>"],
       "space_allocation": {
-        "individual_pct": <number>,
-        "collaboration_pct": <number>,
-        "support_pct": <number>,
-        "amenity_pct": <number>,
-        "core_pct": <number>
+        "individual_pct": <% of USF>,
+        "collaboration_pct": <% of USF>,
+        "support_pct": <% of USF>,
+        "amenity_pct": <% of USF>,
+        "core_pct": <% of RSF that is core/vertical>
       }
     }
   ],
   "key_takeaways": [
-    { "title": "<short title>", "description": "<1-2 sentence insight>" }
+    { "title": "<short title>", "description": "<1-2 sentence insight referencing specific numbers>" }
   ]
 }
 
-Include 4-5 key takeaways grounded in the data. Return ONLY the JSON object, no markdown, no preamble.`;
+Include 4-5 key takeaways grounded in specific data points. Benchmark collab ratio against 0.6:1.0 (typical) and flag if significantly above or below. Return ONLY the JSON object, no markdown, no preamble.`;
 
   try {
     const response = await fetch(`${WORKER_URL}/analyze`, {
@@ -522,37 +540,68 @@ Include 4-5 key takeaways grounded in the data. Return ONLY the JSON object, no 
 
 function buildPlaceholderData(client, address, date, headcount) {
   return {
-    _meta: { client_name: client, address, date, headcount: parseInt(headcount) || 0 },
+    _meta: { client_name: client || 'Client', address, date, headcount: parseInt(headcount) || 0 },
     totals: {
-      rsf: 26139, usf: 24435, offices: 19, workstations: 90,
-      total_individual_seats: 109, phone_rooms: 1,
-      collab_seats: 83, collab_ratio: '0.8 : 1.0',
-      office_workstation_split: { offices_pct: 16, workstations_pct: 84 },
-      total_meeting_spaces: 18
+      rsf: 168805, usf: 142515, usf_per_seat: 131,
+      offices: 51, workstations: 1035,
+      total_individual_seats: 1086, phone_rooms: 113,
+      collab_seats: 660, collab_ratio: '0.6 : 1.0',
+      office_workstation_split: { offices_pct: 5, workstations_pct: 95 },
+      total_meeting_spaces: 92
     },
     floors: [
       {
-        name: '1st Floor', rsf: 18962, usf: 17725,
-        offices: 17, office_avg_sf: 129, workstations: 65, workstation_avg_sf: 72,
-        total_individual_seats: 82, phone_rooms: 1,
-        collab_seats: 48, collab_ratio: '0.6 : 1.0', total_meeting_spaces: 13,
-        amenities: ['Break Room', 'Multi-Purpose Room', 'Reception'],
-        space_allocation: { individual_pct: 44, collaboration_pct: 22, support_pct: 18, amenity_pct: 10, core_pct: 6 }
+        name: '28th Floor', rsf: 21395, usf: 15945,
+        offices: 1, office_avg_sf: 125, workstations: 75, workstation_avg_sf: 35,
+        total_individual_seats: 76, phone_rooms: 88,
+        collab_seats: 76, enclosed_collab_spaces: 13, open_collab_spaces: 2,
+        collab_ratio: '1.0 : 1.0', total_meeting_spaces: 13,
+        amenities: ['Reception'],
+        space_allocation: { individual_pct: 20, collaboration_pct: 13, support_pct: 7, amenity_pct: 6, core_pct: 34 }
       },
       {
-        name: 'Mezzanine', rsf: 7177, usf: 6710,
-        offices: 2, office_avg_sf: 135, workstations: 25, workstation_avg_sf: 87,
-        total_individual_seats: 27, phone_rooms: 0,
-        collab_seats: 35, collab_ratio: '1.3 : 1.0', total_meeting_spaces: 5,
-        amenities: [],
-        space_allocation: { individual_pct: 38, collaboration_pct: 40, support_pct: 12, amenity_pct: 4, core_pct: 6 }
+        name: '30th Floor', rsf: 37050, usf: 32380,
+        offices: 11, office_avg_sf: 120, workstations: 272, workstation_avg_sf: 30,
+        total_individual_seats: 283, phone_rooms: 29,
+        collab_seats: 162, enclosed_collab_spaces: 23, open_collab_spaces: 5,
+        collab_ratio: '0.6 : 1.0', total_meeting_spaces: 23,
+        amenities: ['Break Room', 'Pantry'],
+        space_allocation: { individual_pct: 33, collaboration_pct: 13, support_pct: 10, amenity_pct: 2, core_pct: 14 }
+      },
+      {
+        name: '31st Floor', rsf: 36165, usf: 30010,
+        offices: 10, office_avg_sf: 115, workstations: 272, workstation_avg_sf: 30,
+        total_individual_seats: 282, phone_rooms: 31,
+        collab_seats: 151, enclosed_collab_spaces: 22, open_collab_spaces: 5,
+        collab_ratio: '0.5 : 1.0', total_meeting_spaces: 22,
+        amenities: ['Break Room'],
+        space_allocation: { individual_pct: 35, collaboration_pct: 13, support_pct: 6, amenity_pct: 3, core_pct: 17 }
+      },
+      {
+        name: '32nd Floor', rsf: 37120, usf: 32135,
+        offices: 15, office_avg_sf: 134, workstations: 144, workstation_avg_sf: 33,
+        total_individual_seats: 159, phone_rooms: 15,
+        collab_seats: 134, enclosed_collab_spaces: 15, open_collab_spaces: 5,
+        collab_ratio: '0.8 : 1.0', total_meeting_spaces: 15,
+        amenities: ['Café', 'Reception', 'Break Room'],
+        space_allocation: { individual_pct: 22, collaboration_pct: 11, support_pct: 6, amenity_pct: 27, core_pct: 13 }
+      },
+      {
+        name: '33rd Floor', rsf: 37075, usf: 32045,
+        offices: 14, office_avg_sf: 120, workstations: 272, workstation_avg_sf: 30,
+        total_individual_seats: 286, phone_rooms: 30,
+        collab_seats: 137, enclosed_collab_spaces: 19, open_collab_spaces: 2,
+        collab_ratio: '0.5 : 1.0', total_meeting_spaces: 19,
+        amenities: ['Break Room', 'Pantry'],
+        space_allocation: { individual_pct: 34, collaboration_pct: 11, support_pct: 9, amenity_pct: 2, core_pct: 16 }
       }
     ],
     key_takeaways: [
-      { title: 'Workstation-heavy inventory signals unassigned opportunity', description: 'At 84% workstations vs. 16% offices, the portfolio is already configured for flexibility. An unassigned model would require minimal reconfiguration.' },
-      { title: 'Collaboration ratio is below benchmark on primary floor', description: '1st floor\'s 0.6:1.0 collaboration ratio falls below the CBRE benchmark of 1.0:1.0. Adding collaboration seats would align the space with hybrid work patterns.' },
-      { title: 'Mezzanine punches above its weight on collaboration', description: 'Despite being the smaller floor, the Mezzanine\'s 1.3:1.0 ratio makes it the stronger collaboration floor — consider programming it as a team hub.' },
-      { title: 'Support space may be oversized for a modern workflow', description: 'File storage, copy areas, and server rooms account for a significant portion of support space. A digitization audit could free up meaningful square footage.' }
+      { title: 'Portfolio is overwhelmingly workstation-based', description: 'At 95% workstations vs. 5% private offices across 5 floors, the space is already well-positioned for an unassigned or activity-based model.' },
+      { title: 'Phone room density is a standout feature', description: '113 phone/focus rooms across 5 floors (1 per ~9.6 individual seats) signals strong investment in individual focus and call privacy — above typical benchmarks.' },
+      { title: '32nd floor is an outlier — amenity-heavy by design', description: 'At 27% amenity allocation, Floor 32 is clearly programmed as the social/hospitality hub. Collaboration ratio (0.8:1.0) is the strongest of the five floors.' },
+      { title: 'Collaboration ratio is at benchmark on most floors', description: 'Portfolio-wide conf:work ratio of 0.6:1.0 is at the low end of the typical 0.6–1.0 range. Floors 31 and 33 (0.5:1.0) present opportunities to add open collab settings.' },
+      { title: '28th floor has the most constrained usable area', description: 'With only 15,945 USF vs. 21,395 RSF, Floor 28 has the highest core factor (~25%) — likely an entry/lobby floor. Its space allocation reflects this with lower density.' }
     ]
   };
 }
@@ -573,12 +622,16 @@ function renderResults(data) {
       <div class="stat-label">Individual Seats</div>
     </div>
     <div class="stat-card">
-      <div class="stat-num">${t.collab_ratio || '—'}</div>
-      <div class="stat-label">Collab Ratio</div>
+      <div class="stat-num">${t.usf_per_seat ?? '—'}</div>
+      <div class="stat-label">USF / Seat</div>
     </div>
     <div class="stat-card">
-      <div class="stat-num">${t.office_workstation_split ? t.office_workstation_split.offices_pct + '%' : '—'}</div>
-      <div class="stat-label">Offices vs. Wstn</div>
+      <div class="stat-num">${t.collab_ratio || '—'}</div>
+      <div class="stat-label">Conf : Work Seats</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">${t.phone_rooms ?? '—'}</div>
+      <div class="stat-label">Phone / Focus Rooms</div>
     </div>`;
 
   // Summary table
@@ -642,7 +695,7 @@ function renderResults(data) {
             <span class="floor-stat-val accent">${f.collab_seats ?? '—'}</span>
           </div>
           <div class="floor-stat-row">
-            <span class="floor-stat-key">Collab Ratio</span>
+            <span class="floor-stat-key">Conf : Work Seats</span>
             <span class="floor-stat-val"><span class="ratio-pill">${f.collab_ratio || '—'}</span></span>
           </div>
           <div class="floor-stat-row">
