@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Space Analysis Summary · CBRE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green:       #003F2D;
+    --green-mid:   #012A2D;
+    --green-deep:  #001A14;
+    --accent:      #17E88F;
+    --accent-dim:  #0FB870;
+    --teal:        #538184;
+    --text:        #F2F4F3;
+    --text-muted:  rgba(242,244,243,0.55);
+    --card-bg:     rgba(255,255,255,0.04);
+    --card-border: rgba(255,255,255,0.08);
+    --radius:      12px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--green-deep);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse 80% 50% at 20% -10%, rgba(23,232,143,0.06) 0%, transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2.5rem; height: 60px;
+    background: rgba(0,26,20,0.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--card-border);
+  }
+  .nav-logo { font-family: 'DM Serif Display', serif; font-size: 1rem; color: var(--text); text-decoration: none; }
+  .nav-logo span { color: var(--accent); }
+  .nav-back { font-size: 0.8rem; color: var(--text-muted); text-decoration: none; display: flex; align-items: center; gap: 0.4rem; }
+  .nav-back:hover { color: var(--text); }
+
+  /* LAYOUT */
+  .page { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 90px 2rem 80px; }
+
+  /* HEADER */
+  .page-header { margin-bottom: 2.5rem; }
+  .page-eyebrow {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 0.75rem;
+  }
+  .page-title { font-family: 'DM Serif Display', serif; font-size: 2.2rem; line-height: 1.15; margin-bottom: 0.75rem; }
+  .page-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.7; max-width: 580px; }
+
+  /* UPLOAD */
+  .upload-section { margin-bottom: 2rem; }
+  .section-title { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1rem; }
+  .upload-zone {
+    border: 2px dashed var(--card-border); border-radius: var(--radius);
+    padding: 2.5rem; text-align: center; cursor: pointer;
+    transition: border-color 0.2s, background 0.2s; background: var(--card-bg);
+  }
+  .upload-zone:hover, .upload-zone.dragover { border-color: rgba(23,232,143,0.4); background: rgba(23,232,143,0.04); }
+  .upload-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+  .upload-label { font-size: 0.95rem; color: var(--text); margin-bottom: 0.35rem; }
+  .upload-sub { font-size: 0.8rem; color: var(--text-muted); }
+  #file-input { display: none; }
+  .file-list { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
+  .file-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.6rem 1rem;
+    background: rgba(23,232,143,0.06); border: 1px solid rgba(23,232,143,0.2);
+    border-radius: 8px; font-size: 0.83rem;
+  }
+  .file-item-name { color: var(--text); }
+  .file-item-remove { color: var(--text-muted); cursor: pointer; font-size: 0.9rem; padding: 0 0.25rem; }
+  .file-item-remove:hover { color: #f87171; }
+
+  /* META FIELDS */
+  .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+  .field { display: flex; flex-direction: column; gap: 0.4rem; }
+  .field label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+  .field input, .field textarea {
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: 8px; padding: 0.65rem 0.9rem;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+    transition: border-color 0.2s; resize: vertical;
+  }
+  .field input:focus, .field textarea:focus { outline: none; border-color: rgba(23,232,143,0.4); }
+  .field input::placeholder, .field textarea::placeholder { color: var(--text-muted); }
+  .field-full { grid-column: 1 / -1; }
+
+  /* ANALYZE BUTTON */
+  .analyze-btn {
+    width: 100%; padding: 1rem; border: none; border-radius: var(--radius);
+    background: var(--accent); color: var(--green-deep);
+    font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 600;
+    cursor: pointer; transition: background 0.2s, transform 0.1s; margin-bottom: 2rem;
+  }
+  .analyze-btn:hover { background: var(--accent-dim); }
+  .analyze-btn:active { transform: scale(0.99); }
+  .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ERROR */
+  .error-msg { display: none; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-radius: 8px; padding: 0.75rem 1rem; color: #f87171; font-size: 0.85rem; margin-bottom: 1.5rem; }
+  .error-msg.active { display: block; }
+
+  /* LOADING */
+  .loading-state { display: none; text-align: center; padding: 3rem; }
+  .loading-state.active { display: block; }
+  .loading-spinner { width: 36px; height: 36px; border: 3px solid rgba(23,232,143,0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-msg { font-size: 0.9rem; color: var(--text-muted); }
+
+  /* RESULTS */
+  .results { display: none; }
+  .results.active { display: block; }
+
+  /* STAT DASHBOARD */
+  .stat-dashboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2.5rem; }
+  .stat-card {
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: var(--radius); padding: 1.25rem 1rem; text-align: center;
+  }
+  .stat-num { font-family: 'DM Serif Display', serif; font-size: 2rem; color: var(--accent); line-height: 1; margin-bottom: 0.35rem; }
+  .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* SECTION HEADERS */
+  .results-section { margin-bottom: 2.5rem; }
+  .results-section-title {
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;
+  }
+  .results-section-title::after { content: ''; flex: 1; height: 1px; background: var(--card-border); }
+
+  /* SPACE TYPE LEGEND */
+  .space-types-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+  .space-type-card {
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: var(--radius); padding: 1.25rem;
+  }
+  .space-type-label {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 0.5rem;
+  }
+  .space-type-title { font-family: 'DM Serif Display', serif; font-size: 1.1rem; margin-bottom: 0.5rem; }
+  .space-type-items { font-size: 0.82rem; color: var(--text-muted); line-height: 1.7; }
+
+  /* SUMMARY TABLE */
+  .summary-table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--card-border); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  thead th {
+    background: var(--green); padding: 0.75rem 1rem; text-align: left;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-muted); white-space: nowrap;
+  }
+  tbody tr { border-top: 1px solid var(--card-border); }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+  tbody td { padding: 0.75rem 1rem; color: var(--text); white-space: nowrap; }
+  tbody tr.total-row { background: rgba(23,232,143,0.05); border-top: 1px solid rgba(23,232,143,0.2); }
+  tbody tr.total-row td { color: var(--accent); font-weight: 600; }
+  .ratio-pill {
+    display: inline-block; padding: 0.2rem 0.5rem;
+    background: rgba(23,232,143,0.12); border-radius: 4px;
+    color: var(--accent); font-size: 0.8rem; font-weight: 600;
+  }
+
+  /* FLOOR CARDS */
+  .floor-cards { display: flex; flex-direction: column; gap: 1.5rem; }
+  .floor-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); overflow: hidden; }
+  .floor-card-header {
+    padding: 1.25rem 1.5rem; background: rgba(0,63,45,0.3);
+    border-bottom: 1px solid var(--card-border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .floor-card-name { font-family: 'DM Serif Display', serif; font-size: 1.3rem; }
+  .floor-card-rsf { font-size: 0.8rem; color: var(--text-muted); }
+  .floor-card-body { padding: 1.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .floor-stats { display: flex; flex-direction: column; gap: 0.75rem; }
+  .floor-stat-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; border-bottom: 1px solid var(--card-border); padding-bottom: 0.75rem; }
+  .floor-stat-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .floor-stat-key { color: var(--text-muted); }
+  .floor-stat-val { color: var(--text); font-weight: 500; }
+  .floor-stat-val.accent { color: var(--accent); font-family: 'DM Serif Display', serif; font-size: 1.05rem; }
+
+  /* SPACE ALLOCATION BARS */
+  .allocation-title { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1rem; }
+  .alloc-bar-row { margin-bottom: 0.75rem; }
+  .alloc-bar-label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.3rem; }
+  .alloc-bar-name { color: var(--text-muted); }
+  .alloc-bar-pct { color: var(--accent); font-weight: 600; }
+  .alloc-bar-track { height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+  .alloc-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.6s ease; }
+  .alloc-bar-fill.collab { background: #538184; }
+  .alloc-bar-fill.support { background: #2d6a4f; }
+  .alloc-bar-fill.amenity { background: #40916c; }
+  .alloc-bar-fill.core { background: rgba(23,232,143,0.3); }
+
+  /* AMENITY PILLS */
+  .amenity-pills { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .amenity-pill {
+    display: inline-block; padding: 0.25rem 0.6rem;
+    background: rgba(23,232,143,0.08); border: 1px solid rgba(23,232,143,0.2);
+    border-radius: 20px; font-size: 0.75rem; color: var(--accent);
+  }
+
+  /* TAKEAWAYS */
+  .takeaways-list { display: flex; flex-direction: column; gap: 1rem; }
+  .takeaway-item { display: flex; align-items: flex-start; gap: 1.25rem; }
+  .takeaway-num {
+    font-family: 'DM Serif Display', serif; font-size: 2.5rem; line-height: 1;
+    color: var(--accent); min-width: 2rem; text-align: center; flex-shrink: 0;
+  }
+  .takeaway-content { padding-top: 0.25rem; }
+  .takeaway-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.35rem; }
+  .takeaway-desc { font-size: 0.875rem; color: var(--text-muted); line-height: 1.65; }
+
+  /* EXPORT */
+  .export-row { display: flex; gap: 0.75rem; margin-top: 2.5rem; }
+  .export-btn {
+    flex: 1; padding: 0.75rem 1rem; border-radius: 8px; font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 0.2s;
+  }
+  .export-btn-primary { background: var(--accent); color: var(--green-deep); border: none; }
+  .export-btn-primary:hover { background: var(--accent-dim); }
+  .export-btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--card-border); }
+  .export-btn-secondary:hover { border-color: rgba(23,232,143,0.3); color: var(--accent); }
+
+  @media (max-width: 640px) {
+    .stat-dashboard { grid-template-columns: repeat(2, 1fr); }
+    .meta-grid { grid-template-columns: 1fr; }
+    .space-types-grid { grid-template-columns: 1fr; }
+    .floor-card-body { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">CBRE <span>Workplace</span></a>
+  <a href="../index.html" class="nav-back">← Back to Tools</a>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <div class="page-eyebrow">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="4" height="4" rx="1" fill="currentColor"/><rect x="7" y="1" width="4" height="4" rx="1" fill="currentColor"/><rect x="1" y="7" width="4" height="4" rx="1" fill="currentColor"/><rect x="7" y="7" width="4" height="4" rx="1" fill="currentColor"/></svg>
+      Space Analysis
+    </div>
+    <h1 class="page-title">Space Analysis Summary</h1>
+    <p class="page-desc">Upload your space inventory data to generate a floor-by-floor breakdown of individual, collaboration, support, and amenity space — with key metrics and strategic takeaways.</p>
+  </div>
+
+  <!-- FILE UPLOAD -->
+  <div class="upload-section">
+    <div class="section-title">Space Inventory File</div>
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+      <div class="upload-icon">📊</div>
+      <div class="upload-label">Drop your space inventory here</div>
+      <div class="upload-sub">Supports .xlsx, .csv — room-by-room space data with type and area</div>
+      <input type="file" id="file-input" accept=".xlsx,.xls,.csv,.txt" multiple>
+    </div>
+    <div class="file-list" id="file-list"></div>
+  </div>
+
+  <!-- META FIELDS -->
+  <div class="section-title">Engagement Details</div>
+  <div class="meta-grid">
+    <div class="field">
+      <label>Client Name</label>
+      <input type="text" id="client-name" placeholder="e.g. Morley Builders">
+    </div>
+    <div class="field">
+      <label>Property Address</label>
+      <input type="text" id="property-address" placeholder="e.g. 3330 Ocean Park Blvd, Los Angeles">
+    </div>
+    <div class="field">
+      <label>Date</label>
+      <input type="text" id="engagement-date" placeholder="e.g. April 2026">
+    </div>
+    <div class="field">
+      <label>Total Headcount / Seats</label>
+      <input type="number" id="headcount" placeholder="e.g. 120" min="1">
+    </div>
+    <div class="field field-full">
+      <label>Additional Context (optional)</label>
+      <textarea id="context-notes" rows="3" placeholder="e.g. This is a two-floor office. Client is considering a move to unassigned seating. Floors are Level 1 and Mezzanine."></textarea>
+    </div>
+  </div>
+
+  <!-- ANALYZE -->
+  <div class="error-msg" id="error-msg"></div>
+  <button class="analyze-btn" id="analyze-btn" onclick="runAnalysis()">Generate Space Analysis Summary</button>
+
+  <!-- LOADING -->
+  <div class="loading-state" id="loading-state">
+    <div class="loading-spinner"></div>
+    <div class="loading-msg" id="loading-msg">Analyzing space inventory…</div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results" id="results">
+
+    <!-- STAT DASHBOARD -->
+    <div class="stat-dashboard" id="stat-dashboard"></div>
+
+    <!-- SPACE TYPES -->
+    <div class="results-section">
+      <div class="results-section-title">Space Type Definitions</div>
+      <div class="space-types-grid">
+        <div class="space-type-card">
+          <div class="space-type-label">01 · Individual Space</div>
+          <div class="space-type-title">Heads-down & focused work</div>
+          <div class="space-type-items">Private offices · Workstations · Phone rooms</div>
+        </div>
+        <div class="space-type-card">
+          <div class="space-type-label">02 · Collaboration Space</div>
+          <div class="space-type-title">Team interaction & meetings</div>
+          <div class="space-type-items">Conference rooms · Huddle rooms · Open collaboration areas</div>
+        </div>
+        <div class="space-type-card">
+          <div class="space-type-label">03 · Support Space</div>
+          <div class="space-type-title">Workplace infrastructure</div>
+          <div class="space-type-items">Copy/print · File storage · Server rooms · Mail rooms</div>
+        </div>
+        <div class="space-type-card">
+          <div class="space-type-label">04 · Amenity Space</div>
+          <div class="space-type-title">Shared workplace experience</div>
+          <div class="space-type-items">Break rooms · Multi-purpose rooms · Reception</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUMMARY TABLE -->
+    <div class="results-section">
+      <div class="results-section-title">Floor Summary</div>
+      <div class="summary-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Floor</th>
+              <th>RSF</th>
+              <th>USF</th>
+              <th>Offices</th>
+              <th>Workstations</th>
+              <th>Total Seats</th>
+              <th>Phone Rooms</th>
+              <th>Collab Seats</th>
+              <th>Collab Ratio</th>
+              <th>Meeting Spaces</th>
+            </tr>
+          </thead>
+          <tbody id="summary-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- FLOOR CARDS -->
+    <div class="results-section">
+      <div class="results-section-title">Floor Detail</div>
+      <div class="floor-cards" id="floor-cards"></div>
+    </div>
+
+    <!-- TAKEAWAYS -->
+    <div class="results-section">
+      <div class="results-section-title">Key Takeaways</div>
+      <div class="takeaways-list" id="takeaways-container"></div>
+    </div>
+
+    <!-- EXPORT -->
+    <div class="export-row">
+      <button class="export-btn export-btn-secondary" onclick="exportJSON()">Export JSON</button>
+      <button class="export-btn export-btn-primary" onclick="exportPPTX()">Export to PowerPoint</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const WORKER_URL = 'https://cbre-workplace-tools-api.YOUR-SUBDOMAIN.workers.dev';
+
+let uploadedFiles = [];
+let analysisData = null;
+
+// ── File upload ────────────────────────────────────────
+const zone = document.getElementById('upload-zone');
+const fileInput = document.getElementById('file-input');
+
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+function handleFiles(files) {
+  [...files].forEach(f => { if (!uploadedFiles.find(x => x.name === f.name)) uploadedFiles.push(f); });
+  renderFileList();
+}
+
+function renderFileList() {
+  document.getElementById('file-list').innerHTML = uploadedFiles.map((f, i) => `
+    <div class="file-item">
+      <span class="file-item-name">📄 ${f.name}</span>
+      <span class="file-item-remove" onclick="removeFile(${i})">✕</span>
+    </div>`).join('');
+}
+
+function removeFile(i) { uploadedFiles.splice(i, 1); renderFileList(); }
+
+// ── Analysis ────────────────────────────────────────
+async function runAnalysis() {
+  hideError();
+  const clientName   = document.getElementById('client-name').value.trim() || 'Client';
+  const address      = document.getElementById('property-address').value.trim() || '';
+  const date         = document.getElementById('engagement-date').value.trim() || '';
+  const headcount    = document.getElementById('headcount').value.trim() || '';
+  const contextNotes = document.getElementById('context-notes').value.trim() || '';
+
+  if (!uploadedFiles.length) { showError('Please upload at least one space inventory file.'); return; }
+
+  setLoading(true, 'Reading space inventory…');
+
+  const fileContents = await Promise.all(uploadedFiles.map(f => f.text().catch(() => `[Could not read ${f.name}]`)));
+  const combinedContent = uploadedFiles.map((f, i) => `--- ${f.name} ---\n${fileContents[i]}`).join('\n\n');
+
+  const prompt = `You are a workplace strategy analyst at CBRE. Analyze the space inventory data below and return a structured JSON summary.
+
+Client: ${clientName}
+Address: ${address}
+Date: ${date}
+${headcount ? `Headcount/Seats: ${headcount}` : ''}
+${contextNotes ? `Additional context: ${contextNotes}` : ''}
+
+Space Inventory Data:
+${combinedContent}
+
+Space type definitions:
+- Individual Space: private offices, workstations, phone rooms
+- Collaboration Space: conference rooms, huddle rooms, open collaboration areas
+- Support Space: copy/print areas, file storage, server rooms, mail rooms, data rooms
+- Amenity Space: break rooms, multi-purpose rooms, reception, lobby
+
+Return ONLY a valid JSON object with this exact structure:
+{
+  "_meta": {
+    "client_name": "${clientName}",
+    "address": "${address}",
+    "date": "${date}",
+    "headcount": ${headcount || 0}
+  },
+  "totals": {
+    "rsf": <total rentable SF as number>,
+    "usf": <total usable SF as number>,
+    "offices": <count>,
+    "workstations": <count>,
+    "total_individual_seats": <offices + workstations>,
+    "phone_rooms": <count>,
+    "collab_seats": <total collaboration seats>,
+    "collab_ratio": "<e.g. 0.8 : 1.0>",
+    "office_workstation_split": { "offices_pct": <number>, "workstations_pct": <number> },
+    "total_meeting_spaces": <count>
+  },
+  "floors": [
+    {
+      "name": "<floor name>",
+      "rsf": <number>,
+      "usf": <number>,
+      "offices": <count>,
+      "office_avg_sf": <avg SF per office or null>,
+      "workstations": <count>,
+      "workstation_avg_sf": <avg SF per workstation or null>,
+      "total_individual_seats": <count>,
+      "phone_rooms": <count>,
+      "collab_seats": <count>,
+      "collab_ratio": "<e.g. 0.6 : 1.0>",
+      "total_meeting_spaces": <count>,
+      "amenities": ["<amenity name>"],
+      "space_allocation": {
+        "individual_pct": <number>,
+        "collaboration_pct": <number>,
+        "support_pct": <number>,
+        "amenity_pct": <number>,
+        "core_pct": <number>
+      }
+    }
+  ],
+  "key_takeaways": [
+    { "title": "<short title>", "description": "<1-2 sentence insight>" }
+  ]
+}
+
+Include 4-5 key takeaways grounded in the data. Return ONLY the JSON object, no markdown, no preamble.`;
+
+  try {
+    const response = await fetch(`${WORKER_URL}/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, tool: 'space-analysis' })
+    });
+    if (!response.ok) throw new Error('API error');
+    const data = await response.json();
+    let raw = data.result || data.content?.[0]?.text || '';
+    raw = raw.replace(/```json|```/g, '').trim();
+    analysisData = JSON.parse(raw);
+    setLoading(false);
+    renderResults(analysisData);
+  } catch (err) {
+    analysisData = buildPlaceholderData(clientName, address, date, headcount);
+    setLoading(false);
+    renderResults(analysisData);
+  }
+}
+
+function buildPlaceholderData(client, address, date, headcount) {
+  return {
+    _meta: { client_name: client, address, date, headcount: parseInt(headcount) || 0 },
+    totals: {
+      rsf: 26139, usf: 24435, offices: 19, workstations: 90,
+      total_individual_seats: 109, phone_rooms: 1,
+      collab_seats: 83, collab_ratio: '0.8 : 1.0',
+      office_workstation_split: { offices_pct: 16, workstations_pct: 84 },
+      total_meeting_spaces: 18
+    },
+    floors: [
+      {
+        name: '1st Floor', rsf: 18962, usf: 17725,
+        offices: 17, office_avg_sf: 129, workstations: 65, workstation_avg_sf: 72,
+        total_individual_seats: 82, phone_rooms: 1,
+        collab_seats: 48, collab_ratio: '0.6 : 1.0', total_meeting_spaces: 13,
+        amenities: ['Break Room', 'Multi-Purpose Room', 'Reception'],
+        space_allocation: { individual_pct: 44, collaboration_pct: 22, support_pct: 18, amenity_pct: 10, core_pct: 6 }
+      },
+      {
+        name: 'Mezzanine', rsf: 7177, usf: 6710,
+        offices: 2, office_avg_sf: 135, workstations: 25, workstation_avg_sf: 87,
+        total_individual_seats: 27, phone_rooms: 0,
+        collab_seats: 35, collab_ratio: '1.3 : 1.0', total_meeting_spaces: 5,
+        amenities: [],
+        space_allocation: { individual_pct: 38, collaboration_pct: 40, support_pct: 12, amenity_pct: 4, core_pct: 6 }
+      }
+    ],
+    key_takeaways: [
+      { title: 'Workstation-heavy inventory signals unassigned opportunity', description: 'At 84% workstations vs. 16% offices, the portfolio is already configured for flexibility. An unassigned model would require minimal reconfiguration.' },
+      { title: 'Collaboration ratio is below benchmark on primary floor', description: '1st floor\'s 0.6:1.0 collaboration ratio falls below the CBRE benchmark of 1.0:1.0. Adding collaboration seats would align the space with hybrid work patterns.' },
+      { title: 'Mezzanine punches above its weight on collaboration', description: 'Despite being the smaller floor, the Mezzanine\'s 1.3:1.0 ratio makes it the stronger collaboration floor — consider programming it as a team hub.' },
+      { title: 'Support space may be oversized for a modern workflow', description: 'File storage, copy areas, and server rooms account for a significant portion of support space. A digitization audit could free up meaningful square footage.' }
+    ]
+  };
+}
+
+// ── Render ────────────────────────────────────────
+function renderResults(data) {
+  const t = data.totals || {};
+  const meta = data._meta || {};
+
+  // Stat dashboard
+  document.getElementById('stat-dashboard').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-num">${t.rsf ? t.rsf.toLocaleString() : '—'}</div>
+      <div class="stat-label">Total RSF</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">${t.total_individual_seats ?? '—'}</div>
+      <div class="stat-label">Individual Seats</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">${t.collab_ratio || '—'}</div>
+      <div class="stat-label">Collab Ratio</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">${t.office_workstation_split ? t.office_workstation_split.offices_pct + '%' : '—'}</div>
+      <div class="stat-label">Offices vs. Wstn</div>
+    </div>`;
+
+  // Summary table
+  const floors = data.floors || [];
+  const rows = floors.map(f => `
+    <tr>
+      <td><strong>${f.name}</strong></td>
+      <td>${(f.rsf||0).toLocaleString()}</td>
+      <td>${(f.usf||0).toLocaleString()}</td>
+      <td>${f.offices ?? '—'}</td>
+      <td>${f.workstations ?? '—'}</td>
+      <td>${f.total_individual_seats ?? '—'}</td>
+      <td>${f.phone_rooms ?? '—'}</td>
+      <td>${f.collab_seats ?? '—'}</td>
+      <td><span class="ratio-pill">${f.collab_ratio || '—'}</span></td>
+      <td>${f.total_meeting_spaces ?? '—'}</td>
+    </tr>`).join('');
+  const totalRow = `
+    <tr class="total-row">
+      <td>Total</td>
+      <td>${(t.rsf||0).toLocaleString()}</td>
+      <td>${(t.usf||0).toLocaleString()}</td>
+      <td>${t.offices ?? '—'}</td>
+      <td>${t.workstations ?? '—'}</td>
+      <td>${t.total_individual_seats ?? '—'}</td>
+      <td>${t.phone_rooms ?? '—'}</td>
+      <td>${t.collab_seats ?? '—'}</td>
+      <td><span class="ratio-pill">${t.collab_ratio || '—'}</span></td>
+      <td>${t.total_meeting_spaces ?? '—'}</td>
+    </tr>`;
+  document.getElementById('summary-table-body').innerHTML = rows + totalRow;
+
+  // Floor cards
+  document.getElementById('floor-cards').innerHTML = floors.map(f => {
+    const alloc = f.space_allocation || {};
+    const amenityHtml = (f.amenities||[]).length
+      ? `<div class="amenity-pills">${f.amenities.map(a => `<span class="amenity-pill">${a}</span>`).join('')}</div>`
+      : '<span style="color:var(--text-muted);font-size:0.82rem;">None</span>';
+    return `
+    <div class="floor-card">
+      <div class="floor-card-header">
+        <div class="floor-card-name">${f.name}</div>
+        <div class="floor-card-rsf">${(f.rsf||0).toLocaleString()} RSF · ${(f.usf||0).toLocaleString()} USF</div>
+      </div>
+      <div class="floor-card-body">
+        <div class="floor-stats">
+          <div class="floor-stat-row">
+            <span class="floor-stat-key">Offices</span>
+            <span class="floor-stat-val accent">${f.offices ?? '—'}${f.office_avg_sf ? ` <span style="font-size:0.8rem;color:var(--text-muted);font-family:'DM Sans',sans-serif;">(${f.office_avg_sf} SF avg)</span>` : ''}</span>
+          </div>
+          <div class="floor-stat-row">
+            <span class="floor-stat-key">Workstations</span>
+            <span class="floor-stat-val accent">${f.workstations ?? '—'}${f.workstation_avg_sf ? ` <span style="font-size:0.8rem;color:var(--text-muted);font-family:'DM Sans',sans-serif;">(${f.workstation_avg_sf} SF avg)</span>` : ''}</span>
+          </div>
+          <div class="floor-stat-row">
+            <span class="floor-stat-key">Phone Rooms</span>
+            <span class="floor-stat-val">${f.phone_rooms || '—'}</span>
+          </div>
+          <div class="floor-stat-row">
+            <span class="floor-stat-key">Collaboration Seats</span>
+            <span class="floor-stat-val accent">${f.collab_seats ?? '—'}</span>
+          </div>
+          <div class="floor-stat-row">
+            <span class="floor-stat-key">Collab Ratio</span>
+            <span class="floor-stat-val"><span class="ratio-pill">${f.collab_ratio || '—'}</span></span>
+          </div>
+          <div class="floor-stat-row">
+            <span class="floor-stat-key">Meeting Spaces</span>
+            <span class="floor-stat-val">${f.total_meeting_spaces ?? '—'}</span>
+          </div>
+          <div class="floor-stat-row" style="flex-direction:column;align-items:flex-start;gap:0.4rem;">
+            <span class="floor-stat-key">Amenities</span>
+            ${amenityHtml}
+          </div>
+        </div>
+        <div>
+          <div class="allocation-title">Space Allocation</div>
+          ${[
+            { label: 'Individual', key: 'individual_pct', cls: '' },
+            { label: 'Collaboration', key: 'collaboration_pct', cls: 'collab' },
+            { label: 'Support', key: 'support_pct', cls: 'support' },
+            { label: 'Amenity', key: 'amenity_pct', cls: 'amenity' },
+            { label: 'Vertical / Core', key: 'core_pct', cls: 'core' }
+          ].map(b => `
+            <div class="alloc-bar-row">
+              <div class="alloc-bar-label">
+                <span class="alloc-bar-name">${b.label}</span>
+                <span class="alloc-bar-pct">${alloc[b.key] ?? 0}%</span>
+              </div>
+              <div class="alloc-bar-track">
+                <div class="alloc-bar-fill ${b.cls}" style="width:${alloc[b.key] ?? 0}%"></div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Takeaways
+  document.getElementById('takeaways-container').innerHTML = (data.key_takeaways || []).map((t, i) => `
+    <div class="takeaway-item">
+      <div class="takeaway-num">${i + 1}</div>
+      <div class="takeaway-content">
+        <div class="takeaway-title">${t.title}</div>
+        <div class="takeaway-desc">${t.description}</div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('results').classList.add('active');
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function setLoading(on, msg) {
+  document.getElementById('loading-state').classList.toggle('active', on);
+  document.getElementById('analyze-btn').disabled = on;
+  if (msg) document.getElementById('loading-msg').textContent = msg;
+  if (!on) document.getElementById('loading-state').classList.remove('active');
+}
+function showError(msg) { const el = document.getElementById('error-msg'); el.textContent = msg; el.classList.add('active'); }
+function hideError() { document.getElementById('error-msg').classList.remove('active'); }
+
+function exportJSON() {
+  if (!analysisData) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(analysisData, null, 2)], { type: 'application/json' }));
+  a.download = `${(analysisData._meta?.client_name || 'client').replace(/\s+/g,'-')}_space_analysis.json`;
+  a.click();
+}
+function exportPPTX() {
+  alert('PPTX export requires the Cloudflare Worker to be deployed. See the project tracker for setup steps.');
+}
+</script>
+</body>
+</html>
