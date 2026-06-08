@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Space Analysis Processor – CBRE OM (Portfolio v3)</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono&family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--cg:#003F2D;--ag:#17E88F;--dk:#012A2D;--dg:#435254;--lg:#CAD1D3;--sg:#538184;--cm:#7F8480;--card:#FAFBFB;--border:#E0E3E4;--text:#435254;--t2:#538184}
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100vh;color:var(--dg);font-family:'DM Sans',sans-serif;background:#FFFFFF}
+.app{max-width:1300px;margin:0 auto;padding:0 24px}
+.hdr{padding:22px 0 14px;border-bottom:2px solid var(--cg)}
+.ha{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.ha .b{width:44px;height:3px;background:var(--ag);border-radius:2px}
+.ha span{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2.5px;color:var(--ag);text-transform:uppercase}
+.hdr h1{font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:400;color:var(--cg)}
+.hr{display:flex;align-items:center;justify-content:space-between;margin-top:4px;flex-wrap:wrap;gap:8px}
+.hs{font-size:12px;color:var(--t2);font-weight:300}
+.acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.acts input,.acts select{padding:6px 10px;border-radius:6px;border:1px solid var(--lg);font-size:11px;background:#fff;color:var(--dg);font-family:inherit}
+.acts select{cursor:pointer;min-width:180px}
+.acts select option{background:#fff;color:var(--dg)}
+
+/* Multi-select filter dropdown */
+.filter-wrapper{position:relative;min-width:320px}
+.filter-button{min-width:320px;padding:8px 12px;border-radius:6px;border:2px solid var(--cg);font-size:11px;font-weight:600;background:#fff;color:var(--dg);font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .2s}
+.filter-button:hover{background:var(--card)}
+.filter-button .arrow{transition:transform .2s}
+.filter-button.open .arrow{transform:rotate(180deg)}
+.filter-dropdown{position:absolute;top:100%;left:0;right:0;margin-top:4px;background:#fff;border:2px solid var(--cg);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);max-height:400px;overflow-y:auto;z-index:1000;display:none}
+.filter-dropdown.open{display:block}
+.filter-item{padding:8px 12px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .1s}
+.filter-item:hover{background:var(--card)}
+.filter-item:last-child{border-bottom:none}
+.filter-item input[type=checkbox]{cursor:pointer;width:16px;height:16px}
+.filter-item.portfolio{font-weight:700;background:#FFF8F0}
+.filter-item.building{font-weight:600;padding-left:12px}
+.filter-item.floor{padding-left:32px;font-size:10px}
+.filter-item .icon{font-size:14px;width:20px;text-align:center}
+.filter-item .label{flex:1}
+.filter-item .count{font-size:9px;color:var(--cm);padding:2px 6px;background:var(--card);border-radius:10px}
+.filter-actions{padding:8px;border-top:2px solid var(--border);display:flex;gap:6px;background:var(--card)}
+.filter-actions button{flex:1;padding:6px;font-size:10px;font-weight:600;border-radius:4px;border:none;cursor:pointer;font-family:inherit}
+.filter-actions .apply{background:var(--ag);color:var(--dk)}
+.filter-actions .clear{background:#fff;border:1px solid var(--lg);color:var(--dg)}
+
+.btn{padding:6px 14px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;border:none;transition:all .2s}
+.bp{background:var(--ag);color:var(--dk)}.bp:hover{transform:translateY(-1px)}
+.bs{background:#fff;color:var(--dg);border:1px solid var(--lg)}.bs:hover{border-color:var(--cg);color:var(--cg)}
+.bx{background:#80BBAD;color:#fff}.bx:hover{transform:translateY(-1px)}
+.uz{border:2px dashed var(--lg);border-radius:14px;padding:60px;text-align:center;margin:28px 0;cursor:pointer;background:#F5F7F7;transition:all .3s}
+.uz:hover,.uz.dragover{border-color:var(--cg);background:#EEFAF4}
+.err{padding:10px 14px;background:#FFF0F0;border:1px solid #D4A0A0;border-radius:8px;color:#AD2A2A;font-size:12px;margin-top:10px;display:none}
+.ct{padding:18px 0 30px;display:none}
+.mg{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px}
+.mc{padding:12px;background:#FAFBFB;border-radius:8px;border:1px solid #E0E3E4}
+.mc .v{font-size:22px;font-weight:700;line-height:1.1;color:var(--dg)}.mc .va{color:var(--cg)}.mc .l{font-size:10px;color:var(--t2);margin-top:3px}.mc .s{font-size:9px;color:var(--cm);margin-top:1px}
+.r2{display:grid;grid-template-columns:1fr 270px;gap:12px;margin-bottom:14px}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+.pn{background:#FAFBFB;border-radius:10px;border:1px solid #E0E3E4;padding:16px}
+.pt{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--cg);text-transform:uppercase;margin-bottom:10px}
+.sb{margin-bottom:7px}.sl{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--sg);text-transform:uppercase;margin-bottom:2px}
+.br{display:flex;border-radius:4px;overflow:hidden}
+.lg2{display:flex;gap:12px;margin-top:8px}
+.mr{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #E0E3E4}
+.kv{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #E0E3E4}
+.kv .k{font-size:11px;color:var(--t2)}.kv .vl{font-size:12px;font-weight:600}
+.hcb{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 16px;background:#FAFBFB;border-radius:8px;border:1px solid #E0E3E4;margin-bottom:14px}
+.hcb label{font-size:11px;color:var(--t2)}
+.hcb input[type=number]{padding:5px 8px;border-radius:6px;border:1px solid var(--lg);background:#FFFFE0;color:var(--dg);font-size:13px;font-weight:700;width:100px;font-family:inherit;text-align:center}
+.hcb .rs{font-size:18px;font-weight:700;color:var(--cg)}.hcb .bn{font-size:9px;color:var(--cm)}
+.bb{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:16px;background:#EEFAF4;border:1px solid #80BBAD;font-size:9px;color:var(--cg);cursor:pointer;text-decoration:none}
+.tw{overflow-x:auto}.tbl{width:100%;border-collapse:collapse;font-size:11px}
+.tbl thead th{padding:6px 8px;text-align:left;color:var(--t2);font-weight:500;font-size:10px;border-bottom:2px solid var(--ag);white-space:nowrap}
+.tbl tbody tr{border-bottom:1px solid #E0E3E4}.tbl tbody tr:nth-child(even){background:#F5F7F7}
+.tbl tbody td{padding:6px 8px;white-space:nowrap}.tbl tbody td:first-child{font-weight:600}
+.ft{padding:10px 0 18px;display:flex;justify-content:space-between;align-items:center;border-top:2px solid var(--cg);margin-top:14px}
+.ft span{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--cm)}
+.bldg-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.bldg-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#FAFBFB;border:1px solid #E0E3E4;border-radius:6px}
+.bldg-item input{flex:1;border:none;background:transparent;font-size:12px;font-weight:600;color:var(--cg)}
+.bldg-item .info{font-size:10px;color:var(--cm)}
+.bldg-item .btn-sm{padding:3px 8px;font-size:9px}
+.level-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:16px;font-size:10px;font-weight:600;margin-left:8px}
+.level-portfolio{background:#FFE8D6;border:1px solid #E88F17;color:#C06000}
+.level-custom{background:#E8F4FF;border:1px solid #4A90E2;color:#2563EB}
+
+@media print{
+  body{background:#fff!important;color:#1a1a1a!important}
+  .app{max-width:100%;padding:0 10px}
+  .hdr,.acts,.uz,.ft,.err,.hcb input,.bldg-list,#fI,.filter-wrapper{display:none!important}
+  .ct{display:block!important;padding:0}
+  .pn{background:#fff!important;border:1px solid #ddd!important;page-break-inside:avoid;margin-bottom:10px}
+  .mc{background:#f8f8f8!important;border:1px solid #ddd!important}
+  .mc .v,.mc .va{color:#003F2D!important}
+  .mc .l,.mc .s{color:#435254!important}
+  .pt{color:#003F2D!important}
+  .kv .k,.tbl thead th{color:#435254!important}
+  .kv .vl,.tbl tbody td{color:#1a1a1a!important}
+  .mr span{color:#1a1a1a!important}
+  .sl{color:#666!important}
+  .bb{color:#003F2D!important;border-color:#003F2D!important;background:#f0f0f0!important}
+  .mg{grid-template-columns:repeat(3,1fr)!important}
+  .r2{grid-template-columns:1fr 250px!important}
+  .r3{grid-template-columns:1fr 1fr 1fr!important}
+  .tbl tbody tr:nth-child(even){background:#f5f5f5!important}
+  .tbl tbody tr:hover{background:transparent!important}
+  .hcb{background:#f8f8f8!important;border:1px solid #ddd!important}
+  .hcb label{color:#435254!important}
+  .hcb .rs{color:#003F2D!important}
+  .hcb .bn{color:#666!important}
+  .lg2 span{color:#435254!important}
+  .print-hdr{display:block!important;padding:15px 0;border-bottom:3px solid #003F2D;margin-bottom:15px}
+  .print-hdr h2{font-family:Georgia,serif;font-size:22px;color:#003F2D;margin:0}
+  .print-hdr .sub{font-size:11px;color:#666;margin-top:3px}
+}
+@media screen{.print-hdr{display:none!important}}
+@media(max-width:900px){.mg{grid-template-columns:repeat(3,1fr)}.r2,.r3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="hdr"><div class="ha"><div class="b"></div><span>Space Analysis Processor</span></div>
+<div class="hr"><div><h1 id="pT">Upload Kreo Export(s)</h1><div class="hs" id="pS">Drop single or multiple .xlsx files to begin</div></div>
+<div class="acts" id="acts" style="display:none">
+<input type="text" id="cI" placeholder="Portfolio name..." style="width:180px" oninput="updTitle()"/>
+<div class="filter-wrapper">
+  <button class="filter-button" onclick="toggleFilterDropdown()">
+    <span id="filterLabel">📊 Portfolio (All)</span>
+    <span class="arrow">▼</span>
+  </button>
+  <div class="filter-dropdown" id="filterDropdown"></div>
+</div>
+<select id="sS"></select>
+<select id="mS" style="min-width:170px"></select>
+<button class="btn bp" onclick="doExcel()">Export Excel</button>
+<button class="btn bx" onclick="doPNG()">Export PNG</button>
+<button class="btn bs" onclick="resetApp()">New</button>
+</div></div></div>
+<div class="uz" id="uZ" onclick="document.getElementById('fI').click()"
+ ondragover="event.preventDefault();event.stopPropagation();this.classList.add('dragover')"
+ ondragleave="event.preventDefault();this.classList.remove('dragover')"
+ ondrop="event.preventDefault();event.stopPropagation();this.classList.remove('dragover');handleDrop(event)">
+<div style="font-size:48px;margin-bottom:10px;opacity:.5">📊</div>
+<div style="font-size:16px;color:var(--sg)">Drop your Kreo takeoff export(s) here</div>
+<div style="font-size:11px;color:var(--cm);margin-top:4px">Single building or multiple for portfolio · .xlsx / .xls</div>
+</div>
+<input type="file" id="fI" accept=".xlsx,.xls" multiple style="display:none"/>
+<div class="bldg-list" id="bList" style="display:none"></div>
+<div class="err" id="eM"></div>
+<div class="ct" id="res"><div class="print-hdr" id="printHdr"></div></div>
+<div class="ft"><div style="display:flex;align-items:center;gap:8px"><div style="width:24px;height:2px;background:var(--ag)"></div><span>CBRE OCCUPANCY MANAGEMENT</span></div><span>v2.3 Multi-Select</span></div>
+</div>
+<script>
+// ─── BENCHMARKS ───
+var BM = {
+  v:"2026 GWOIR", dy:2025,
+  du:"https://public.tableau.com/app/profile/occupancy.management/viz/2025-2026WorkplaceOccupancyManagementBenchmarking/2025-2026OfficeOccupancyManagementBenchmarks",
+  models:{
+    "Activity-Based":{me:0.40, we:0.20, su:0.15, am:0.25},
+    "Focus-Based":{me:0.50, we:0.15, su:0.17, am:0.17},
+    "Event-Based":{me:0.12, we:0.48, su:0.10, am:0.30},
+    "Collaboration-Based":{me:0.25, we:0.38, su:0.10, am:0.28}
+  },
+  s:{
+    "All Clients":{c:{me:0.35,we:0.19,su:0.24,am:0.22},d:{ss:190,sp:158}},
+    "Financial & Professional Services":{c:{me:0.42,we:0.18,su:0.22,am:0.18},d:{ss:195,sp:165}},
+    "Technology, Media & Telecom":{c:{me:0.32,we:0.22,su:0.23,am:0.23},d:{ss:175,sp:145}},
+    "Healthcare & Life Sciences":{c:{me:0.38,we:0.17,su:0.26,am:0.19},d:{ss:200,sp:170}},
+    "Consumer Products & Retail":{c:{me:0.34,we:0.20,su:0.24,am:0.22},d:{ss:185,sp:155}},
+    "Government & Public Sector":{c:{me:0.45,we:0.15,su:0.25,am:0.15},d:{ss:210,sp:180}},
+    "Energy & Natural Resources":{c:{me:0.40,we:0.17,su:0.25,am:0.18},d:{ss:205,sp:175}},
+    "Manufacturing & Industrial":{c:{me:0.37,we:0.16,su:0.28,am:0.19},d:{ss:200,sp:168}}
+  }
+};
+
+var SC = {Me:"#3C5069", We:"#328059", Support:"#DCD99A", Amenity:"#966D95"};
+var MRC = {S:"#1F3765", M:"#3E7CA6", L:"#D2785A", X:"#A388BF"};
+var SDV = {"Conference Room":30,"CL_Conference Room":30,"CL_Small Conference Room":25,"CL_Medium Conference Room":30,"CL_Large Conference Room":30,"Huddle Room":25,"CL_Huddle":25,"CL_Enclosed Collaboration":30,"OP_Open Collaboration":45,"OP_Open Seating":45,"Training Room":22,"Board Room":25};
+
+var BUILDINGS = [];
+var PORTFOLIO = null;
+var SEC = "All Clients", MDL = "Activity-Based";
+var SELECTED_ITEMS = []; // Array of {type:"portfolio"} or {type:"building",idx:0} or {type:"floor",idx:0,floor:"1st Floor"}
+
+// Init
+(function() {
+  document.body.addEventListener("dragover", function(e) { e.preventDefault(); });
+  document.body.addEventListener("drop", function(e) { e.preventDefault(); });
+  document.body.addEventListener("click", function(e) {
+    var dropdown = document.getElementById("filterDropdown");
+    var button = document.querySelector(".filter-button");
+    if (!dropdown.contains(e.target) && !button.contains(e.target)) {
+      dropdown.classList.remove("open");
+      button.classList.remove("open");
+    }
+  });
+
+  var sel = document.getElementById("sS");
+  var keys = Object.keys(BM.s);
+  for (var i = 0; i < keys.length; i++) {
+    var o = document.createElement("option");
+    o.value = keys[i]; o.textContent = keys[i];
+    sel.appendChild(o);
+  }
+  sel.onchange = function() { SEC = this.value; if (BUILDINGS.length) render(); };
+  var msel = document.getElementById("mS");
+  var mkeys = Object.keys(BM.models);
+  for (var j = 0; j < mkeys.length; j++) {
+    var mo = document.createElement("option");
+    mo.value = mkeys[j]; mo.textContent = mkeys[j];
+    msel.appendChild(mo);
+  }
+  msel.onchange = function() { MDL = this.value; if (BUILDINGS.length) render(); };
+  document.getElementById("fI").onchange = function() {
+    if (this.files.length) handleFiles(Array.from(this.files));
+  };
+})();
+
+function handleDrop(e) {
+  if (e.dataTransfer.files.length) {
+    handleFiles(Array.from(e.dataTransfer.files));
+  }
+}
+
+function handleFiles(files) {
+  document.getElementById("eM").style.display = "none";
+  var pending = files.length;
+
+  files.forEach(function(f) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var wb = XLSX.read(e.target.result, {type:"array"});
+        var raw = parseKreo(wb);
+        if (!raw.length) {
+          showErr("No valid data in " + f.name);
+          pending--;
+          return;
+        }
+        var analysis = analyze(raw);
+        var name = f.name.replace(/\.xlsx?$/i,"").replace(/[_-]/g," ");
+        BUILDINGS.push({name: name, raw: raw, analysis: analysis});
+        pending--;
+        if (pending === 0) finishUpload();
+      } catch(err) {
+        showErr("Parse error in " + f.name + ": " + err.message);
+        pending--;
+      }
+    };
+    reader.readAsArrayBuffer(f);
+  });
+}
+
+function finishUpload() {
+  if (!BUILDINGS.length) return;
+  PORTFOLIO = aggregateBuildings(BUILDINGS);
+
+  if (BUILDINGS.length === 1) {
+    document.getElementById("cI").value = BUILDINGS[0].name;
+  } else {
+    document.getElementById("cI").value = "Portfolio (" + BUILDINGS.length + " buildings)";
+  }
+
+  // Default: select all (portfolio view)
+  SELECTED_ITEMS = [{type:"portfolio"}];
+
+  buildFilterDropdown();
+  renderBuildingList();
+  render();
+}
+
+function buildFilterDropdown() {
+  var dropdown = document.getElementById("filterDropdown");
+  var h = '';
+
+  // Portfolio option
+  h += '<div class="filter-item portfolio" onclick="toggleItem(event, {type:\'portfolio\'})"><input type="checkbox" ' + (isSelected({type:"portfolio"}) ? "checked" : "") + '/><span class="icon">📊</span><span class="label">Portfolio (All Buildings)</span></div>';
+
+  // Buildings and floors
+  for (var i = 0; i < BUILDINGS.length; i++) {
+    var b = BUILDINGS[i];
+    var bSel = isSelected({type:"building",idx:i});
+    h += '<div class="filter-item building" onclick="toggleItem(event, {type:\'building\',idx:' + i + '})"><input type="checkbox" ' + (bSel ? "checked" : "") + '/><span class="icon">🏢</span><span class="label">' + b.name + '</span><span class="count">' + b.analysis.floors.length + ' floors</span></div>';
+
+    for (var f = 0; f < b.analysis.floors.length; f++) {
+      var floorName = b.analysis.floors[f];
+      var fSel = isSelected({type:"floor",idx:i,floor:floorName});
+      h += '<div class="filter-item floor" onclick="toggleItem(event, {type:\'floor\',idx:' + i + ',floor:\'' + floorName + '\'})"><input type="checkbox" ' + (fSel ? "checked" : "") + '/><span class="icon">└─</span><span class="label">' + floorName + '</span></div>';
+    }
+  }
+
+  // Actions
+  h += '<div class="filter-actions"><button class="clear" onclick="clearSelection()">Clear All</button><button class="apply" onclick="applyFilter()">Apply</button></div>';
+
+  dropdown.innerHTML = h;
+}
+
+function toggleFilterDropdown() {
+  var dropdown = document.getElementById("filterDropdown");
+  var button = document.querySelector(".filter-button");
+  dropdown.classList.toggle("open");
+  button.classList.toggle("open");
+}
+
+function isSelected(item) {
+  return SELECTED_ITEMS.some(function(s) {
+    if (item.type === "portfolio") return s.type === "portfolio";
+    if (item.type === "building") return s.type === "building" && s.idx === item.idx;
+    if (item.type === "floor") return s.type === "floor" && s.idx === item.idx && s.floor === item.floor;
+    return false;
+  });
+}
+
+function toggleItem(event, item) {
+  event.stopPropagation();
+  var checkbox = event.currentTarget.querySelector('input[type=checkbox]');
+
+  if (item.type === "portfolio") {
+    // Selecting portfolio clears all other selections
+    SELECTED_ITEMS = [{type:"portfolio"}];
+  } else {
+    // Remove portfolio if selecting specific items
+    SELECTED_ITEMS = SELECTED_ITEMS.filter(function(s) { return s.type !== "portfolio"; });
+
+    var idx = SELECTED_ITEMS.findIndex(function(s) {
+      if (item.type === "building") return s.type === "building" && s.idx === item.idx;
+      if (item.type === "floor") return s.type === "floor" && s.idx === item.idx && s.floor === item.floor;
+      return false;
+    });
+
+    if (idx >= 0) {
+      SELECTED_ITEMS.splice(idx, 1);
+    } else {
+      SELECTED_ITEMS.push(item);
+    }
+
+    // If nothing selected, default to portfolio
+    if (SELECTED_ITEMS.length === 0) {
+      SELECTED_ITEMS = [{type:"portfolio"}];
+    }
+  }
+
+  buildFilterDropdown();
+}
+
+function clearSelection() {
+  SELECTED_ITEMS = [{type:"portfolio"}];
+  buildFilterDropdown();
+}
+
+function applyFilter() {
+  var dropdown = document.getElementById("filterDropdown");
+  var button = document.querySelector(".filter-button");
+  dropdown.classList.remove("open");
+  button.classList.remove("open");
+
+  // Update label
+  var label = "";
+  if (SELECTED_ITEMS.length === 1 && SELECTED_ITEMS[0].type === "portfolio") {
+    label = "📊 Portfolio (All)";
+  } else {
+    var bldgCount = SELECTED_ITEMS.filter(function(s) { return s.type === "building"; }).length;
+    var floorCount = SELECTED_ITEMS.filter(function(s) { return s.type === "floor"; }).length;
+    if (bldgCount > 0 && floorCount === 0) {
+      label = "🏢 " + bldgCount + " Building" + (bldgCount > 1 ? "s" : "");
+    } else if (bldgCount === 0 && floorCount > 0) {
+      label = "🏠 " + floorCount + " Floor" + (floorCount > 1 ? "s" : "");
+    } else {
+      label = "📊 Custom (" + (bldgCount + floorCount) + " items)";
+    }
+  }
+  document.getElementById("filterLabel").textContent = label;
+
+  render();
+}
+
+function aggregateBuildings(buildings) {
+  var total = {
+    gia: 0, core: 0, usf: 0, meSF: 0, weSF: 0, supSF: 0, amSF: 0,
+    measured: 0, circ: 0, offices: 0, workstations: 0, focus: 0, phone: 0,
+    allocatable: 0, totalMeCount: 0, enclosedCount: 0, openCount: 0,
+    small: 0, medium: 0, large: 0, xl: 0, weSeats: 0,
+    officeSF: 0, wsSF: 0
+  };
+
+  for (var i = 0; i < buildings.length; i++) {
+    var t = buildings[i].analysis.total;
+    total.gia += t.gia;
+    total.core += t.core;
+    total.usf += t.usf;
+    total.meSF += t.meSF;
+    total.weSF += t.weSF;
+    total.supSF += t.supSF;
+    total.amSF += t.amSF;
+    total.measured += t.measured;
+    total.circ += t.circ;
+    total.offices += t.offices;
+    total.workstations += t.workstations;
+    total.focus += t.focus;
+    total.phone += t.phone;
+    total.allocatable += t.allocatable;
+    total.totalMeCount += t.totalMeCount;
+    total.enclosedCount += t.enclosedCount;
+    total.openCount += t.openCount;
+    total.small += t.small;
+    total.medium += t.medium;
+    total.large += t.large;
+    total.xl += t.xl;
+    total.weSeats += t.weSeats;
+    total.officeSF += t.officeSF;
+    total.wsSF += t.wsSF;
+  }
+
+  var dtt = function(sf) { return total.measured > 0 ? (sf/total.measured)*(total.measured+total.circ)/total.usf : 0; };
+  total.mePct = dtt(total.meSF);
+  total.wePct = dtt(total.weSF);
+  total.supPct = dtt(total.supSF);
+  total.amenPct = dtt(total.amSF);
+  total.avgOfficeSF = total.offices > 0 ? Math.round(total.officeSF/total.offices) : 0;
+  total.avgWsSF = total.workstations > 0 ? Math.round(total.wsSF/total.workstations) : 0;
+  total.weMeRatio = total.allocatable > 0 ? total.weSeats/total.allocatable : 0;
+
+  return total;
+}
+
+function aggregateSelected() {
+  if (SELECTED_ITEMS.length === 1 && SELECTED_ITEMS[0].type === "portfolio") {
+    return PORTFOLIO;
+  }
+
+  // Aggregate selected buildings/floors
+  var buildings = [];
+  var floors = [];
+
+  for (var i = 0; i < SELECTED_ITEMS.length; i++) {
+    var item = SELECTED_ITEMS[i];
+    if (item.type === "building") {
+      buildings.push(BUILDINGS[item.idx]);
+    } else if (item.type === "floor") {
+      floors.push({building: BUILDINGS[item.idx], floor: item.floor});
+    }
+  }
+
+  var total = {
+    gia: 0, core: 0, usf: 0, meSF: 0, weSF: 0, supSF: 0, amSF: 0,
+    measured: 0, circ: 0, offices: 0, workstations: 0, focus: 0, phone: 0,
+    allocatable: 0, totalMeCount: 0, enclosedCount: 0, openCount: 0,
+    small: 0, medium: 0, large: 0, xl: 0, weSeats: 0,
+    officeSF: 0, wsSF: 0
+  };
+
+  // Add building totals
+  for (var b = 0; b < buildings.length; b++) {
+    var t = buildings[b].analysis.total;
+    total.gia += t.gia;
+    total.core += t.core;
+    total.usf += t.usf;
+    total.meSF += t.meSF;
+    total.weSF += t.weSF;
+    total.supSF += t.supSF;
+    total.amSF += t.amSF;
+    total.measured += t.measured;
+    total.circ += t.circ;
+    total.offices += t.offices;
+    total.workstations += t.workstations;
+    total.focus += t.focus;
+    total.phone += t.phone;
+    total.allocatable += t.allocatable;
+    total.totalMeCount += t.totalMeCount;
+    total.enclosedCount += t.enclosedCount;
+    total.openCount += t.openCount;
+    total.small += t.small;
+    total.medium += t.medium;
+    total.large += t.large;
+    total.xl += t.xl;
+    total.weSeats += t.weSeats;
+    total.officeSF += t.officeSF;
+    total.wsSF += t.wsSF;
+  }
+
+  // Add floor totals
+  for (var f = 0; f < floors.length; f++) {
+    var ft = floors[f].building.analysis.byFloor[floors[f].floor];
+    total.gia += ft.gia;
+    total.core += ft.core;
+    total.usf += ft.usf;
+    total.meSF += ft.meSF;
+    total.weSF += ft.weSF;
+    total.supSF += ft.supSF;
+    total.amSF += ft.amSF;
+    total.measured += ft.measured;
+    total.circ += ft.circ;
+    total.offices += ft.offices;
+    total.workstations += ft.workstations;
+    total.focus += ft.focus;
+    total.phone += ft.phone;
+    total.allocatable += ft.allocatable;
+    total.totalMeCount += ft.totalMeCount;
+    total.enclosedCount += ft.enclosedCount;
+    total.openCount += ft.openCount;
+    total.small += ft.small;
+    total.medium += ft.medium;
+    total.large += ft.large;
+    total.xl += ft.xl;
+    total.weSeats += ft.weSeats;
+    total.officeSF += ft.officeSF;
+    total.wsSF += ft.wsSF;
+  }
+
+  var dtt = function(sf) { return total.measured > 0 ? (sf/total.measured)*(total.measured+total.circ)/total.usf : 0; };
+  total.mePct = dtt(total.meSF);
+  total.wePct = dtt(total.weSF);
+  total.supPct = dtt(total.supSF);
+  total.amenPct = dtt(total.amSF);
+  total.avgOfficeSF = total.offices > 0 ? Math.round(total.officeSF/total.offices) : 0;
+  total.avgWsSF = total.workstations > 0 ? Math.round(total.wsSF/total.workstations) : 0;
+  total.weMeRatio = total.allocatable > 0 ? total.weSeats/total.allocatable : 0;
+
+  return total;
+}
+
+function renderBuildingList() {
+  var list = document.getElementById("bList");
+  if (BUILDINGS.length > 1) {
+    list.style.display = "flex";
+    var h = "";
+    for (var i = 0; i < BUILDINGS.length; i++) {
+      var b = BUILDINGS[i];
+      var usf = b.analysis.total.usf.toLocaleString();
+      var floors = b.analysis.floors.length;
+      h += '<div class="bldg-item">';
+      h += '<input type="text" value="' + b.name + '" onchange="updateBuildingName(' + i + ', this.value)"/>';
+      h += '<span class="info">' + floors + ' floor' + (floors > 1 ? 's' : '') + ' · ' + usf + ' SF</span>';
+      h += '<button class="btn bs btn-sm" onclick="removeBuilding(' + i + ')">Remove</button>';
+      h += '</div>';
+    }
+    list.innerHTML = h;
+  } else {
+    list.style.display = "none";
+  }
+}
+
+function updateBuildingName(idx, name) {
+  if (BUILDINGS[idx]) {
+    BUILDINGS[idx].name = name;
+    buildFilterDropdown();
+    render();
+  }
+}
+
+function removeBuilding(idx) {
+  BUILDINGS.splice(idx, 1);
+  if (BUILDINGS.length === 0) {
+    resetApp();
+  } else {
+    PORTFOLIO = aggregateBuildings(BUILDINGS);
+    buildFilterDropdown();
+    renderBuildingList();
+    SELECTED_ITEMS = [{type:"portfolio"}];
+    render();
+  }
+}
+
+function showErr(m) { var e = document.getElementById("eM"); e.textContent = m; e.style.display = "block"; }
+
+function resetApp() {
+  BUILDINGS=[];
+  PORTFOLIO=null;
+  SELECTED_ITEMS = [];
+  document.getElementById("uZ").style.display="";
+  document.getElementById("bList").style.display="none";
+  document.getElementById("res").style.display="none";
+  document.getElementById("acts").style.display="none";
+  document.getElementById("pT").textContent="Upload Kreo Export(s)";
+  document.getElementById("pS").textContent="Drop single or multiple .xlsx files to begin";
+}
+
+// ─── PARSER ───
+function parseKreo(wb) {
+  var ws = wb.Sheets[wb.SheetNames[0]];
+  var rows = XLSX.utils.sheet_to_json(ws, {defval:""});
+  if (!rows.length) return [];
+  var h = Object.keys(rows[0]), cm = {};
+  for (var i = 0; i < h.length; i++) {
+    var kl = h[i].toLowerCase();
+    if (kl.indexOf("level 1") >= 0 || kl.indexOf("grouping") >= 0) cm.g = h[i];
+    else if (kl.indexOf("measurement") >= 0 && kl.indexOf("name") >= 0) cm.n = h[i];
+    else if (kl.indexOf("page") >= 0) cm.f = h[i];
+    else if (kl.indexOf("area") >= 0 && !cm.a) cm.a = h[i];
+    else if (kl.indexOf("height") >= 0) cm.h = h[i];
+  }
+  if (!cm.g) { cm.g=h[0]; cm.n=h[1]; cm.f=h[2]; cm.a=h[3]; cm.h=h[4]; }
+  if (rows[0] && typeof rows[0][cm.n] === "string" && rows[0][cm.n].indexOf("Floor") >= 0) { var tmp=cm.n; cm.n=cm.f; cm.f=tmp; }
+  var data = [];
+  for (var r = 0; r < rows.length; r++) {
+    var g = String(rows[r][cm.g]||"").trim(), n = String(rows[r][cm.n]||"").trim();
+    var fl = String(rows[r][cm.f]||"").trim(), a = parseFloat(rows[r][cm.a])||0, ht = parseFloat(rows[r][cm.h])||0;
+    if (!g || !n) continue;
+    if (n.indexOf("Workstation") === 0) n = "Workstation";
+    if (n.indexOf("Copy/Print") === 0) n = "Copy/Print";
+    if (n.indexOf("GIA") === 0) n = "GIA";
+    var rd = Math.round(a/5)*5, sh = Math.round(ht), seat = 0;
+    if (g === "Individual Space") { if (n === "Workstation" || n === "Private Office") seat = 1; else if (n === "Shared Office") seat = sh > 0 ? sh : 1; }
+    else if (g === "Collaboration Space") { seat = sh > 0 ? sh : Math.max(1, Math.round(rd/(SDV[n]||30))); }
+    var sug = "N/A";
+    if (g === "Collaboration Space") sug = Math.max(1, Math.round(rd/(SDV[n]||30)));
+    else if (g === "Individual Space" && n !== "Focus Room" && n !== "Phone Room") sug = 1;
+    data.push({grouping:g, name:n, floor:fl, area:a, height:ht, rounded:rd, seat:seat, suggested:sug});
+  }
+  return data;
+}
+
+// ─── ANALYZER ───
+function analyze(data) {
+  var floors = [], i;
+  for (i = 0; i < data.length; i++) { if (floors.indexOf(data[i].floor) < 0) floors.push(data[i].floor); }
+  floors.sort();
+  var byFloor = {};
+  for (var fi = 0; fi < floors.length; fi++) {
+    var f = floors[fi], fd = [];
+    for (i = 0; i < data.length; i++) { if (data[i].floor === f) fd.push(data[i]); }
+    var gia=0, core=0, meSF=0, weSF=0, supSF=0, amSF=0, offN=0, wsN=0, focN=0, phN=0, offSF=0, wsSF2=0;
+    var encN=0, opN=0, smN=0, mdN=0, lgN=0, xlN=0, weSeats=0;
+    for (i = 0; i < fd.length; i++) {
+      var d = fd[i];
+      if (d.grouping === "Area Measurement") gia += d.rounded;
+      else if (d.grouping === "Core Space") core += d.rounded;
+      else if (d.grouping === "Individual Space") {
+        meSF += d.rounded;
+        if (d.name === "Private Office" || d.name === "Shared Office") { offN++; offSF += d.rounded; }
+        else if (d.name === "Workstation") { wsN++; wsSF2 += d.rounded; }
+        else if (d.name === "Focus Room") focN++;
+        else if (d.name === "Phone Room") phN++;
+      } else if (d.grouping === "Collaboration Space") {
+        weSF += d.rounded; weSeats += d.seat;
+        if (d.name.indexOf("OP_") === 0) opN++;
+        else {
+          encN++;
+          if (d.seat >= 2 && d.seat <= 6) smN++;
+          else if (d.seat >= 7 && d.seat <= 10) mdN++;
+          else if (d.seat >= 11 && d.seat <= 19) lgN++;
+          else if (d.seat >= 20) xlN++;
+        }
+      } else if (d.grouping === "Support Space") supSF += d.rounded;
+      else if (d.grouping === "Amenity Space") amSF += d.rounded;
+    }
+    var usf = gia - core, measured = meSF + weSF + supSF + amSF, circ = usf - measured;
+    var alloc = offN + wsN;
+    var dp = function(sf) { return measured > 0 ? (sf/measured)*(measured+circ)/usf : 0; };
+    byFloor[f] = {gia:gia, core:core, usf:usf, meSF:meSF, weSF:weSF, supSF:supSF, amSF:amSF, measured:measured, circ:circ,
+      mePct:dp(meSF), wePct:dp(weSF), supPct:dp(supSF), amenPct:dp(amSF),
+      offices:offN, workstations:wsN, focus:focN, phone:phN, allocatable:alloc, totalMeCount:offN+wsN+focN+phN,
+      avgOfficeSF: offN > 0 ? Math.round(offSF/offN) : 0, avgWsSF: wsN > 0 ? Math.round(wsSF2/wsN) : 0,
+      enclosedCount:encN, openCount:opN, small:smN, medium:mdN, large:lgN, xl:xlN,
+      weSeats:weSeats, weMeRatio: alloc > 0 ? weSeats/alloc : 0, officeSF:offSF, wsSF:wsSF2};
+  }
+  var total = {}, k, keys = Object.keys(byFloor[floors[0]] || {});
+  var skip = ["mePct","wePct","supPct","amenPct","weMeRatio","avgOfficeSF","avgWsSF"];
+  for (var ki = 0; ki < keys.length; ki++) {
+    k = keys[ki]; if (skip.indexOf(k) >= 0) continue;
+    total[k] = 0;
+    for (fi = 0; fi < floors.length; fi++) total[k] += byFloor[floors[fi]][k] || 0;
+  }
+  var dtt = function(sf) { return total.measured > 0 ? (sf/total.measured)*(total.measured+total.circ)/total.usf : 0; };
+  total.mePct = dtt(total.meSF); total.wePct = dtt(total.weSF); total.supPct = dtt(total.supSF); total.amenPct = dtt(total.amSF);
+  total.avgOfficeSF = total.offices > 0 ? Math.round(total.officeSF/total.offices) : 0;
+  total.avgWsSF = total.workstations > 0 ? Math.round(total.wsSF/total.workstations) : 0;
+  total.weMeRatio = total.allocatable > 0 ? total.weSeats/total.allocatable : 0;
+  return {floors:floors, byFloor:byFloor, total:total};
+}
+
+// ─── RENDER DASHBOARD ───
+function render() {
+  var t = aggregateSelected();
+  var cn = document.getElementById("cI").value || "Custom Selection";
+  var bm = BM.s[SEC];
+
+  var levelBadge, viewDesc;
+  if (SELECTED_ITEMS.length === 1 && SELECTED_ITEMS[0].type === "portfolio") {
+    levelBadge = '<span class="level-badge level-portfolio">📊 Portfolio</span>';
+    var totalFloors = 0;
+    for (var i = 0; i < BUILDINGS.length; i++) totalFloors += BUILDINGS[i].analysis.floors.length;
+    viewDesc = BUILDINGS.length + " buildings · " + totalFloors + " floors · " + t.usf.toLocaleString() + " USF";
+  } else {
+    levelBadge = '<span class="level-badge level-custom">📊 Custom Selection</span>';
+    viewDesc = SELECTED_ITEMS.length + " item" + (SELECTED_ITEMS.length > 1 ? "s" : "") + " · " + t.usf.toLocaleString() + " USF";
+  }
+
+  document.getElementById("uZ").style.display = "none";
+  document.getElementById("acts").style.display = "flex";
+  document.getElementById("pT").innerHTML = cn + ' ' + levelBadge;
+  document.getElementById("pS").textContent = viewDesc;
+
+  var el = document.getElementById("res"); el.style.display = "block";
+  var h = "";
+
+  h += '<div style="margin-bottom:12px"><a class="bb" href="' + BM.du + '" target="_blank">📊 ' + BM.v + ' (' + BM.dy + ') · ' + SEC + ' · Verify</a></div>';
+
+  var cards = [[t.usf.toLocaleString(),"Total USF","",1],[t.allocatable,"Workpoints",t.totalMeCount+" total",0],[t.offices,"Offices",t.avgOfficeSF+" SF avg",0],[t.workstations,"Workstations",t.avgWsSF+" SF avg",0],[t.enclosedCount,"Meeting Rooms","enclosed",0],[t.allocatable>0?Math.round(t.usf/t.allocatable):"-","USF/Seat","BM: "+bm.d.ss,0]];
+  h += '<div class="mg">';
+  for (var ci = 0; ci < cards.length; ci++) { var c = cards[ci]; h += '<div class="mc"><div class="v'+(c[3]?" va":"")+'">'+c[0]+'</div><div class="l">'+c[1]+'</div>'+(c[2]?'<div class="s">'+c[2]+'</div>':'')+'</div>'; }
+  h += '</div>';
+
+  h += '<div class="hcb"><label>Headcount:</label><input type="number" id="hcI" value="0" min="0" oninput="updHC()"/><label>USF/Person:</label><span class="rs" id="uE">–</span><span class="bn">BM: '+bm.d.sp+' SF/person</span></div>';
+
+  h += '<div class="r2"><div class="pn"><div class="pt">Space Composition vs. Benchmarks</div>';
+  var selectionLabel = (SELECTED_ITEMS.length === 1 && SELECTED_ITEMS[0].type === "portfolio") ? "Portfolio Average" : (SELECTED_ITEMS.filter(function(s){return s.type==="building";}).length === 1 && SELECTED_ITEMS.length === 1) ? "Building Average" : "Selection Average";
+  h += makeBar(t.mePct,t.wePct,t.supPct,t.amenPct,selectionLabel,36);
+  h += makeBar(bm.c.me,bm.c.we,bm.c.su,bm.c.am,SEC+" Benchmark",22);
+  var mdl = BM.models[MDL];
+  h += makeBar(mdl.me, mdl.we, mdl.su, mdl.am, MDL + " Target", 22);
+  h += '<div class="lg2">';
+  var catNames = ["Me","We","Support","Amenity"], catCols = [SC.Me,SC.We,SC.Support,SC.Amenity];
+  for (ci = 0; ci < 4; ci++) h += '<div style="display:flex;align-items:center;gap:4px"><div style="width:8px;height:8px;border-radius:2px;background:'+catCols[ci]+'"></div><span style="font-size:9px;color:var(--sg)">'+catNames[ci]+'</span></div>';
+  h += '</div></div>';
+
+  h += '<div class="pn"><div class="pt">Meeting Room Sizes</div>';
+  var mrs = [["Small (2–6)",t.small,MRC.S],["Medium (7–10)",t.medium,MRC.M],["Large (11–19)",t.large,MRC.L],["XL (20+)",t.xl,MRC.X]];
+  for (ci = 0; ci < mrs.length; ci++) {
+    var pct = t.enclosedCount > 0 ? Math.round(mrs[ci][1]/t.enclosedCount*100) : 0;
+    h += '<div class="mr"><div style="display:flex;align-items:center;gap:6px"><div style="width:7px;height:7px;border-radius:50%;background:'+mrs[ci][2]+'"></div><span style="font-size:11px;color:var(--t2)">'+mrs[ci][0]+'</span></div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:14px;font-weight:700">'+mrs[ci][1]+'</span><span style="font-size:9px;color:var(--cm)">'+pct+'%</span></div></div>';
+  }
+  h += '<div style="margin-top:6px;font-size:8px;color:var(--cm)">Phone/Focus → Me. Training/Board → Amenity.</div></div></div>';
+
+  h += '<div class="r3">';
+  h += '<div class="pn"><div class="pt">Key Ratios</div>';
+  var kvs = [["Office : WS",t.allocatable>0?Math.round(t.offices/t.allocatable*100)+"% : "+Math.round(t.workstations/t.allocatable*100)+"%":"-"],["We : Me",t.weMeRatio.toFixed(2)+" : 1"],["Enc : Open",t.enclosedCount+" : "+t.openCount],["Focus Rooms",""+t.focus],["Phone Rooms",""+t.phone]];
+  for (ci = 0; ci < kvs.length; ci++) h += '<div class="kv"><span class="k">'+kvs[ci][0]+'</span><span class="vl">'+kvs[ci][1]+'</span></div>';
+  h += '</div><div class="pn"><div class="pt">Square Footage</div>';
+  var sfs = [["Me",t.meSF],["We",t.weSF],["Support",t.supSF],["Amenity",t.amSF],["Circulation",t.circ]];
+  for (ci = 0; ci < sfs.length; ci++) h += '<div class="kv"><span class="k">'+sfs[ci][0]+'</span><span class="vl">'+sfs[ci][1].toLocaleString()+' SF</span></div>';
+  h += '</div><div class="pn"><div class="pt">Selection Details</div>';
+  var selDesc = [];
+  if (SELECTED_ITEMS.length === 1 && SELECTED_ITEMS[0].type === "portfolio") {
+    selDesc.push(["Buildings", BUILDINGS.length + ""]);
+    selDesc.push(["Floors", "All"]);
+  } else {
+    var bCount = SELECTED_ITEMS.filter(function(s){return s.type==="building";}).length;
+    var fCount = SELECTED_ITEMS.filter(function(s){return s.type==="floor";}).length;
+    selDesc.push(["Buildings", bCount + ""]);
+    selDesc.push(["Floors", fCount + ""]);
+  }
+  selDesc.push(["GIA", t.gia.toLocaleString() + " SF"]);
+  selDesc.push(["Core", t.core.toLocaleString() + " SF"]);
+  selDesc.push(["Measured", t.measured.toLocaleString() + " SF"]);
+  selDesc.push(["Circulation", t.circ.toLocaleString() + " SF"]);
+  for (ci = 0; ci < selDesc.length; ci++) h += '<div class="kv"><span class="k">'+selDesc[ci][0]+'</span><span class="vl">'+selDesc[ci][1]+'</span></div>';
+  h += '</div></div>';
+
+  el.innerHTML = h;
+
+  var ph = document.getElementById("printHdr");
+  if (ph) {
+    ph.innerHTML = "<h2>" + cn + " – Space Analysis</h2><div class=\"sub\">" + viewDesc + " · " + SEC + " · " + BM.v + "</div>";
+  }
+}
+
+function makeBar(mp,wp,sp,ap,label,ht) {
+  var p = [mp*100,wp*100,sp*100,ap*100];
+  var cs = [SC.Me,SC.We,SC.Support,SC.Amenity];
+  var s = '<div class="sb"><div class="sl">'+label+'</div><div class="br" style="height:'+ht+'px;position:relative">';
+  for (var i = 0; i < 4; i++) {
+    var tc = (i >= 2) ? "#012A2D" : "#fff";
+    var pctText = p[i].toFixed(1)+"%";
+    if (p[i] > 8) {
+      // Label inside bar
+      s += '<div style="width:'+p[i]+'%;background:'+cs[i]+';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:'+tc+'">'+pctText+'</div>';
+    } else if (p[i] > 0) {
+      // Label outside bar (to the right)
+      s += '<div style="width:'+p[i]+'%;background:'+cs[i]+';position:relative;"><span style="position:absolute;left:100%;white-space:nowrap;margin-left:4px;font-size:9px;font-weight:600;color:'+cs[i]+'">'+pctText+'</span></div>';
+    } else {
+      s += '<div style="width:0%;background:'+cs[i]+'"></div>';
+    }
+  }
+  return s + '</div></div>';
+}
+
+function updTitle() {
+  render();
+}
+
+function updHC() {
+  var h = parseInt(document.getElementById("hcI").value)||0;
+  var t = aggregateSelected();
+  document.getElementById("uE").textContent = h>0&&t ? Math.round(t.usf/h).toLocaleString() : "–";
+}
+
+// ─── EXCEL EXPORT ───
+function doExcel() {
+  var t = aggregateSelected();
+  var cn = document.getElementById("cI").value || "Selection";
+
+  // Gather all source data from selected buildings/floors
+  var sourceData = [["Space Category", "Floor", "Area", "Space Type", "Area Rounded", "Seats", "Suggested"]];
+
+  for (var i = 0; i < SELECTED_ITEMS.length; i++) {
+    var item = SELECTED_ITEMS[i];
+    if (item.type === "portfolio") {
+      // Add all buildings
+      for (var b = 0; b < BUILDINGS.length; b++) {
+        var raw = BUILDINGS[b].raw || [];
+        for (var r = 0; r < raw.length; r++) {
+          var d = raw[r];
+          sourceData.push([d.grouping, d.floor, d.area, d.name, d.rounded, d.seat, d.suggested]);
+        }
+      }
+    } else if (item.type === "building") {
+      var raw = BUILDINGS[item.idx].raw || [];
+      for (var r = 0; r < raw.length; r++) {
+        var d = raw[r];
+        sourceData.push([d.grouping, d.floor, d.area, d.name, d.rounded, d.seat, d.suggested]);
+      }
+    } else if (item.type === "floor") {
+      var bldg = BUILDINGS[item.idx];
+      var raw = bldg.raw || [];
+      for (var r = 0; r < raw.length; r++) {
+        var d = raw[r];
+        if (d.floor === item.floor) {
+          sourceData.push([d.grouping, d.floor, d.area, d.name, d.rounded, d.seat, d.suggested]);
+        }
+      }
+    }
+  }
+
+  // Create workbook
+  var wb = XLSX.utils.book_new();
+
+  // Define styles
+  var headerStyle = {fill: {fgColor: {rgb: "003F2D"}}, font: {bold: true, color: {rgb: "FFFFFF"}}, alignment: {horizontal: "center"}};
+  var altRowStyle = {fill: {fgColor: {rgb: "F5F7F7"}}};
+  var numStyle = {numFmt: "#,##0"};
+  var pctStyle = {numFmt: "0.0%"};
+  var labelStyle = {font: {bold: false}};
+  var sectionStyle = {fill: {fgColor: {rgb: "CAD1D3"}}, font: {bold: true}};
+
+  // Summary sheet - matches the format from reference file
+  var summaryData = [
+    ["Metric", cn, "Total"],
+    ["GIA", t.gia, t.gia],
+    ["Core", t.core, t.core],
+    ["USF", t.usf, t.usf],
+    ["SPACE CATEGORY SF"],
+    ["Me (Individual) SF", t.meSF, t.meSF],
+    ["We (Collaboration) SF", t.weSF, t.weSF],
+    ["Support SF", t.supSF, t.supSF],
+    ["Amenity SF", t.amSF, t.amSF],
+    ["Total Measured SF", t.measured, t.measured],
+    ["Circulation", t.circ, t.circ],
+    ["COMPOSITION (% w/ Circulation Distributed)"],
+    ["Me %", t.mePct, t.mePct],
+    ["We %", t.wePct, t.wePct],
+    ["Support %", t.supPct, t.supPct],
+    ["Amenity %", t.amenPct, t.amenPct],
+    ["KEY METRICS"],
+    ["Workpoints", t.allocatable, t.allocatable],
+    ["Total Me Count", t.totalMeCount, t.totalMeCount],
+    ["Offices", t.offices, t.offices],
+    ["Workstations", t.workstations, t.workstations],
+    ["USF/Seat", t.allocatable > 0 ? Math.round(t.usf/t.allocatable) : 0, t.allocatable > 0 ? Math.round(t.usf/t.allocatable) : 0],
+    ["Avg Office SF", t.avgOfficeSF, t.avgOfficeSF],
+    ["Avg WS SF", t.avgWsSF, t.avgWsSF],
+    ["We:Me", t.weMeRatio.toFixed(2) + ":1", t.weMeRatio.toFixed(2) + ":1"],
+    ["Enclosed Meeting Rooms", t.enclosedCount, t.enclosedCount],
+    ["Small (2-6)", t.small, t.small],
+    ["Medium (7-10)", t.medium, t.medium],
+    ["Large (11-19)", t.large, t.large],
+    ["XL (20+)", t.xl, t.xl],
+    ["Open Collaboration Spaces", t.openCount, t.openCount],
+    ["Total We Seats", t.weSeats, t.weSeats],
+    ["Focus Rooms", t.focus, t.focus],
+    ["Phone Rooms", t.phone, t.phone]
+  ];
+
+  // Create Source sheet first (formulas reference it)
+  var ws_source = XLSX.utils.aoa_to_sheet(sourceData);
+  XLSX.utils.book_append_sheet(wb, ws_source, "Source");
+
+  // Summary sheet with formulas
+  var ws_summary = XLSX.utils.aoa_to_sheet(summaryData);
+
+  // Apply header formatting
+  ws_summary['A1'].s = headerStyle;
+  ws_summary['B1'].s = headerStyle;
+  ws_summary['C1'].s = headerStyle;
+
+  // Apply number formatting to numeric cells
+  ['B2','C2','B3','C3','B4','C4','B7','C7','B8','C8','B9','C9','B10','C10','B11','C11','B12','C12'].forEach(function(cell) {
+    if (ws_summary[cell]) ws_summary[cell].z = "#,##0";
+  });
+
+  // Apply percentage formatting
+  ['B15','C15','B16','C16','B17','C17','B18','C18'].forEach(function(cell) {
+    if (ws_summary[cell]) ws_summary[cell].z = "0.0%";
+  });
+
+  XLSX.utils.book_append_sheet(wb, ws_summary, "Summary");
+
+  // Individual Space sheet - breakdown by office/WS size
+  var indivData = [["Individual Space", cn, "Total"]];
+
+  // Get detailed breakdown if available from selected buildings
+  indivData.push(["Private Office"]);
+  indivData.push(["Private Office Count", t.offices, t.offices]);
+  indivData.push(["Private Office SF", t.officeSF, t.officeSF]);
+  indivData.push(["Workstation"]);
+  indivData.push(["Workstation Count", t.workstations, t.workstations]);
+  indivData.push(["Workstation SF", t.wsSF, t.wsSF]);
+  indivData.push(["Focus Room", t.focus, t.focus]);
+  indivData.push(["Phone Room", t.phone, t.phone]);
+
+  var ws_indiv = XLSX.utils.aoa_to_sheet(indivData);
+  XLSX.utils.book_append_sheet(wb, ws_indiv, "Individual Space");
+
+  // Collaboration Space sheet
+  var collabData = [
+    ["Collaboration Space", cn, "Total"],
+    ["Enclosed"],
+    ["Small (2-6)", t.small, t.small],
+    ["Medium (7-10)", t.medium, t.medium],
+    ["Large (11-19)", t.large, t.large],
+    ["XL (20+)", t.xl, t.xl],
+    ["Total Enclosed", t.enclosedCount, t.enclosedCount],
+    ["Total Enclosed Seats", t.small*4 + t.medium*8.5 + t.large*15 + t.xl*25, t.small*4 + t.medium*8.5 + t.large*15 + t.xl*25],
+    ["Open Collaboration"],
+    ["Open Count", t.openCount, t.openCount],
+    ["Total We Seats", t.weSeats, t.weSeats],
+    ["Total Collaboration SF", t.weSF, t.weSF]
+  ];
+
+  var ws_collab = XLSX.utils.aoa_to_sheet(collabData);
+  XLSX.utils.book_append_sheet(wb, ws_collab, "Collaboration Space");
+
+  // Support Space sheet
+  var suppData = [
+    ["Support Space", cn, "Total"],
+    ["Support SF", t.supSF, t.supSF]
+  ];
+
+  var ws_supp = XLSX.utils.aoa_to_sheet(suppData);
+  XLSX.utils.book_append_sheet(wb, ws_supp, "Support Space");
+
+  // Amenity Space sheet
+  var amenData = [
+    ["Amenity Space", cn, "Total"],
+    ["Amenity SF", t.amSF, t.amSF]
+  ];
+
+  var ws_amen = XLSX.utils.aoa_to_sheet(amenData);
+  XLSX.utils.book_append_sheet(wb, ws_amen, "Amenity Space");
+
+  // Generate filename and export
+  var filename = cn.replace(/[^a-zA-Z0-9 ]/g,"_") + "_Space_Analysis.xlsx";
+  XLSX.writeFile(wb, filename);
+}
+
+function doPNG() {
+  var cn = document.getElementById("cI").value || "Selection";
+  var el = document.getElementById("res");
+  var origBg = el.style.background;
+  el.style.background = "#012A2D";
+  el.style.padding = "20px";
+  el.style.borderRadius = "0";
+
+  html2canvas(el, {
+    backgroundColor: "#012A2D",
+    scale: 2,
+    useCORS: true,
+    logging: false,
+    width: el.scrollWidth,
+    height: el.scrollHeight
+  }).then(function(canvas) {
+    el.style.background = origBg;
+    el.style.padding = "";
+    el.style.borderRadius = "";
+    var link = document.createElement("a");
+    link.download = cn.replace(/[^a-zA-Z0-9 ]/g,"_") + "_Space_Analysis.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  }).catch(function(err) {
+    el.style.background = origBg;
+    el.style.padding = "";
+    el.style.borderRadius = "";
+    alert("PNG export error: " + err.message);
+  });
+}
+</script>
+</body>
+</html>
