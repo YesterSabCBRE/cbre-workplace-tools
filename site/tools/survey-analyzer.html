@@ -3,50 +3,1166 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Survey Analyzer · CBRE</title>
+<title>Workplace Survey Analyzer · CBRE</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
-  :root {
-    --green: #003F2D; --green-mid: #012A2D; --green-deep: #001A14;
-    --accent: #17E88F; --accent-dim: #0FB870; --teal: #538184;
-    --text: #F2F4F3; --text-muted: rgba(242,244,243,0.55);
-    --card-bg: rgba(255,255,255,0.04); --card-border: rgba(255,255,255,0.08); --radius: 12px;
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--green-deep); color: var(--text); min-height: 100vh; }
-  body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse 80% 50% at 20% -10%, rgba(23,232,143,0.06) 0%, transparent 60%); pointer-events: none; z-index: 0; }
-  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 0 2.5rem; height: 60px; background: rgba(0,26,20,0.9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--card-border); }
-  .nav-logo { font-family: 'DM Serif Display', serif; font-size: 1rem; color: var(--text); text-decoration: none; }
-  .nav-logo span { color: var(--accent); }
-  .nav-back { font-size: 0.8rem; color: var(--text-muted); text-decoration: none; display: flex; align-items: center; gap: 0.4rem; }
-  .nav-back:hover { color: var(--text); }
-  .page { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 90px 2rem 80px; }
-  .page-eyebrow { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.75rem; }
-  .page-title { font-family: 'DM Serif Display', serif; font-size: 2.2rem; line-height: 1.15; margin-bottom: 0.75rem; }
-  .page-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.7; max-width: 560px; margin-bottom: 3rem; }
-  .coming-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 3rem; text-align: center; }
-  .coming-icon { font-size: 3rem; margin-bottom: 1rem; }
-  .coming-title { font-family: 'DM Serif Display', serif; font-size: 1.5rem; margin-bottom: 0.75rem; }
-  .coming-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.7; max-width: 480px; margin: 0 auto; }
-  .badge { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(23,232,143,0.12); color: var(--accent); border: 1px solid rgba(23,232,143,0.25); padding: 0.3rem 0.75rem; border-radius: 100px; margin-bottom: 1.5rem; }
+:root {
+  --green: #003F2D;
+  --green-mid: #012A2D;
+  --green-deep: #001A14;
+  --accent: #17E88F;
+  --accent-dim: #0FB870;
+  --teal: #538184;
+  --text: #F2F4F3;
+  --text-muted: rgba(242,244,243,0.55);
+  --card-bg: rgba(255,255,255,0.04);
+  --card-border: rgba(255,255,255,0.08);
+  --radius: 12px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--green-deep);
+  color: var(--text);
+  min-height: 100vh;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse 80% 50% at 20% -10%, rgba(23,232,143,0.06) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+
+/* NAV */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2.5rem; height: 60px;
+  background: rgba(0,26,20,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--card-border);
+}
+.nav-logo { font-family: 'DM Serif Display', serif; font-size: 1rem; color: var(--text); text-decoration: none; }
+.nav-logo span { color: var(--accent); }
+.nav-back { font-size: 0.8rem; color: var(--text-muted); text-decoration: none; display: flex; align-items: center; gap: 0.4rem; }
+.nav-back:hover { color: var(--text); }
+
+/* PAGE */
+.page { position: relative; z-index: 1; max-width: 1300px; margin: 0 auto; padding: 80px 2rem 80px; }
+
+/* HEADER */
+.page-header { margin-bottom: 2rem; }
+.page-eyebrow {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 0.6rem;
+}
+.page-title { font-family: 'DM Serif Display', serif; font-size: 2.2rem; line-height: 1.15; margin-bottom: 0.5rem; }
+.page-desc { font-size: 0.88rem; color: var(--text-muted); line-height: 1.7; max-width: 600px; }
+
+/* UPLOAD SCREEN */
+.upload-screen { max-width: 680px; margin: 0 auto; padding-top: 1rem; }
+.upload-zone {
+  border: 2px dashed var(--card-border);
+  border-radius: var(--radius);
+  padding: 3rem 2rem;
+  text-align: center; cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  background: var(--card-bg);
+  margin-bottom: 1rem;
+}
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: rgba(23,232,143,0.4);
+  background: rgba(23,232,143,0.04);
+}
+.upload-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+.upload-label { font-size: 1rem; color: var(--text); margin-bottom: 0.35rem; }
+.upload-sub { font-size: 0.8rem; color: var(--text-muted); }
+#file-input { display: none; }
+.upload-actions { display: flex; gap: 0.75rem; justify-content: center; margin-top: 1rem; }
+.btn-primary {
+  padding: 0.7rem 1.5rem;
+  background: var(--accent); color: var(--green-deep);
+  font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 600;
+  border: none; border-radius: 8px; cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+.btn-primary:hover { background: var(--accent-dim); }
+.btn-secondary {
+  padding: 0.7rem 1.5rem;
+  background: var(--card-bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 500;
+  border: 1px solid var(--card-border); border-radius: 8px; cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.btn-secondary:hover { border-color: rgba(23,232,143,0.3); background: rgba(23,232,143,0.04); }
+.upload-error {
+  display: none; margin-top: 1rem;
+  background: rgba(210,120,90,0.1); border: 1px solid rgba(210,120,90,0.3);
+  border-radius: 8px; padding: 0.75rem 1rem;
+  font-size: 0.82rem; color: #D2785A;
+}
+
+/* APP LAYOUT */
+.app-layout { display: none; }
+.app-layout.active { display: block; }
+
+/* CONTROL BAR */
+.control-bar {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+  background: rgba(0,63,45,0.2);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 0.9rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.n-badge {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: rgba(23,232,143,0.12);
+  border: 1px solid rgba(23,232,143,0.25);
+  border-radius: 20px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.82rem; font-weight: 600; color: var(--accent);
+  white-space: nowrap; align-self: center;
+}
+.filters-row { display: flex; gap: 0.65rem; flex-wrap: wrap; flex: 1; align-items: flex-end; }
+.filter-group { display: flex; flex-direction: column; gap: 0.25rem; }
+.filter-label { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+.filter-select {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--card-border);
+  border-radius: 6px; padding: 0.38rem 0.65rem;
+  color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.78rem;
+  cursor: pointer; min-width: 130px;
+}
+.filter-select:focus { outline: none; border-color: rgba(23,232,143,0.4); }
+.filter-select option { background: #001A14; color: var(--text); }
+.reset-btn {
+  padding: 0.38rem 0.85rem;
+  background: transparent; color: var(--text-muted);
+  font-family: 'DM Sans', sans-serif; font-size: 0.72rem;
+  border: 1px solid var(--card-border); border-radius: 6px; cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.reset-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+/* TABS */
+.tabs-bar {
+  display: flex; gap: 0; flex-wrap: wrap;
+  border-bottom: 1px solid var(--card-border);
+  margin-bottom: 1.5rem; align-items: flex-end;
+}
+.tab-group-label {
+  font-size: 0.62rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-muted); padding: 0 0.6rem 0.55rem; align-self: flex-end;
+}
+.tab-sep { width: 1px; background: var(--card-border); margin: 0 0.4rem 0 0; height: 36px; align-self: flex-end; }
+.tab-btn {
+  padding: 0.6rem 0.9rem;
+  background: transparent; color: var(--text-muted);
+  font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 500;
+  border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; transition: color 0.2s, border-color 0.2s;
+  white-space: nowrap; margin-bottom: -1px;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+/* SECTIONS */
+.section-panel { display: none; }
+.section-panel.active { display: block; }
+.section-heading { font-family: 'DM Serif Display', serif; font-size: 1.4rem; margin-bottom: 0.35rem; }
+.section-sub { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.4rem; }
+
+/* STAT CARDS */
+.cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.9rem; margin-bottom: 1.2rem; }
+.stat-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 1.1rem 1.2rem; }
+.stat-card-value { font-family: 'DM Serif Display', serif; font-size: 2rem; color: var(--accent); line-height: 1; margin-bottom: 0.3rem; }
+.stat-card-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.stat-card-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+/* CHART CARDS */
+.chart-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 1.2rem 1.25rem; margin-bottom: 1rem; }
+.chart-card-title { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1rem; }
+.chart-card-title span { color: var(--accent); font-weight: 700; }
+
+/* STACKED BARS */
+.stacked-chart { display: flex; flex-direction: column; gap: 0.6rem; }
+.bar-row { display: flex; align-items: center; gap: 0.7rem; }
+.bar-label { font-size: 0.76rem; color: var(--text); min-width: 215px; max-width: 215px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+.bar-track { flex: 1; height: 26px; display: flex; border-radius: 4px; overflow: hidden; min-width: 0; }
+.bar-seg { display: flex; align-items: center; justify-content: center; font-size: 0.66rem; font-weight: 600; color: rgba(0,0,0,0.7); white-space: nowrap; overflow: hidden; }
+.bar-seg-lt { color: rgba(255,255,255,0.85); }
+.bar-avg { font-size: 0.8rem; font-weight: 600; color: var(--accent); min-width: 34px; text-align: right; flex-shrink: 0; }
+
+/* LEGEND */
+.chart-legend { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; }
+.legend-item { display: flex; align-items: center; gap: 0.35rem; font-size: 0.7rem; color: var(--text-muted); }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+/* H-BAR */
+.h-bar-chart { display: flex; flex-direction: column; gap: 0.5rem; }
+.h-bar-row { display: flex; align-items: center; gap: 0.65rem; }
+.h-bar-label { font-size: 0.76rem; color: var(--text); min-width: 200px; max-width: 200px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* DONUT */
+.donut-wrap { display: flex; align-items: center; gap: 2rem; flex-wrap: wrap; }
+.donut-svg-wrap { position: relative; flex-shrink: 0; }
+.donut-center-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.donut-center-value { font-family: 'DM Serif Display', serif; font-size: 1.8rem; color: var(--accent); line-height: 1; }
+.donut-center-label { font-size: 0.64rem; color: var(--text-muted); margin-top: 0.2rem; }
+.donut-legend { display: flex; flex-direction: column; gap: 0.5rem; }
+.donut-legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text); }
+.donut-legend-swatch { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+.donut-legend-pct { font-weight: 600; margin-left: 0.25rem; color: var(--text-muted); }
+
+/* NPS */
+.nps-grid { display: grid; grid-template-columns: auto 1fr; gap: 1.5rem; align-items: center; }
+.nps-score-big { font-family: 'DM Serif Display', serif; font-size: 4rem; line-height: 1; }
+.nps-score-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.nps-breakdown { display: flex; flex-direction: column; gap: 0.5rem; }
+.nps-tier { display: flex; align-items: center; gap: 0.65rem; }
+.nps-tier-label { font-size: 0.76rem; color: var(--text-muted); min-width: 100px; }
+.nps-tier-bar { flex: 1; height: 18px; border-radius: 4px; }
+.nps-tier-pct { font-size: 0.78rem; font-weight: 600; min-width: 38px; text-align: right; }
+
+/* VERBATIM */
+.verbatim-list { display: flex; flex-direction: column; gap: 0.55rem; }
+.verbatim-item { background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-left: 3px solid var(--accent); border-radius: 6px; padding: 0.7rem 1rem; font-size: 0.81rem; color: var(--text); line-height: 1.6; font-style: italic; }
+.verbatim-item.neg { border-left-color: #D2785A; }
+
+/* DRIVER CARDS */
+.driver-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.2rem; }
+.driver-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 1.2rem; }
+.driver-icon { font-size: 1.4rem; margin-bottom: 0.4rem; }
+.driver-name { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.35rem; }
+.driver-score { font-family: 'DM Serif Display', serif; font-size: 2.2rem; color: var(--accent); line-height: 1; margin-bottom: 0.5rem; }
+.driver-bar { height: 5px; background: var(--card-border); border-radius: 3px; overflow: hidden; margin-bottom: 0.7rem; }
+.driver-bar-fill { height: 100%; border-radius: 3px; }
+.driver-items { display: flex; flex-direction: column; gap: 0.28rem; }
+.driver-item { font-size: 0.73rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.4rem; }
+.driver-item::before { content: '›'; color: var(--accent); }
+
+/* WORK STYLES */
+.ws-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
+.ws-label { font-size: 0.78rem; color: var(--text); min-width: 200px; flex-shrink: 0; }
+.ws-track { flex: 1; height: 28px; background: var(--card-border); border-radius: 6px; overflow: hidden; position: relative; }
+.ws-fill { height: 100%; background: linear-gradient(90deg, var(--green) 0%, var(--accent) 100%); border-radius: 6px; }
+.ws-pct { font-size: 0.76rem; font-weight: 600; color: var(--text); position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); }
+
+/* GRID HELPERS */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+
+/* NOTICE */
+.field-notice { background: rgba(23,232,143,0.06); border: 1px solid rgba(23,232,143,0.2); border-radius: 8px; padding: 0.7rem 1rem; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1rem; }
+.field-notice strong { color: var(--accent); }
+
+/* EMPTY */
+.empty-state { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem; }
+
+@media (max-width: 900px) {
+  .demo-grid, .two-col { grid-template-columns: 1fr; }
+  .bar-label { min-width: 130px; max-width: 130px; }
+  .h-bar-label { min-width: 130px; max-width: 130px; }
+  .ws-label { min-width: 130px; }
+  .nps-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
+
 <nav>
   <a class="nav-logo" href="/cbre-workplace-tools/"><span>CBRE</span> Workplace Tools</a>
   <a class="nav-back" href="/cbre-workplace-tools/">← Back to tools</a>
 </nav>
+
 <div class="page">
-  <div class="page-eyebrow">📊 Analysis Tool</div>
-  <h1 class="page-title">Survey Analyzer</h1>
-  <p class="page-desc">Process employee workplace surveys — quantitative summaries, verbatim theme extraction, and persona-level breakdowns.</p>
-  <div class="coming-card">
-    <div class="coming-icon">🚧</div>
-    <div class="badge">Under Construction</div>
-    <div class="coming-title">Tool in development</div>
-    <div class="coming-desc">The Survey Analyzer is being built. Upload a survey export and get quantitative summaries, verbatim themes, and persona-level breakdowns — formatted for client delivery.</div>
+  <div class="page-header">
+    <div class="page-eyebrow">📊 Analysis Tool</div>
+    <h1 class="page-title">Workplace Survey Analyzer</h1>
+    <p class="page-desc">Upload your survey CSV to generate instant insights across demographics, space performance, collaboration patterns, and employee sentiment.</p>
   </div>
-</div>
+
+  <!-- UPLOAD SCREEN -->
+  <div class="upload-screen" id="uploadScreen">
+    <div class="upload-zone" id="uploadZone">
+      <div class="upload-icon">📋</div>
+      <div class="upload-label">Drop your survey CSV here</div>
+      <div class="upload-sub">or click to browse · CSV with 5 header rows before data</div>
+      <input type="file" id="file-input" accept=".csv">
+    </div>
+    <div class="upload-actions">
+      <button class="btn-primary" onclick="document.getElementById('file-input').click()">Choose File</button>
+      <button class="btn-secondary" onclick="loadSampleData()">Load Sample Data</button>
+    </div>
+    <div class="upload-error" id="uploadError"></div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div class="app-layout" id="appLayout">
+
+    <!-- CONTROL BAR -->
+    <div class="control-bar">
+      <div class="n-badge" id="nBadge">N = 0</div>
+      <div class="filters-row">
+        <div class="filter-group">
+          <span class="filter-label">Department</span>
+          <select class="filter-select" id="fDept" onchange="applyFilters()"><option value="">All Departments</option></select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Role</span>
+          <select class="filter-select" id="fRole" onchange="applyFilters()"><option value="">All Roles</option></select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Generation</span>
+          <select class="filter-select" id="fGen" onchange="applyFilters()"><option value="">All Generations</option></select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Tenure</span>
+          <select class="filter-select" id="fTenure" onchange="applyFilters()"><option value="">All Tenure</option></select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Office Frequency</span>
+          <select class="filter-select" id="fFreq" onchange="applyFilters()"><option value="">All Frequencies</option></select>
+        </div>
+        <button class="reset-btn" onclick="resetFilters()">Reset</button>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs-bar">
+      <span class="tab-group-label">Standard Reporting</span>
+      <button class="tab-btn active" data-tab="demographics">Demographics</button>
+      <button class="tab-btn" data-tab="space">Space, Design &amp; Function</button>
+      <button class="tab-btn" data-tab="relationships">Relationships &amp; Collaboration</button>
+      <button class="tab-btn" data-tab="wvp">WVP &amp; Attachment</button>
+      <button class="tab-btn" data-tab="future">Future Preferences</button>
+      <div class="tab-sep"></div>
+      <span class="tab-group-label">Module Outputs</span>
+      <button class="tab-btn" data-tab="attendance">Attendance Drivers</button>
+      <button class="tab-btn" data-tab="workstyles">Work Styles</button>
+      <button class="tab-btn" data-tab="sentiment">Sentiment Analysis</button>
+    </div>
+
+    <div class="section-panel active" id="tab-demographics">
+      <h2 class="section-heading">Demographics</h2>
+      <p class="section-sub">Breakdown of survey respondents by key demographic segments.</p>
+      <div class="field-notice" id="demoNotice" style="display:none"></div>
+      <div class="demo-grid" id="demoCharts"></div>
+    </div>
+
+    <div class="section-panel" id="tab-space">
+      <h2 class="section-heading">Space, Design &amp; Function</h2>
+      <p class="section-sub">Space supply adequacy, functionality ratings, and design perceptions across the workplace.</p>
+      <div id="spaceContent"></div>
+    </div>
+
+    <div class="section-panel" id="tab-relationships">
+      <h2 class="section-heading">Relationships &amp; Collaboration</h2>
+      <p class="section-sub">Collaboration patterns, hosting behaviors, learning opportunities, and workplace relationships.</p>
+      <div id="relContent"></div>
+    </div>
+
+    <div class="section-panel" id="tab-wvp">
+      <h2 class="section-heading">WVP &amp; Attachment</h2>
+      <p class="section-sub">Workplace Value Proposition — belonging, culture, and organizational attachment scores.</p>
+      <div id="wvpContent"></div>
+    </div>
+
+    <div class="section-panel" id="tab-future">
+      <h2 class="section-heading">Future Preferences</h2>
+      <p class="section-sub">Preferred work location, remote and office benefits, trade-off priorities, and amenity importance.</p>
+      <div id="futureContent"></div>
+    </div>
+
+    <div class="section-panel" id="tab-attendance">
+      <h2 class="section-heading">Attendance Drivers</h2>
+      <p class="section-sub">Why employees choose to come into the office — scored across four strategic dimensions.</p>
+      <div id="attendanceContent"></div>
+    </div>
+
+    <div class="section-panel" id="tab-workstyles">
+      <h2 class="section-heading">Work Styles</h2>
+      <p class="section-sub">How employees allocate time across individual and collaborative work modes.</p>
+      <div id="workStylesContent"></div>
+    </div>
+
+    <div class="section-panel" id="tab-sentiment">
+      <h2 class="section-heading">Sentiment Analysis</h2>
+      <p class="section-sub">Employee NPS, satisfaction scores, WVP composite, and verbatim feedback.</p>
+      <div id="sentimentContent"></div>
+    </div>
+
+  </div><!-- /app-layout -->
+</div><!-- /page -->
+
+<script>
+// ─── COLUMN DEFINITIONS ───────────────────────────────────────────────────────
+const C = {
+  DEPT:'Q3', ROLE:'Q4', GEN:'Q5', TENURE:'Q6', FREQOFF:'FREQOFF',
+  SSUPPLY:['SSUPPLY.OISPACE','SSUPPLY.PISPACE','SSUPPLY.INFCSPACE','SSUPPLY.FORCSPACE','SSUPPLY.MPRSPACE','SSUPPLY.WELLSPACE','SSUPPLY.SSPACE','SSUPPLY.FBSPACE'],
+  SSUPPLY_L:['Functional individual workspaces','Private focus/phone spaces','Informal collaboration','Formal meeting rooms','Large multipurpose/training','Wellness/quiet rooms','Social spaces','Food & beverage'],
+  SFUNC:['SFUNCTION.ICLEAN','SFUNCTION.ITECH','SFUNCTION.CCLEAN','SFUNCTION.CTECH','SFUNCTION.FURN','SFUNCTION.WIFI','SFUNCTION.TEMP','SFUNCTION.LIGHT','SFUNCTION.NOISE','SFUNCTION.WELLAVAIL','SFUNCTION.RRCLEAN'],
+  SFUNC_L:['Individual workspace cleanliness','Individual workspace technology','Meeting room cleanliness','Meeting room technology','Furniture ergonomics','Wi-Fi reliability','Temperature comfort','Lighting quality','Noise levels acceptable','Inclusive support spaces','Restroom quality'],
+  SDES:['SDESIGN.DECOR','SDESIGN.VISPRAC','SDESIGN.MOVE','SDESIGN.MOBLVL','SDESIGN.WELCOME','SDESIGN.RESOURCES','SDESIGN.WELLBEN','SDESIGN.NATURE'],
+  SDES_L:['Decor and finishes','Visual/practical balance','Movement across settings','Mobility accommodation','Visitor experience','Resource access','Well-being support','Connection to nature'],
+  VIBE:['VIBE.DYNAMIC','VIBE.QUIET'],
+  VIBE_L:['Dynamic like coffee shop','Quiet like library'],
+  REL:['RELATION.FRIEND','RELATION.MENTOR','RELATION.TCONNECT','RELATION.NTCONNECT','RELATION.COMMUNITY','RELATION.TRAINING'],
+  REL_L:['Friends at work','Has a mentor','Team connection','Cross-team interaction','Community sense','Training adequacy'],
+  LEARN:['LEARNOPP.FEEDBACK','LEARNOPP.MORALE','LEARNOPP.COMPCOLLAB','LEARNOPP.ONBOARD','LEARNOPP.PDEV','LEARNOPP.BOUND','LEARNOPP.TOOLS'],
+  LEARN_L:['Feedback culture','Team morale','Company collaboration','Onboarding','Personal development','Cross-boundary learning','Tools & resources'],
+  SOC:['SOCIALOPP.CELEB','SOCIALOPP.LUNCH','SOCIALOPP.HH','SOCIALOPP.EVENT','SOCIALOPP.ERG'],
+  SOC_L:['Celebrations','Team lunches','Happy hours','Sponsored events','ERG activities'],
+  HOST:['HOST.LTEAM','HOST.VTEAM','HOST.MENTORS','HOST.TALENT','HOST.CLIENT'],
+  HOST_L:['Local team','Visiting colleagues','Mentors','Prospective talent','Clients'],
+  WVP:['WVP.BELONG','WVP.RESPECT','WVP.VALUED','WVP.OPEN','WVP.POSREF','WVP.PROUD','WVP.INVEST','WVP.WLBAL','WVP.RECOG'],
+  WVP_L:['Belonging','Inclusivity & respect','Supported & valued','Leadership openness','Brand reflection','Office pride','Investment in people','Work-life balance','Recognition'],
+  SAT:'SATISFACT.A1', ENPS:'ENPS.A1', Q42:'Q42.A1', Q43:'Q43.A1', Q45:'Q45',
+  TIME_I:'TIME.TIND', TIME_O:'TIME.TOTHERS',
+  COL_S:'COLLAB.SCOLLAB', COL_U:'COLLAB.UCOLLAB',
+  MTG_S:'Q30.A1', MTG_M:'Q30.A2', MTG_L:'Q30.A3',
+  RBEN:['RPOTBEN.LESSCOMM','RPOTBEN.FLEXLIV','RPOTBEN.FLEXLOC','RPOTBEN.FLEXSCHED','RPOTBEN.EXPENSE','RPOTBEN.CHILD','RPOTBEN.RDISTRACT','RPOTBEN.RPRIVATE','RPOTBEN.RCONFIG'],
+  RBEN_L:['Less commuting','Flexible living','Flexible location','Flexible schedule','Expense savings','Childcare ease','Fewer distractions','More privacy','Custom setup'],
+  OBEN:['OPOTBEN.GATHER','OPOTBEN.LEADVIS','OPOTBEN.COMMS','OPOTBEN.BWLB','OPOTBEN.OCONNECT','OPOTBEN.TECH','OPOTBEN.ODISTRACT','OPOTBEN.OPRIVATE','OPOTBEN.OCONFIG'],
+  OBEN_L:['Team gatherings','Leadership visibility','Better communication','Work-life separation','Office connections','Better technology','Fewer distractions','Private workspace','Custom setup'],
+  TRADE:['TRADEOFF.RFLEX','TRADEOFF.PRIVACC','TRADEOFF.ENHANCED'],
+  TRADE_L:['Greater remote flexibility','Private enclosed space','Enhanced collaborative spaces'],
+  AMM:['AMMEN.MPRTRAIN','AMMEN.PANTRY','AMMEN.COFFEE','AMMEN.GNGFOOD','AMMEN.LOCKER','AMMEN.RECEP','AMMEN.OUTDOOR','AMMEN.A8','AMMEN.A9'],
+  AMM_L:['Meeting/training rooms','Pantry','Coffee','Grab & go food','Lockers','Reception','Outdoor spaces',"Mother's rooms","Phone booths"],
+};
+
+const LIKERT_MAP = {
+  'strongly agree':5,'agree':4,'neither agree nor disagree':3,'disagree':2,'strongly disagree':1,
+  'very important':5,'important':4,'somewhat important':3,'not important':2,'not important at all':1,
+  'always':5,'often':4,'occasionally':3,'rarely':2,'never':1,
+};
+const L5_LABELS = ['Strongly Agree','Agree','Neutral','Disagree','Strongly Disagree'];
+const L5_COLORS = ['#003F2D','#17E88F','#80BBAD','#DBD99A','#D2785A'];
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let allRows = [];
+let colIdx = {};
+let filteredRows = [];
+
+// ─── PARSE HELPERS ────────────────────────────────────────────────────────────
+function parseLikert(val) {
+  if (!val) return null;
+  const v = val.trim().toLowerCase();
+  if (LIKERT_MAP[v] !== undefined) return LIKERT_MAP[v];
+  for (const [k,n] of Object.entries(LIKERT_MAP)) { if (v.includes(k)) return n; }
+  const n = parseFloat(v);
+  return (!isNaN(n) && n >= 1 && n <= 5) ? n : null;
+}
+
+function parseHostFreq(val) {
+  if (!val) return null;
+  const v = val.trim().toLowerCase();
+  const m = {'always':5,'often':4,'occasionally':3,'rarely':2,'never':1};
+  for (const [k,n] of Object.entries(m)) { if (v.includes(k)) return n; }
+  return null;
+}
+
+function parseScore(val) {
+  if (!val) return null;
+  const m = val.trim().match(/^(\d+)/);
+  return m ? parseInt(m[1]) : null;
+}
+
+function gv(row, col) {
+  const i = colIdx[col];
+  return i !== undefined ? (row[i] || '').trim() : '';
+}
+
+function numVals(rows, col) {
+  return rows.map(r => { const n = parseFloat(gv(r, col)); return isNaN(n) ? null : n; }).filter(v => v !== null);
+}
+
+function avg(arr) {
+  const v = arr.filter(x => x !== null && !isNaN(x));
+  return v.length ? v.reduce((a,b) => a+b, 0) / v.length : null;
+}
+
+function pct(n, total) { return total ? Math.round((n / total) * 100) : 0; }
+
+function countBy(rows, col) {
+  const c = {};
+  rows.forEach(r => { const v = gv(r, col); if (v) c[v] = (c[v] || 0) + 1; });
+  return c;
+}
+
+function cbPct(rows, col) {
+  if (!rows.length) return 0;
+  return pct(rows.filter(r => gv(r, col) !== '').length, rows.length);
+}
+
+function likertDist(rows, col) {
+  const d = {5:0,4:0,3:0,2:0,1:0};
+  let t = 0;
+  rows.forEach(r => { const v = parseLikert(gv(r, col)); if (v !== null) { d[v]++; t++; } });
+  const a = t ? (5*d[5]+4*d[4]+3*d[3]+2*d[2]+1*d[1]) / t : null;
+  return { d, t, avg: a };
+}
+
+function supplyDist(rows, col) {
+  const c = {r:0,l:0,m:0,n:0,t:0};
+  rows.forEach(r => {
+    const v = gv(r, col).toLowerCase();
+    if (!v) return;
+    if (v.includes('right')) c.r++;
+    else if (v.includes('too little')) c.l++;
+    else if (v.includes('too much')) c.m++;
+    else if (v === 'none') c.n++;
+    else return;
+    c.t++;
+  });
+  return c;
+}
+
+// ─── CSV PARSE ────────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  const res = Papa.parse(text, { header: false, skipEmptyLines: false });
+  const rows = res.data;
+  if (rows.length < 7) { showErr('CSV must have at least 7 rows (5 header + data).'); return false; }
+  colIdx = {};
+  rows[0].forEach((name, i) => { if (name && name.trim()) colIdx[name.trim()] = i; });
+  allRows = rows.slice(5).filter(r => r.some(c => c && c.trim() !== ''));
+  return true;
+}
+
+function showErr(msg) {
+  const el = document.getElementById('uploadError');
+  el.style.display = 'block'; el.textContent = msg;
+}
+
+// ─── FILE HANDLING ────────────────────────────────────────────────────────────
+document.getElementById('file-input').addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('dragover'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+zone.addEventListener('click', () => document.getElementById('file-input').click());
+
+function handleFile(file) {
+  if (!file.name.endsWith('.csv')) { showErr('Please upload a .csv file.'); return; }
+  document.getElementById('uploadError').style.display = 'none';
+  const reader = new FileReader();
+  reader.onload = e => { if (parseCSV(e.target.result)) initApp(); };
+  reader.readAsText(file);
+}
+
+function initApp() {
+  document.getElementById('uploadScreen').style.display = 'none';
+  document.getElementById('appLayout').classList.add('active');
+  buildFilters();
+  applyFilters();
+}
+
+// ─── FILTERS ──────────────────────────────────────────────────────────────────
+function buildFilters() {
+  [['fDept',C.DEPT],['fRole',C.ROLE],['fGen',C.GEN],['fTenure',C.TENURE],['fFreq',C.FREQOFF]].forEach(([id,col]) => {
+    const sel = document.getElementById(id);
+    const first = sel.options[0];
+    sel.innerHTML = '';
+    sel.appendChild(first);
+    [...new Set(allRows.map(r => gv(r, col)).filter(v => v))].sort().forEach(v => {
+      const o = document.createElement('option');
+      o.value = v; o.textContent = v; sel.appendChild(o);
+    });
+  });
+}
+
+function applyFilters() {
+  const dept = document.getElementById('fDept').value;
+  const role = document.getElementById('fRole').value;
+  const gen = document.getElementById('fGen').value;
+  const tenure = document.getElementById('fTenure').value;
+  const freq = document.getElementById('fFreq').value;
+  filteredRows = allRows.filter(r =>
+    (!dept || gv(r,C.DEPT) === dept) &&
+    (!role || gv(r,C.ROLE) === role) &&
+    (!gen || gv(r,C.GEN) === gen) &&
+    (!tenure || gv(r,C.TENURE) === tenure) &&
+    (!freq || gv(r,C.FREQOFF) === freq)
+  );
+  document.getElementById('nBadge').textContent = `N = ${filteredRows.length} respondents`;
+  renderActive();
+}
+
+function resetFilters() {
+  ['fDept','fRole','fGen','fTenure','fFreq'].forEach(id => document.getElementById(id).value = '');
+  applyFilters();
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderActive();
+  });
+});
+
+function getActiveTab() {
+  const a = document.querySelector('.tab-btn.active');
+  return a ? a.dataset.tab : 'demographics';
+}
+
+function renderActive() {
+  const tab = getActiveTab();
+  document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  const fns = { demographics: renderDemo, space: renderSpace, relationships: renderRel, wvp: renderWVP, future: renderFuture, attendance: renderAttendance, workstyles: renderWorkStyles, sentiment: renderSentiment };
+  if (fns[tab]) fns[tab]();
+}
+
+// ─── CHART BUILDERS ───────────────────────────────────────────────────────────
+function stackedBar(label, d, t, a, lblClass) {
+  lblClass = lblClass || 'bar-label';
+  if (!t) return `<div class="bar-row"><span class="${lblClass}">${label}</span><span style="font-size:0.72rem;color:var(--text-muted)">No data</span></div>`;
+  const segs = [5,4,3,2,1].map((s,i) => {
+    const w = pct(d[s], t);
+    if (!w) return '';
+    const dark = i === 0;
+    return `<div class="bar-seg${dark?' bar-seg-lt':''}" style="width:${w}%;background:${L5_COLORS[i]}" title="${L5_LABELS[i]}: ${w}%">${w > 7 ? w+'%' : ''}</div>`;
+  }).join('');
+  return `<div class="bar-row"><span class="${lblClass}" title="${label}">${label}</span><div class="bar-track">${segs}</div><span class="bar-avg">${a !== null ? a.toFixed(1) : '—'}</span></div>`;
+}
+
+function supplyBar(label, c) {
+  if (!c.t) return `<div class="bar-row"><span class="bar-label">${label}</span><span style="font-size:0.72rem;color:var(--text-muted)">No data</span></div>`;
+  const segs = [
+    [c.r,'#17E88F','Right amount'],
+    [c.l,'#D2785A','Too little'],
+    [c.m,'#DBD99A','Too much'],
+    [c.n,'#CAD1D3','None'],
+  ].map(([n,color,name]) => {
+    const w = pct(n, c.t);
+    if (!w) return '';
+    return `<div class="bar-seg" style="width:${w}%;background:${color};color:rgba(0,0,0,0.7)" title="${name}: ${w}%">${w > 8 ? w+'%' : ''}</div>`;
+  }).join('');
+  return `<div class="bar-row"><span class="bar-label" title="${label}">${label}</span><div class="bar-track">${segs}</div></div>`;
+}
+
+function hBar(label, val, color) {
+  color = color || 'var(--accent)';
+  const w = Math.min(100, Math.max(0, Math.round(val)));
+  return `<div class="h-bar-row">
+    <span class="h-bar-label" title="${label}">${label}</span>
+    <div style="flex:1;height:22px;background:var(--card-border);border-radius:4px;overflow:hidden;position:relative;">
+      <div style="height:100%;width:${w}%;background:${color};border-radius:4px;display:flex;align-items:center;padding-left:6px;">
+        ${w > 10 ? `<span style="font-size:0.68rem;font-weight:600;color:#001A14">${w}%</span>` : ''}
+      </div>
+    </div>
+    <span style="font-size:0.75rem;color:var(--text-muted);min-width:36px;text-align:right">${w}%</span>
+  </div>`;
+}
+
+function likertLegend() {
+  return `<div class="chart-legend">${L5_LABELS.map((l,i) => `<div class="legend-item"><div class="legend-dot" style="background:${L5_COLORS[i]}"></div>${l}</div>`).join('')}</div>`;
+}
+
+function donutSVG(segs, size) {
+  size = size || 130;
+  const total = segs.reduce((s,x) => s+x.value, 0);
+  if (!total) return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size/2}" cy="${size/2}" r="${size/2-14}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="18"/></svg>`;
+  const r = size/2-16, cx = size/2, cy = size/2;
+  let angle = -Math.PI/2;
+  const paths = segs.map(seg => {
+    const a = (seg.value / total) * 2 * Math.PI;
+    const x1 = cx + r*Math.cos(angle), y1 = cy + r*Math.sin(angle);
+    angle += a;
+    const x2 = cx + r*Math.cos(angle), y2 = cy + r*Math.sin(angle);
+    return `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${a>Math.PI?1:0} 1 ${x2},${y2}Z" fill="${seg.color}" opacity="0.9"/>`;
+  }).join('');
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}<circle cx="${cx}" cy="${cy}" r="${r*0.56}" fill="#001A14"/></svg>`;
+}
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ─── DEMOGRAPHICS ─────────────────────────────────────────────────────────────
+function renderDemo() {
+  const rows = filteredRows;
+  const fieldW = rows.filter(r => { const f = gv(r,C.FREQOFF).toLowerCase(); return f.includes('less than one day') || f === 'never'; }).length;
+  const notice = document.getElementById('demoNotice');
+  if (fieldW > 0) {
+    notice.style.display = 'block';
+    notice.innerHTML = `<strong>Field workers:</strong> ${fieldW} of ${rows.length} respondents attend the office less than once per week. These respondents may have limited responses to facility-specific sections. Office-based: <strong>${rows.length - fieldW}</strong>.`;
+  } else notice.style.display = 'none';
+
+  const COLS = [
+    { col:C.DEPT, label:'Department', order:null },
+    { col:C.ROLE, label:'Role', order:['Leadership','Manager','Employee'] },
+    { col:C.GEN, label:'Generation', order:['Born before 1965','Born 1965-1980','Born 1981-1996','Born 1997 or after'] },
+    { col:C.TENURE, label:'Tenure', order:['0-5 years','6-10 years','11-20 years','21-30 years','30+ years'] },
+    { col:C.FREQOFF, label:'Office Frequency', order:['Every day','4 days per week','2-3 days per week','1 day per week','Less than one day per week','Never'] },
+  ];
+  const PAL = ['#17E88F','#0FB870','#80BBAD','#538184','#003F2D','#DBD99A','#D2785A','#CAD1D3','#012A2D'];
+
+  let html = '';
+  COLS.forEach(({ col, label, order }) => {
+    const counts = countBy(rows, col);
+    if (!Object.keys(counts).length) return;
+    let ents = Object.entries(counts);
+    if (order) ents.sort((a,b) => { const ai=order.indexOf(a[0]),bi=order.indexOf(b[0]); return (ai<0?99:ai)-(bi<0?99:bi); });
+    else ents.sort((a,b) => b[1]-a[1]);
+    const tot = ents.reduce((s,e) => s+e[1], 0);
+    let bars = ents.map(([v,n],i) => {
+      const w = pct(n,tot);
+      return `<div class="h-bar-row" style="margin-bottom:0.35rem">
+        <span style="font-size:0.74rem;color:var(--text);min-width:155px;max-width:155px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${v}">${v}</span>
+        <div style="flex:1;height:20px;background:var(--card-border);border-radius:4px;overflow:hidden;">
+          <div style="height:100%;width:${w}%;background:${PAL[i%PAL.length]};border-radius:4px;display:flex;align-items:center;padding-left:6px;">
+            ${w>9?`<span style="font-size:0.65rem;font-weight:600;color:#001A14">${w}%</span>`:''}
+          </div>
+        </div>
+        <span style="font-size:0.72rem;color:var(--text-muted);min-width:65px;text-align:right">${n} (${w}%)</span>
+      </div>`;
+    }).join('');
+    html += `<div class="chart-card"><div class="chart-card-title">${label} <span>N=${tot}</span></div>${bars}</div>`;
+  });
+  document.getElementById('demoCharts').innerHTML = html || '<div class="empty-state">No data for current filters.</div>';
+}
+
+// ─── SPACE ────────────────────────────────────────────────────────────────────
+function renderSpace() {
+  const rows = filteredRows;
+  let html = '';
+
+  // Supply
+  html += `<div class="chart-card"><div class="chart-card-title">Space Supply Adequacy</div><div class="stacked-chart">`;
+  C.SSUPPLY.forEach((col,i) => html += supplyBar(C.SSUPPLY_L[i], supplyDist(rows,col)));
+  html += `</div><div class="chart-legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#17E88F"></div>Right amount</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#D2785A"></div>Too little</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#DBD99A"></div>Too much</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#CAD1D3"></div>None</div>
+  </div></div>`;
+
+  // Functionality
+  const fd = C.SFUNC.map((col,i) => ({label:C.SFUNC_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
+  html += `<div class="chart-card"><div class="chart-card-title">Functionality Ratings <span>avg out of 5</span></div><div class="stacked-chart">`;
+  fd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
+  html += `</div>${likertLegend()}</div>`;
+
+  // Design
+  const dd = C.SDES.map((col,i) => ({label:C.SDES_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
+  html += `<div class="chart-card"><div class="chart-card-title">Design Ratings <span>avg out of 5</span></div><div class="stacked-chart">`;
+  dd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
+  html += `</div>${likertLegend()}</div>`;
+
+  // Vibe
+  const vd = C.VIBE.map((col,i) => ({label:C.VIBE_L[i],...likertDist(rows,col)}));
+  html += `<div class="chart-card"><div class="chart-card-title">Office Vibe Preference</div><div class="stacked-chart">`;
+  vd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
+  html += `</div>${likertLegend()}</div>`;
+
+  document.getElementById('spaceContent').innerHTML = html;
+}
+
+// ─── RELATIONSHIPS ────────────────────────────────────────────────────────────
+function renderRel() {
+  const rows = filteredRows;
+  let html = '';
+
+  // Relationships
+  const rd = C.REL.map((col,i) => ({label:C.REL_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
+  html += `<div class="chart-card"><div class="chart-card-title">Workplace Relationships <span>avg 1–5</span></div><div class="stacked-chart">`;
+  rd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
+  html += `</div>${likertLegend()}</div>`;
+
+  // Learning
+  const ld = C.LEARN.map((col,i) => ({label:C.LEARN_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
+  html += `<div class="chart-card"><div class="chart-card-title">Learning Opportunity Importance</div><div class="stacked-chart">`;
+  ld.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
+  html += `</div>${likertLegend()}</div>`;
+
+  // Social
+  const sd = C.SOC.map((col,i) => ({label:C.SOC_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
+  html += `<div class="chart-card"><div class="chart-card-title">Social Opportunity Importance</div><div class="stacked-chart">`;
+  sd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
+  html += `</div>${likertLegend()}</div>`;
+
+  // Hosting
+  const hostColors = ['#003F2D','#17E88F','#80BBAD','#DBD99A','#D2785A'];
+  const hd = C.HOST.map((col,i) => {
+    const d2={5:0,4:0,3:0,2:0,1:0}; let t=0;
+    rows.forEach(r => { const v=parseHostFreq(gv(r,col)); if(v!==null){d2[v]++;t++;} });
+    const a = t ? (5*d2[5]+4*d2[4]+3*d2[3]+2*d2[2]+1*d2[1])/t : null;
+    return {label:C.HOST_L[i], d:d2, t, avg:a};
+  }).sort((a,b)=>(b.avg||0)-(a.avg||0));
+  html += `<div class="chart-card"><div class="chart-card-title">Hosting Frequency at Office</div><div class="stacked-chart">`;
+  hd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
+  html += `</div><div class="chart-legend">${['Always','Often','Occasionally','Rarely','Never'].map((l,i)=>`<div class="legend-item"><div class="legend-dot" style="background:${hostColors[i]}"></div>${l}</div>`).join('')}</div></div>`;
+
+  // Time splits
+  const ti = avg(numVals(rows,C.TIME_I))||0;
+  const to = avg(numVals(rows,C.TIME_O))||0;
+  const cs = avg(numVals(rows,C.COL_S))||0;
+  const cu = avg(numVals(rows,C.COL_U))||0;
+  const ms = avg(numVals(rows,C.MTG_S))||0;
+  const mm = avg(numVals(rows,C.MTG_M))||0;
+  const ml = avg(numVals(rows,C.MTG_L))||0;
+
+  html += `<div class="two-col">
+    <div class="chart-card"><div class="chart-card-title">Work Time Split <span>avg %</span></div>
+      <div class="h-bar-chart">${hBar('Individual work',ti)}${hBar('Time with others',to)}</div></div>
+    <div class="chart-card"><div class="chart-card-title">Collaboration Type <span>avg %</span></div>
+      <div class="h-bar-chart">${hBar('Scheduled',cs)}${hBar('Unscheduled / spontaneous',cu)}</div></div>
+  </div>
+  <div class="chart-card"><div class="chart-card-title">Meeting Size Mix <span>avg %</span></div>
+    <div class="h-bar-chart">${hBar('Small (2–5 people)',ms)}${hBar('Medium (6–10 people)',mm)}${hBar('Large (11–16 people)',ml)}</div>
+  </div>`;
+
+  document.getElementById('relContent').innerHTML = html;
+}
+
+// ─── WVP ──────────────────────────────────────────────────────────────────────
+function renderWVP() {
+  const rows = filteredRows;
+  const wvpD = C.WVP.map((col,i) => ({label:C.WVP_L[i],...likertDist(rows,col)}));
+  const avgs = wvpD.map(d => d.avg).filter(v => v !== null);
+  const comp = avgs.length ? (avg(avgs)*20).toFixed(0) : '—';
+  const sorted = [...wvpD].sort((a,b)=>(b.avg||0)-(a.avg||0));
+
+  let html = `<div class="cards-grid">
+    <div class="stat-card"><div class="stat-card-value">${comp}</div><div class="stat-card-label">WVP Composite Score</div><div class="stat-card-sub">Out of 100</div></div>
+    <div class="stat-card"><div class="stat-card-value">${sorted[0]?.avg?.toFixed(2)||'—'}</div><div class="stat-card-label">Highest — ${sorted[0]?.label||'—'}</div><div class="stat-card-sub">Avg score out of 5</div></div>
+    <div class="stat-card"><div class="stat-card-value">${sorted[sorted.length-1]?.avg?.toFixed(2)||'—'}</div><div class="stat-card-label">Lowest — ${sorted[sorted.length-1]?.label||'—'}</div><div class="stat-card-sub">Priority opportunity</div></div>
+  </div>`;
+
+  html += `<div class="chart-card"><div class="chart-card-title">WVP Dimensions — all items <span>avg 1–5</span></div><div class="stacked-chart">`;
+  sorted.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
+  html += `</div>${likertLegend()}</div>`;
+
+  document.getElementById('wvpContent').innerHTML = html;
+}
+
+// ─── FUTURE ───────────────────────────────────────────────────────────────────
+function renderFuture() {
+  const rows = filteredRows;
+  let html = '';
+
+  // Q45 donut
+  const locOrder = ['Fully remote','Mostly home','Equal mix','Mostly office','Fully office'];
+  const locColors = ['#D2785A','#DBD99A','#80BBAD','#17E88F','#003F2D'];
+  const lc = countBy(rows, C.Q45);
+  const locTotal = Object.values(lc).reduce((s,v)=>s+v,0);
+  const locEnts = locOrder.map(k => ({label:k, n:lc[k]||0})).filter(e=>e.n>0);
+  const locSegs = locEnts.map(e => ({value:e.n, color:locColors[locOrder.indexOf(e.label)]}));
+  const svg = donutSVG(locSegs,140);
+  const locLeg = locEnts.map(e => {
+    const ci = locOrder.indexOf(e.label);
+    return `<div class="donut-legend-item"><div class="donut-legend-swatch" style="background:${locColors[ci]}"></div>${e.label}<span class="donut-legend-pct">${pct(e.n,locTotal)}%</span></div>`;
+  }).join('');
+
+  html += `<div class="chart-card"><div class="chart-card-title">Preferred Future Work Location</div>
+    <div class="donut-wrap">
+      <div class="donut-svg-wrap">${svg}<div class="donut-center-text"><div class="donut-center-value">${locTotal}</div><div class="donut-center-label">responses</div></div></div>
+      <div class="donut-legend">${locLeg}</div>
+    </div></div>`;
+
+  // Remote benefits
+  const rb = C.RBEN.map((col,i)=>({label:C.RBEN_L[i],p:cbPct(rows,col)})).sort((a,b)=>b.p-a.p);
+  html += `<div class="chart-card"><div class="chart-card-title">Remote Work Benefits <span>% who selected</span></div><div class="h-bar-chart">`;
+  rb.forEach(({label,p})=>html+=hBar(label,p));
+  html += `</div></div>`;
+
+  // Office benefits
+  const ob = C.OBEN.map((col,i)=>({label:C.OBEN_L[i],p:cbPct(rows,col)})).sort((a,b)=>b.p-a.p);
+  html += `<div class="chart-card"><div class="chart-card-title">Office Benefits <span>% who selected</span></div><div class="h-bar-chart">`;
+  ob.forEach(({label,p})=>html+=hBar(label,p));
+  html += `</div></div>`;
+
+  // Trade-offs
+  const td = C.TRADE.map((col,i)=>({label:C.TRADE_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
+  html += `<div class="chart-card"><div class="chart-card-title">Trade-off Preferences</div><div class="stacked-chart">`;
+  td.forEach(d=>html+=stackedBar(d.label,d.d,d.t,d.avg));
+  html += `</div>${likertLegend()}</div>`;
+
+  // Amenities
+  const ammData = C.AMM.map((col,i) => {
+    let off=0,bld=0,nbr=0,not=0,tot=0;
+    rows.forEach(r => {
+      const v = gv(r,col).toLowerCase();
+      if(!v) return; tot++;
+      if(v.includes('office space')||v.includes('within the office')) off++;
+      else if(v.includes('building')||v.includes('site')) bld++;
+      else if(v.includes('neighborhood')||v.includes('surrounding')) nbr++;
+      else if(v.includes('not important')) not++;
+    });
+    return {label:C.AMM_L[i],off,bld,nbr,not,tot};
+  }).sort((a,b)=>(b.off/Math.max(b.tot,1))-(a.off/Math.max(a.tot,1)));
+
+  html += `<div class="chart-card"><div class="chart-card-title">Amenity Location Importance</div><div class="stacked-chart">`;
+  ammData.forEach(({label,off,bld,nbr,not,tot}) => {
+    if(!tot) return;
+    const segs = [[off,'#17E88F','Within office'],[bld,'#80BBAD','Within building'],[nbr,'#DBD99A','Neighborhood'],[not,'#D2785A','Not important']].map(([n,color,name]) => {
+      const w=pct(n,tot); if(!w) return '';
+      return `<div class="bar-seg" style="width:${w}%;background:${color};color:rgba(0,0,0,0.7)" title="${name}: ${w}%">${w>8?w+'%':''}</div>`;
+    }).join('');
+    html += `<div class="bar-row"><span class="bar-label" title="${label}">${label}</span><div class="bar-track">${segs}</div></div>`;
+  });
+  html += `</div><div class="chart-legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#17E88F"></div>Within office</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#80BBAD"></div>Within building</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#DBD99A"></div>Neighborhood</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#D2785A"></div>Not important</div>
+  </div></div>`;
+
+  document.getElementById('futureContent').innerHTML = html;
+}
+
+// ─── ATTENDANCE DRIVERS ───────────────────────────────────────────────────────
+function renderAttendance() {
+  const rows = filteredRows;
+  const gp = col => cbPct(rows,col);
+  const dims = [
+    { icon:'⚙️', name:'Functionality', score: avg([gp('OPOTBEN.TECH'),gp('OPOTBEN.OCONFIG')])||0, items:['Better technology','Custom workspace setup'] },
+    { icon:'🤝', name:'Teamwork', score: avg([gp('OPOTBEN.COMMS'),gp('OPOTBEN.OCONNECT')])||0, items:['Better communication','Office connections'] },
+    { icon:'👁️', name:'Exposure', score: avg([gp('OPOTBEN.LEADVIS'),gp('OPOTBEN.GATHER')])||0, items:['Leadership visibility','Team gatherings'] },
+    { icon:'✨', name:'Experience', score: avg([gp('OPOTBEN.BWLB'),gp('OPOTBEN.OPRIVATE'),gp('OPOTBEN.ODISTRACT')])||0, items:['Work-life separation','Private workspace','Fewer distractions'] },
+  ];
+  const top = [...dims].sort((a,b)=>b.score-a.score)[0];
+  const avgSel = rows.length ? (rows.reduce((s,r)=>s+C.OBEN.filter(col=>gv(r,col)!=='').length,0)/rows.length).toFixed(1) : '—';
+
+  let html = `<div class="cards-grid">
+    <div class="stat-card"><div class="stat-card-value">${top?.name||'—'}</div><div class="stat-card-label">Top Attendance Driver</div><div class="stat-card-sub">${top?Math.round(top.score)+'% of respondents':''}</div></div>
+    <div class="stat-card"><div class="stat-card-value">${avgSel}</div><div class="stat-card-label">Avg Reasons Selected</div><div class="stat-card-sub">Per respondent (9 options)</div></div>
+  </div><div class="driver-cards">`;
+
+  dims.forEach(({icon,name,score,items}) => {
+    const w = Math.round(score);
+    const bc = score>60?'#17E88F':score>35?'#80BBAD':'#D2785A';
+    html += `<div class="driver-card"><div class="driver-icon">${icon}</div><div class="driver-name">${name}</div>
+      <div class="driver-score">${w}%</div>
+      <div class="driver-bar"><div class="driver-bar-fill" style="width:${w}%;background:${bc}"></div></div>
+      <div class="driver-items">${items.map(l=>`<div class="driver-item">${l}</div>`).join('')}</div></div>`;
+  });
+
+  html += `</div>`;
+
+  // Full breakdown
+  const ob2 = C.OBEN.map((col,i)=>({label:C.OBEN_L[i],p:gp(col)})).sort((a,b)=>b.p-a.p);
+  html += `<div class="chart-card"><div class="chart-card-title">All Office Benefits — Full Breakdown</div><div class="h-bar-chart">`;
+  ob2.forEach(({label,p})=>html+=hBar(label,p));
+  html += `</div></div>`;
+
+  document.getElementById('attendanceContent').innerHTML = html;
+}
+
+// ─── WORK STYLES ──────────────────────────────────────────────────────────────
+function renderWorkStyles() {
+  const rows = filteredRows;
+  const dims = [
+    {label:'Solo / Individual Work', col:C.TIME_I},
+    {label:'Time with Others', col:C.TIME_O},
+    {label:'Scheduled Collaboration', col:C.COL_S},
+    {label:'Spontaneous Collaboration', col:C.COL_U},
+    {label:'Small-Group Meetings (2–5)', col:C.MTG_S},
+    {label:'Medium Meetings (6–10)', col:C.MTG_M},
+    {label:'Large Meetings (11–16)', col:C.MTG_L},
+  ].map(d => ({...d, val: avg(numVals(rows,d.col))||0}));
+
+  let html = `<div class="cards-grid">
+    <div class="stat-card"><div class="stat-card-value">${Math.round(dims[0].val)}%</div><div class="stat-card-label">Solo Time (avg)</div><div class="stat-card-sub">Individual focus work</div></div>
+    <div class="stat-card"><div class="stat-card-value">${Math.round(dims[1].val)}%</div><div class="stat-card-label">Collaborative Time (avg)</div><div class="stat-card-sub">Time spent with others</div></div>
+    <div class="stat-card"><div class="stat-card-value">${Math.round(dims[2].val)}%</div><div class="stat-card-label">Scheduled Collab</div><div class="stat-card-sub">Planned meetings</div></div>
+    <div class="stat-card"><div class="stat-card-value">${Math.round(dims[3].val)}%</div><div class="stat-card-label">Spontaneous Collab</div><div class="stat-card-sub">Unscheduled interactions</div></div>
+  </div>`;
+
+  html += `<div class="chart-card"><div class="chart-card-title">Work Style Profile — Average % Allocation</div>`;
+  dims.forEach(({label,val}) => {
+    const w = Math.round(val);
+    html += `<div class="ws-row"><span class="ws-label">${label}</span><div class="ws-track"><div class="ws-fill" style="width:${w}%"></div><span class="ws-pct">${w}%</span></div></div>`;
+  });
+  html += `</div>`;
+
+  // Bucket distribution
+  const bks = ['0–25%','26–50%','51–75%','76–100%'];
+  const bkCounts = [0,0,0,0];
+  numVals(rows,C.TIME_I).forEach(v => { bkCounts[v<=25?0:v<=50?1:v<=75?2:3]++; });
+  const bkT = bkCounts.reduce((s,v)=>s+v,0);
+  html += `<div class="chart-card"><div class="chart-card-title">Individual Work Time Distribution</div><div class="h-bar-chart">`;
+  bks.forEach((b,i) => html += hBar(b + ' individual time', bkT ? pct(bkCounts[i],bkT) : 0));
+  html += `</div></div>`;
+
+  document.getElementById('workStylesContent').innerHTML = html;
+}
+
+// ─── SENTIMENT ────────────────────────────────────────────────────────────────
+function renderSentiment() {
+  const rows = filteredRows;
+  let html = '';
+
+  // NPS
+  let pro=0,pas=0,det=0,nT=0;
+  rows.forEach(r => {
+    const v = parseScore(gv(r,C.ENPS));
+    if(v===null) return; nT++;
+    if(v>=9) pro++; else if(v>=7) pas++; else det++;
+  });
+  const nps = nT ? Math.round((pro/nT - det/nT)*100) : null;
+  const npsCol = nps===null?'var(--text-muted)':nps>=30?'#17E88F':nps>=0?'#80BBAD':'#D2785A';
+  const pP=nT?pct(pro,nT):0, paP=nT?pct(pas,nT):0, dP=nT?pct(det,nT):0;
+
+  // Satisfaction
+  const satS = rows.map(r=>parseScore(gv(r,C.SAT))).filter(v=>v!==null);
+  const satA = satS.length ? (satS.reduce((s,v)=>s+v,0)/satS.length).toFixed(1) : null;
+  const satCol = satA===null?'var(--text-muted)':satA>=8?'#17E88F':satA>=6?'#80BBAD':'#D2785A';
+
+  // WVP composite
+  const wAvgs = C.WVP.map(col => { const v=rows.map(r=>parseLikert(gv(r,col))).filter(v=>v!==null); return v.length?v.reduce((s,x)=>s+x,0)/v.length:null; }).filter(v=>v!==null);
+  const wComp = wAvgs.length ? (avg(wAvgs)*20).toFixed(0) : '—';
+
+  html += `<div class="cards-grid">
+    <div class="stat-card"><div class="stat-card-value" style="color:${npsCol}">${nps!==null?nps:'—'}</div><div class="stat-card-label">Employee NPS</div><div class="stat-card-sub">${nT} responses · ${pP}% promoters / ${dP}% detractors</div></div>
+    <div class="stat-card"><div class="stat-card-value" style="color:${satCol}">${satA!==null?satA+'/10':'—'}</div><div class="stat-card-label">Avg Satisfaction</div><div class="stat-card-sub">${satS.length} responses</div></div>
+    <div class="stat-card"><div class="stat-card-value">${wComp}</div><div class="stat-card-label">WVP Composite</div><div class="stat-card-sub">Out of 100</div></div>
+  </div>`;
+
+  // NPS breakdown
+  html += `<div class="chart-card"><div class="chart-card-title">eNPS Breakdown</div><div class="nps-grid">
+    <div><div class="nps-score-big" style="color:${npsCol}">${nps!==null?nps:'—'}</div><div class="nps-score-label">Net Promoter Score</div><div style="margin-top:0.5rem;font-size:0.72rem;color:var(--text-muted)">${nT} responses</div></div>
+    <div class="nps-breakdown">
+      <div class="nps-tier"><span class="nps-tier-label">Promoters (9–10)</span><div class="nps-tier-bar" style="background:linear-gradient(90deg,#17E88F ${pP}%,var(--card-border) ${pP}%)"></div><span class="nps-tier-pct" style="color:#17E88F">${pP}%</span></div>
+      <div class="nps-tier"><span class="nps-tier-label">Passives (7–8)</span><div class="nps-tier-bar" style="background:linear-gradient(90deg,#80BBAD ${paP}%,var(--card-border) ${paP}%)"></div><span class="nps-tier-pct" style="color:#80BBAD">${paP}%</span></div>
+      <div class="nps-tier"><span class="nps-tier-label">Detractors (0–6)</span><div class="nps-tier-bar" style="background:linear-gradient(90deg,#D2785A ${dP}%,var(--card-border) ${dP}%)"></div><span class="nps-tier-pct" style="color:#D2785A">${dP}%</span></div>
+    </div></div></div>`;
+
+  // Satisfaction distribution
+  if(satS.length) {
+    const satDist = Array.from({length:11},(_,i)=>10-i).map(s=>({s,n:satS.filter(x=>x===s).length})).filter(d=>d.n>0);
+    html += `<div class="chart-card"><div class="chart-card-title">Satisfaction Score Distribution</div><div class="h-bar-chart">`;
+    satDist.forEach(({s,n}) => {
+      const p2=pct(n,satS.length), c2=s>=8?'#17E88F':s>=6?'#80BBAD':'#D2785A';
+      html += `<div class="h-bar-row">
+        <span style="font-size:0.76rem;color:var(--text);min-width:55px;flex-shrink:0">Score ${s}</span>
+        <div style="flex:1;height:20px;background:var(--card-border);border-radius:4px;overflow:hidden;">
+          <div style="height:100%;width:${p2}%;background:${c2};border-radius:4px;display:flex;align-items:center;padding-left:6px;">
+            ${p2>9?`<span style="font-size:0.65rem;font-weight:600;color:#001A14">${p2}%</span>`:''}
+          </div>
+        </div>
+        <span style="font-size:0.72rem;color:var(--text-muted);min-width:60px;text-align:right">${n} (${p2}%)</span>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  // Verbatims
+  const pos = rows.map(r=>gv(r,C.Q42)).filter(v=>v&&v.length>10);
+  const neg = rows.map(r=>gv(r,C.Q43)).filter(v=>v&&v.length>10);
+
+  if(pos.length) {
+    html += `<div class="chart-card"><div class="chart-card-title">What Employees Look Forward To <span>sample verbatims</span></div><div class="verbatim-list">`;
+    pos.slice(0,8).forEach(v=>html+=`<div class="verbatim-item">"${esc(v)}"</div>`);
+    if(pos.length>8) html+=`<div style="font-size:0.72rem;color:var(--text-muted);padding-top:0.4rem">+ ${pos.length-8} more responses</div>`;
+    html += `</div></div>`;
+  }
+  if(neg.length) {
+    html += `<div class="chart-card"><div class="chart-card-title">What Employees Don't Look Forward To <span>sample verbatims</span></div><div class="verbatim-list">`;
+    neg.slice(0,8).forEach(v=>html+=`<div class="verbatim-item neg">"${esc(v)}"</div>`);
+    if(neg.length>8) html+=`<div style="font-size:0.72rem;color:var(--text-muted);padding-top:0.4rem">+ ${neg.length-8} more responses</div>`;
+    html += `</div></div>`;
+  }
+  if(!pos.length && !neg.length) {
+    html += `<div class="field-notice">No verbatim responses found. Columns Q42.A1 and Q43.A1 may be empty in this dataset.</div>`;
+  }
+
+  document.getElementById('sentimentContent').innerHTML = html;
+}
+
+// ─── SAMPLE DATA ──────────────────────────────────────────────────────────────
+function loadSampleData() {
+  document.getElementById('uploadError').style.display = 'none';
+
+  const depts = ['GC & Concrete Operations','Accounting and Payroll','IT','Risk and Safety','Marketing and Business Development','P&C and L&D','Administration','GC & Concrete Estimating','Officers'];
+  const roles = ['Employee','Manager','Leadership'];
+  const gens = ['Born before 1965','Born 1965-1980','Born 1981-1996','Born 1997 or after'];
+  const tens = ['0-5 years','6-10 years','11-20 years','21-30 years','30+ years'];
+  const freqs = ['Every day','4 days per week','2-3 days per week','1 day per week','Less than one day per week','Never'];
+  const supply = ['Right amount','Too little','Too much','None'];
+  const l5 = ['Strongly Agree','Agree','Neither Agree nor Disagree','Disagree','Strongly Disagree'];
+  const hostF = ['Always','Often','Occasionally','Rarely','Never'];
+  const q45o = ['Fully remote','Mostly home','Equal mix','Mostly office','Fully office'];
+  const ammO = ['Important to have within the office space','Important to have within the building/site','Important to have within the surrounding neighborhood area','Not important'];
+
+  function rnd(arr,w){
+    if(!w) return arr[Math.floor(Math.random()*arr.length)];
+    let r=Math.random()*w.reduce((s,v)=>s+v,0);
+    for(let i=0;i<arr.length;i++){r-=w[i];if(r<=0)return arr[i];}
+    return arr[arr.length-1];
+  }
+  function ri(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+  function pair(){const a=ri(20,80);return[a,100-a];}
+  function triple(){const a=ri(20,60),b=ri(10,Math.max(10,100-a-10));return[a,b,100-a-b];}
+
+  const posQ=['Collaborating with teammates and getting things done together.','The energy and face-to-face interactions.','Access to better technology than at home.','Catching up with colleagues and building relationships.','Structure of the office keeps me focused.','Mentorship opportunities and leadership visibility.','Team lunches and spontaneous conversations.','Dedicated quiet spaces when I need to focus.','The sense of community and belonging.','Whiteboard sessions and real-time brainstorming.','Feeling part of something bigger.'];
+  const negQ=['The commute is long and expensive.','Open floor plan noise makes it hard to concentrate.','Not enough private focus rooms.','The temperature is always too cold.','Parking is stressful.','The office feels dated and uninspiring.','Too many meetings that could be emails.','Hard to find quiet space for deep work.','Limited flexibility compared to home.','Commute takes away from family time.'];
+
+  // All columns
+  const cols = [
+    C.DEPT,C.ROLE,C.GEN,C.TENURE,C.FREQOFF,
+    ...C.SSUPPLY,...C.SFUNC,...C.SDES,...C.VIBE,
+    C.TIME_I,C.TIME_O,C.COL_S,C.COL_U,C.MTG_S,C.MTG_M,C.MTG_L,
+    ...C.REL,...C.LEARN,...C.SOC,...C.HOST,...C.WVP,
+    C.SAT,C.ENPS,C.Q42,C.Q43,C.Q45,
+    ...C.RBEN,...C.OBEN,...C.TRADE,...C.AMM
+  ];
+
+  const N = 140;
+  const dataRows = [];
+  for(let i=0;i<N;i++){
+    const dept = rnd(depts,[20,10,8,7,12,8,10,15,10]);
+    const role = rnd(roles,[70,20,10]);
+    const gen = rnd(gens,[5,20,45,30]);
+    const ten = rnd(tens,[35,25,20,12,8]);
+    const isField = dept==='GC & Concrete Operations'||dept==='GC & Concrete Estimating';
+    const freq = isField ? rnd(['Less than one day per week','Never','1 day per week'],[40,30,30]) : rnd(freqs.slice(0,4),[20,25,35,20]);
+    const row = [dept,role,gen,ten,freq];
+
+    // Supply
+    C.SSUPPLY.forEach(()=>row.push(isField&&Math.random()>0.3?'':rnd(supply,[50,30,12,8])));
+    // Func + Design + Vibe
+    [...C.SFUNC,...C.SDES,...C.VIBE].forEach(()=>row.push(isField&&Math.random()>0.4?'':rnd(l5,[15,40,25,15,5])));
+    // Time splits
+    const [ti,to]=pair(); row.push(ti,to);
+    const [cs,cu]=pair(); row.push(cs,cu);
+    const [ms,mm,ml]=triple(); row.push(ms,mm,ml);
+    // Rel, Learn, Soc
+    [...C.REL,...C.LEARN,...C.SOC].forEach(()=>row.push(rnd(l5,[20,40,20,15,5])));
+    // Host
+    C.HOST.forEach(()=>row.push(isField?'':rnd(hostF,[10,25,40,20,5])));
+    // WVP
+    C.WVP.forEach(()=>row.push(rnd(l5,[18,42,22,12,6])));
+    // Scores
+    const sat=ri(5,10); row.push(sat===10?'10 - Extremely satisfied':String(sat));
+    const nps=ri(3,10); row.push(nps===10?'10 - Extremely likely':String(nps));
+    // Verbatims
+    row.push(Math.random()>0.3?rnd(posQ):'');
+    row.push(Math.random()>0.4?rnd(negQ):'');
+    // Q45
+    row.push(rnd(q45o,[5,15,35,30,15]));
+    // Checkboxes
+    C.RBEN.forEach(col=>row.push(Math.random()>0.55?col:''));
+    C.OBEN.forEach(col=>row.push(Math.random()>0.5?col:''));
+    // Tradeoffs
+    C.TRADE.forEach(()=>row.push(rnd(l5,[15,38,25,15,7])));
+    // Amenities
+    C.AMM.forEach(()=>row.push(rnd(ammO,[45,25,20,10])));
+    dataRows.push(row);
+  }
+
+  const allCsvRows = [cols, cols, cols, cols, cols, ...dataRows];
+  const csvText = allCsvRows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  if(parseCSV(csvText)) initApp();
+}
+</script>
 </body>
 </html>

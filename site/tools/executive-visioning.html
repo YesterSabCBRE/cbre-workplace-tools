@@ -234,6 +234,9 @@
   </div>
 
   <button class="analyze-btn" id="analyze-btn" onclick="analyzeSession()">⚡ Analyze Session</button>
+  <button class="analyze-btn" id="demo-btn" onclick="runDemo()" style="margin-top:0.75rem;background:transparent;border:1px solid rgba(23,232,143,0.3);color:var(--accent);font-size:0.85rem;">
+    🔍 Preview with demo data — no files needed
+  </button>
   <div class="error-msg" id="error-msg"></div>
 
   <div class="loading-state" id="loading-state">
@@ -372,6 +375,16 @@ Include all planning levers from the session (typically 4-6). chart_data must us
 
   setLoading(false);
   renderResults(analysisData);
+}
+
+function runDemo() {
+  document.getElementById('client-name').value      = 'Acme Financial';
+  document.getElementById('session-date').value     = 'May 14, 2026';
+  document.getElementById('num-participants').value = '18';
+  document.getElementById('facilitator').value      = 'Yester Sabondzhyan';
+  const data = buildPlaceholderData('Acme Financial', 'May 14, 2026', 18, 'Yester Sabondzhyan');
+  analysisData = data;
+  renderResults(data);
 }
 
 function buildPlaceholderData(client, date, participants, facilitator) {

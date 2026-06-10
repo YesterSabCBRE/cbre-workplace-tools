@@ -349,6 +349,9 @@
   <button class="analyze-btn" id="analyze-btn" onclick="analyzeInterviews()">
     ⚡ Analyze Interviews
   </button>
+  <button class="analyze-btn" id="demo-btn" onclick="runDemo()" style="margin-top:0.75rem;background:transparent;border:1px solid rgba(23,232,143,0.3);color:var(--accent);font-size:0.85rem;">
+    🔍 Preview with demo data — no files needed
+  </button>
   <div class="error-msg" id="error-msg"></div>
 
   <!-- LOADING -->
@@ -516,6 +519,17 @@ Include 4-6 themes and 4-5 key takeaways. Base prevalence_pct on how many interv
     setLoading(false);
     renderResults(analysisData);
   }
+}
+
+function runDemo() {
+  const data = buildPlaceholderData('Acme Financial', 'Workplace Strategy 2026', 'May 2026', 14);
+  document.getElementById('client-name').value      = 'Acme Financial';
+  document.getElementById('engagement-name').value  = 'Workplace Strategy 2026';
+  document.getElementById('engagement-date').value  = 'May 2026';
+  document.getElementById('num-interviews').value   = '14';
+  analysisData = data;
+  hideError();
+  renderResults(data);
 }
 
 function buildPlaceholderData(client, engagement, date, n) {
