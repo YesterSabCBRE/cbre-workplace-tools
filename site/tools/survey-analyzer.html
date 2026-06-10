@@ -223,7 +223,7 @@ nav {
 /* STACKED BARS */
 .stacked-chart { display: flex; flex-direction: column; gap: 0.6rem; }
 .bar-row { display: flex; align-items: center; gap: 0.7rem; }
-.bar-label { font-size: 0.76rem; color: var(--text); min-width: 215px; max-width: 215px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+.bar-label { font-size: 0.76rem; color: var(--text); min-width: 215px; max-width: 240px; white-space: normal; line-height: 1.4; flex-shrink: 0; }
 .bar-track { flex: 1; height: 26px; display: flex; border-radius: 4px; overflow: hidden; min-width: 0; }
 .bar-seg { display: flex; align-items: center; justify-content: center; font-size: 0.66rem; font-weight: 600; color: rgba(0,0,0,0.7); white-space: nowrap; overflow: hidden; }
 .bar-seg-lt { color: rgba(255,255,255,0.85); }
@@ -237,7 +237,7 @@ nav {
 /* H-BAR */
 .h-bar-chart { display: flex; flex-direction: column; gap: 0.5rem; }
 .h-bar-row { display: flex; align-items: center; gap: 0.65rem; }
-.h-bar-label { font-size: 0.76rem; color: var(--text); min-width: 200px; max-width: 200px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-bar-label { font-size: 0.76rem; color: var(--text); min-width: 200px; max-width: 240px; flex-shrink: 0; white-space: normal; line-height: 1.4; }
 
 /* DONUT */
 .donut-wrap { display: flex; align-items: center; gap: 2rem; flex-wrap: wrap; }
@@ -264,6 +264,28 @@ nav {
 .verbatim-list { display: flex; flex-direction: column; gap: 0.55rem; }
 .verbatim-item { background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-left: 3px solid var(--accent); border-radius: 6px; padding: 0.7rem 1rem; font-size: 0.81rem; color: var(--text); line-height: 1.6; font-style: italic; }
 .verbatim-item.neg { border-left-color: #D2785A; }
+.verbatim-dept { display: inline-block; font-size: 0.62rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); background: rgba(255,255,255,0.06); border: 1px solid var(--card-border); border-radius: 100px; padding: 0.1rem 0.55rem; margin-top: 0.35rem; margin-left: 0.35rem; font-style: normal; }
+.verbatim-search { width: 100%; max-width: 420px; background: rgba(255,255,255,0.06); border: 1px solid var(--card-border); border-radius: 8px; padding: 0.5rem 0.85rem; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.82rem; transition: border-color 0.2s; margin-bottom: 0.85rem; display: block; }
+.verbatim-search:focus { outline: none; border-color: rgba(23,232,143,0.4); }
+.verbatim-search::placeholder { color: var(--text-muted); }
+
+/* METHODOLOGY PANEL */
+.methodology-panel { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); margin-bottom: 1.5rem; overflow: hidden; }
+.methodology-toggle { list-style: none; display: flex; align-items: center; gap: 0.5rem; padding: 0.9rem 1.25rem; cursor: pointer; font-size: 0.88rem; font-weight: 600; color: var(--text-muted); transition: color 0.2s; }
+.methodology-toggle::-webkit-details-marker { display: none; }
+.methodology-toggle:hover { color: var(--text); }
+.methodology-panel[open] .methodology-toggle { color: var(--text); border-bottom: 1px solid var(--card-border); }
+.methodology-content { padding: 1.25rem; }
+.methodology-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.methodology-item { background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 8px; padding: 1rem; }
+.methodology-icon { font-size: 1.4rem; margin-bottom: 0.4rem; }
+.methodology-title { font-size: 0.82rem; font-weight: 600; color: var(--text); margin-bottom: 0.45rem; }
+.methodology-desc { font-size: 0.75rem; color: var(--text-muted); line-height: 1.6; }
+.methodology-desc strong { color: var(--text); font-weight: 600; }
+@media (max-width: 680px) { .methodology-grid { grid-template-columns: 1fr; } }
+
+/* MIN-N WARNING */
+.min-n-warn { font-size: 0.7rem; color: #DBD99A; background: rgba(219,217,154,0.08); border: 1px solid rgba(219,217,154,0.2); border-radius: 6px; padding: 0.4rem 0.65rem; margin-bottom: 0.5rem; line-height: 1.4; }
 
 /* DRIVER CARDS */
 .driver-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.2rem; }
@@ -606,6 +628,30 @@ nav {
       </ol>
     </div>
 
+    <!-- Methodology explanation -->
+    <details class="methodology-panel">
+      <summary class="methodology-toggle">📖 How to interpret this report</summary>
+      <div class="methodology-content">
+        <div class="methodology-grid">
+          <div class="methodology-item">
+            <div class="methodology-icon">📊</div>
+            <div class="methodology-title">Likert Scale (1–5)</div>
+            <div class="methodology-desc">Most questions use a 5-point agreement scale: <strong>5 = Strongly Agree</strong> down to <strong>1 = Strongly Disagree</strong>. Averages above <strong>3.5</strong> indicate positive sentiment; below <strong>2.5</strong> flags a concern area. Charts display response distributions with the mean score shown on the right side.</div>
+          </div>
+          <div class="methodology-item">
+            <div class="methodology-icon">🏆</div>
+            <div class="methodology-title">Employee NPS (eNPS)</div>
+            <div class="methodology-desc">Derived from a <strong>0–10</strong> likelihood-to-recommend question. <strong>Promoters</strong> score 9–10, <strong>Passives</strong> 7–8, <strong>Detractors</strong> 0–6. <strong>NPS = % Promoters − % Detractors</strong>. A score above +30 is considered strong; above +50 is excellent. High passives (>40%) warrant attention — they can shift either way.</div>
+          </div>
+          <div class="methodology-item">
+            <div class="methodology-icon">🔺</div>
+            <div class="methodology-title">Engagement Pyramid</div>
+            <div class="methodology-desc">Three nested levels of workplace experience: <strong>Physical Environment</strong> — foundational space quality and functionality; <strong>Connections</strong> — team relationships and learning; <strong>Belonging &amp; Values</strong> — culture, WVP, and organizational identity. Each level shows average Likert scores as a % of the 5-point maximum.</div>
+          </div>
+        </div>
+      </div>
+    </details>
+
     <!-- Upload zone (compact) -->
     <div class="upload-compact" id="uploadZone">
       <input type="file" id="file-input" accept=".csv" style="display:none">
@@ -650,6 +696,27 @@ nav {
         <div class="client-name-wrap">
           <span class="filter-label">Client / Project</span>
           <input type="text" id="clientName" class="client-name-input" placeholder="e.g. Morley Builders" oninput="updateClientName()">
+        </div>
+        <div class="client-name-wrap">
+          <span class="filter-label">Sector</span>
+          <select id="sectorInput" class="client-name-input" style="width:170px" onchange="updateClientName()">
+            <option value="">Select sector</option>
+            <option>Architecture &amp; Engineering</option>
+            <option>Construction</option>
+            <option>Financial Services</option>
+            <option>Government</option>
+            <option>Healthcare</option>
+            <option>Legal</option>
+            <option>Media &amp; Entertainment</option>
+            <option>Professional Services</option>
+            <option>Real Estate</option>
+            <option>Retail</option>
+            <option>Technology</option>
+          </select>
+        </div>
+        <div class="client-name-wrap">
+          <span class="filter-label">Headcount</span>
+          <input type="number" id="headcountInput" class="client-name-input" placeholder="e.g. 500" style="width:100px" min="1" oninput="updateClientName()">
         </div>
       </div>
       <div class="filters-row">
@@ -909,9 +976,12 @@ function buildFilters() {
 }
 
 function updateClientName() {
-  const name = (document.getElementById('clientName').value || '').trim();
-  const badge = document.getElementById('clientNameBadge');
-  if (badge) { badge.textContent = name || ''; badge.style.display = name ? 'inline' : 'none'; }
+  const name    = (document.getElementById('clientName').value || '').trim();
+  const sector  = (document.getElementById('sectorInput')?.value || '').trim();
+  const hc      = (document.getElementById('headcountInput')?.value || '').trim();
+  const badge   = document.getElementById('clientNameBadge');
+  const parts   = [name, sector, hc ? 'N≈' + parseInt(hc).toLocaleString() : ''].filter(Boolean);
+  if (badge) { badge.textContent = parts.join(' · '); badge.style.display = parts.length ? 'inline' : 'none'; }
 }
 
 function applyFilters() {
@@ -1415,8 +1485,14 @@ function renderFuture() {
   const svg     = donutSVG(locSegs, 120);
   const skipN   = n - locTotal;
 
+  // Store for export
+  window._lastLocData = { locEnts: locEnts.filter(e => e.n > 0), locTotal };
+
   html += `<div class="chart-card">
-    <div class="chart-card-title">Preferred Future Work Location</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+      <div class="chart-card-title" style="margin-bottom:0">Preferred Future Work Location</div>
+      <button class="export-btn" onclick="exportLocationPNG()">↓ Export PNG</button>
+    </div>
     <div class="loc-split-wrap">
       <div class="loc-donut-side">
         <div class="donut-svg-wrap" style="width:120px;height:120px">
@@ -1450,8 +1526,14 @@ function renderFuture() {
   // ── Trade-offs ────────────────────────────────────────────────────────
   const td = C.TRADE.map((col,i) => ({label:C.TRADE_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
 
+  // Store for export
+  window._lastTradeoffData = td;
+
   html += `<div class="chart-card">
-    <div class="chart-card-title">Trade-off Preferences</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+      <div class="chart-card-title" style="margin-bottom:0">Trade-off Preferences</div>
+      <button class="export-btn" onclick="exportTradeoffPNG()">↓ Export PNG</button>
+    </div>
     <p class="tradeoff-note">
       Respondents rated each trade-off on a <strong>1–5 Likert scale</strong>
       (1 = Strongly Disagree · 5 = Strongly Agree).
@@ -1802,6 +1884,173 @@ function renderWorkStyles() {
   document.getElementById('workStylesContent').innerHTML = html;
 }
 
+// ── ENPS waffle / person-icon chart ──────────────────────────────────────────
+function enpsWaffleChartSVG(pro, pas, det) {
+  const nT = pro + pas + det;
+  if (!nT) return '';
+  const totalIcons = Math.min(nT, 100);
+  const proI = Math.round((pro / nT) * totalIcons);
+  const detI = Math.round((det / nT) * totalIcons);
+  const pasI = Math.max(0, totalIcons - proI - detI);
+  const people = [
+    ...Array(proI).fill('#17E88F'),
+    ...Array(pasI).fill('#80BBAD'),
+    ...Array(detI).fill('#D2785A'),
+  ];
+  const cols = 10;
+  const rows = Math.ceil(people.length / cols);
+  const pw = 16, ph = 22, gap = 3;
+  const W = cols * (pw + gap) + gap;
+  const noteH = nT > 100 ? 16 : 0;
+  const H = rows * (ph + gap) + gap + noteH;
+  let g = '';
+  people.forEach((color, idx) => {
+    const col = idx % cols;
+    const row = Math.floor(idx / cols);
+    const x = gap + col * (pw + gap);
+    const y = gap + row * (ph + gap);
+    const cx = x + pw / 2;
+    const hr = pw * 0.3;
+    g += `<circle cx="${cx.toFixed(1)}" cy="${(y + hr + 1).toFixed(1)}" r="${hr.toFixed(1)}" fill="${color}"/>`;
+    const bx = x + pw * 0.2, by = y + hr * 2 + 3, bw = pw * 0.6, bh = ph - hr * 2 - 4;
+    g += `<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="${(bw * 0.4).toFixed(1)}" fill="${color}" opacity="0.85"/>`;
+  });
+  if (nT > 100) {
+    const ey = rows * (ph + gap) + gap + 11;
+    g += `<text x="${W/2}" y="${ey}" text-anchor="middle" font-size="8.5" fill="rgba(242,244,243,0.35)" font-family="DM Sans,Arial,sans-serif">Each icon ≈ ${(nT/100).toFixed(1)} respondents (scaled to 100)</text>`;
+  }
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${g}</svg>`;
+}
+
+// ── Verbatim search filter ─────────────────────────────────────────────────────
+function filterVerbatims(q) {
+  const term = q.toLowerCase().trim();
+  document.querySelectorAll('.verbatim-item').forEach(el => {
+    el.style.display = (!term || el.textContent.toLowerCase().includes(term)) ? '' : 'none';
+  });
+}
+
+// ── Export: Location chart as PNG ─────────────────────────────────────────────
+function exportLocationPNG() {
+  const data = window._lastLocData;
+  if (!data) return;
+  const { locEnts, locTotal } = data;
+  const visible = locEnts.filter(e => e.n > 0);
+  const W = 560, H = Math.max(220, 60 + visible.length * 30 + 20);
+  const pad = 20, dSize = 130;
+  const barX = pad + dSize + 50, barW = W - barX - 50;
+  let g = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="DM Sans,Arial,sans-serif">`;
+  g += `<text x="${pad}" y="17" font-size="9" font-weight="700" letter-spacing="1" fill="#7A9590">PREFERRED FUTURE WORK LOCATION</text>`;
+  const dcx = pad + dSize / 2, dcy = 28 + dSize / 2, dr = dSize / 2 - 16;
+  const total = visible.reduce((s, e) => s + e.n, 0);
+  if (total > 0) {
+    let ang = -Math.PI / 2;
+    visible.forEach(e => {
+      const a = (e.n / total) * 2 * Math.PI;
+      const x1 = dcx + dr * Math.cos(ang), y1 = dcy + dr * Math.sin(ang);
+      ang += a;
+      const x2 = dcx + dr * Math.cos(ang), y2 = dcy + dr * Math.sin(ang);
+      g += `<path d="M${dcx},${dcy} L${x1.toFixed(1)},${y1.toFixed(1)} A${dr},${dr} 0 ${a > Math.PI ? 1 : 0} 1 ${x2.toFixed(1)},${y2.toFixed(1)}Z" fill="${e.color}" opacity="0.9"/>`;
+    });
+    g += `<circle cx="${dcx}" cy="${dcy}" r="${(dr * 0.56).toFixed(1)}" fill="#001A14"/>`;
+  }
+  g += `<text x="${dcx}" y="${dcy - 4}" text-anchor="middle" font-size="16" font-weight="700" fill="#17E88F">${locTotal}</text>`;
+  g += `<text x="${dcx}" y="${dcy + 12}" text-anchor="middle" font-size="8" fill="#80BBAD">responses</text>`;
+  visible.forEach((e, i) => {
+    const ly = 28 + dSize + 8 + i * 14;
+    g += `<rect x="${pad}" y="${ly}" width="8" height="8" rx="2" fill="${e.color}"/>`;
+    g += `<text x="${pad + 11}" y="${ly + 7}" font-size="8.5" fill="#80BBAD">${esc(e.label)}</text>`;
+  });
+  visible.forEach((e, i) => {
+    const by = 28 + i * 30;
+    const p = locTotal ? Math.round(e.n / locTotal * 100) : 0;
+    const fw = Math.round((p / 100) * barW);
+    g += `<text x="${barX}" y="${by + 8}" font-size="9" fill="#80BBAD">${esc(e.label)}</text>`;
+    g += `<rect x="${barX}" y="${by + 12}" width="${barW}" height="13" rx="3" fill="rgba(255,255,255,0.05)"/>`;
+    if (fw > 0) g += `<rect x="${barX}" y="${by + 12}" width="${fw}" height="13" rx="3" fill="${e.color}"/>`;
+    g += `<text x="${barX + barW + 6}" y="${by + 21}" font-size="9" font-weight="600" fill="${e.color}">${p}%</text>`;
+  });
+  g += `</svg>`;
+  const blob = new Blob([g], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = W * 2; canvas.height = H * 2;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(2, 2);
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    const a = document.createElement('a'); a.download = 'work-location-preference.png'; a.href = canvas.toDataURL('image/png'); a.click();
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); };
+  img.src = url;
+}
+
+// ── Export: Trade-off pies as PNG ─────────────────────────────────────────────
+function exportTradeoffPNG() {
+  const td = window._lastTradeoffData;
+  if (!td || !td.length) return;
+  const W = 720, H = 310, pad = 20, pieSize = 130;
+  const cardW = Math.floor((W - pad * 2) / td.length);
+  let g = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="DM Sans,Arial,sans-serif">`;
+  g += `<text x="${W/2}" y="18" text-anchor="middle" font-size="12" font-weight="700" fill="#F2F4F3">Trade-off Preferences</text>`;
+  g += `<text x="${W/2}" y="33" text-anchor="middle" font-size="8.5" fill="#80BBAD">Rated on a 1–5 Likert scale · Centre = % who Agree or Strongly Agree</text>`;
+  td.forEach((d, idx) => {
+    const agreeN = (d.d[5]||0) + (d.d[4]||0);
+    const agreePct = d.t ? Math.round((agreeN / d.t) * 100) : 0;
+    const cx = pad + idx * cardW + cardW / 2, pieY = 50, cy = pieY + pieSize / 2;
+    const r = pieSize / 2 - 14;
+    // Title (max 2 lines ~22 chars each)
+    const words = d.label.split(' ');
+    let l1 = '', l2 = '';
+    words.forEach(w => { if ((l1 + ' ' + w).trim().length <= 22) l1 = (l1 + ' ' + w).trim(); else l2 = (l2 + ' ' + w).trim(); });
+    g += `<text x="${cx}" y="${pieY - 10}" text-anchor="middle" font-size="9.5" font-weight="600" fill="#F2F4F3">${esc(l1)}</text>`;
+    if (l2) g += `<text x="${cx}" y="${pieY - 0}" text-anchor="middle" font-size="9.5" font-weight="600" fill="#F2F4F3">${esc(l2)}</text>`;
+    // Pie
+    const segs = [5,4,3,2,1].map((s, i) => ({ value: d.d[s]||0, color: L5_COLORS[i] })).filter(s => s.value > 0);
+    const total = segs.reduce((s, x) => s + x.value, 0);
+    if (total > 0) {
+      let ang = -Math.PI / 2;
+      segs.forEach(seg => {
+        const a = (seg.value / total) * 2 * Math.PI;
+        const x1 = cx + r * Math.cos(ang), y1 = cy + r * Math.sin(ang);
+        ang += a;
+        const x2 = cx + r * Math.cos(ang), y2 = cy + r * Math.sin(ang);
+        g += `<path d="M${cx},${cy} L${x1.toFixed(1)},${y1.toFixed(1)} A${r},${r} 0 ${a > Math.PI ? 1 : 0} 1 ${x2.toFixed(1)},${y2.toFixed(1)}Z" fill="${seg.color}" opacity="0.9"/>`;
+      });
+      g += `<circle cx="${cx}" cy="${cy}" r="${(r * 0.56).toFixed(1)}" fill="#001A14"/>`;
+    }
+    g += `<text x="${cx}" y="${cy - 4}" text-anchor="middle" font-size="18" font-weight="700" fill="#17E88F">${agreePct}%</text>`;
+    g += `<text x="${cx}" y="${cy + 11}" text-anchor="middle" font-size="8" fill="#80BBAD">agree</text>`;
+    // Legend
+    const legX = pad + idx * cardW, legY0 = pieY + pieSize + 8;
+    [5,4,3,2,1].forEach((s, i) => {
+      const p = d.t ? Math.round((d.d[s]||0) / d.t * 100) : 0;
+      if (!p) return;
+      const ly = legY0 + i * 16;
+      g += `<rect x="${legX}" y="${ly}" width="8" height="8" rx="2" fill="${L5_COLORS[i]}"/>`;
+      g += `<text x="${legX + 11}" y="${ly + 7}" font-size="8" fill="#7A9590">${L5_LABELS[i]}</text>`;
+      g += `<text x="${legX + cardW - 8}" y="${ly + 7}" text-anchor="end" font-size="8" font-weight="600" fill="#F2F4F3">${p}%</text>`;
+    });
+  });
+  g += `</svg>`;
+  const blob = new Blob([g], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = W * 2; canvas.height = H * 2;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(2, 2);
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    const a = document.createElement('a'); a.download = 'tradeoff-preferences.png'; a.href = canvas.toDataURL('image/png'); a.click();
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); };
+  img.src = url;
+}
+
 // ─── SENTIMENT ────────────────────────────────────────────────────────────────
 // ── Shared pyramid band geometry ────────────────────────────────────────────
 function pyramidBands(W, H) {
@@ -1997,6 +2246,34 @@ function renderSentiment() {
     </div>
   </div>`;
 
+  // ── ENPS Waffle chart ─────────────────────────────────────────────────
+  if (nT > 0) {
+    html += `<div class="chart-card" style="margin-bottom:0.9rem">
+      <div class="chart-card-title">eNPS Response Breakdown <span>N=${nT}</span></div>
+      <div style="display:flex;align-items:flex-start;gap:2rem;flex-wrap:wrap">
+        <div>${enpsWaffleChartSVG(pro, pas, det)}</div>
+        <div style="display:flex;flex-direction:column;gap:0.65rem;justify-content:center;padding-top:0.25rem">
+          <div style="display:flex;align-items:center;gap:0.6rem">
+            <span style="width:13px;height:13px;border-radius:3px;background:#17E88F;flex-shrink:0;display:inline-block"></span>
+            <span style="font-size:0.82rem;color:var(--text)">Promoters &nbsp;<strong style="color:#17E88F">${pro}</strong>&nbsp;<span style="color:var(--text-muted)">(${pP}%) · scored 9–10</span></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.6rem">
+            <span style="width:13px;height:13px;border-radius:3px;background:#80BBAD;flex-shrink:0;display:inline-block"></span>
+            <span style="font-size:0.82rem;color:var(--text)">Passives &nbsp;<strong style="color:#80BBAD">${pas}</strong>&nbsp;<span style="color:var(--text-muted)">(${paP}%) · scored 7–8</span></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.6rem">
+            <span style="width:13px;height:13px;border-radius:3px;background:#D2785A;flex-shrink:0;display:inline-block"></span>
+            <span style="font-size:0.82rem;color:var(--text)">Detractors &nbsp;<strong style="color:#D2785A">${det}</strong>&nbsp;<span style="color:var(--text-muted)">(${dP}%) · scored 0–6</span></span>
+          </div>
+          <div style="font-size:0.74rem;color:var(--text-muted);margin-top:0.25rem;padding-top:0.5rem;border-top:1px solid var(--card-border)">
+            <strong style="color:var(--text)">NPS = % Promoters − % Detractors = ${nps !== null ? (nps >= 0 ? '+' : '') + nps : '—'}</strong><br>
+            <span>+30 or above is strong · +50 or above is excellent</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
   // ── Derived note ──────────────────────────────────────────────────────
   html += `<div class="derived-note">
     <strong>Classification derived from the eNPS question.</strong>
@@ -2051,7 +2328,10 @@ function renderSentiment() {
     const slopeStr = slopeNum !== null ? (slopeNum >= 0 ? '+' : '') + slopeNum.toFixed(1) + ' pts' : '—';
     const barW = slopeNum !== null ? Math.min(100, Math.max(0, slopeNum * 3)) : 0;
     const slopeCol = slopeNum === null ? 'var(--text-muted)' : slopeNum >= 10 ? '#17E88F' : slopeNum >= 5 ? '#80BBAD' : '#DBD99A';
-    html += `<div class="slope-row">
+    const proTip = lvl.proAvg !== null ? Math.round(lvl.proAvg) + '%' : 'n/a';
+    const pasTip = lvl.pasAvg !== null ? Math.round(lvl.pasAvg) + '%' : 'n/a';
+    const detTip = lvl.detAvg !== null ? Math.round(lvl.detAvg) + '%' : 'n/a';
+    html += `<div class="slope-row" title="Promoters: ${proTip} · Passives: ${pasTip} · Detractors: ${detTip}" style="cursor:default">
       <span class="slope-label">${lvl.name}</span>
       <div class="slope-track">
         <div class="slope-fill" style="width:${barW}%;background:${lvl.color}"></div>
@@ -2077,11 +2357,18 @@ function renderSentiment() {
   ];
 
   tiers.forEach(tier => {
+    const lowN = tier.rows.length > 0 && tier.rows.length < 5;
     html += `<div class="pyr-score-card">
       <div class="pyr-score-title" style="color:${tier.color}">${tier.label}</div>
-      <div class="pyr-score-sub">${tier.rows.length} respondents</div>`;
+      <div class="pyr-score-sub">${tier.rows.length} respondent${tier.rows.length !== 1 ? 's' : ''}</div>`;
+    if (lowN) {
+      html += `<div class="min-n-warn">⚠ Small sample (N=${tier.rows.length}) — scores should be interpreted with caution.</div>`;
+    }
+    if (tier.rows.length === 0) {
+      html += `<div style="font-size:0.76rem;color:var(--text-muted);padding:0.4rem 0">No respondents in this tier.</div>`;
+    }
     pyrData.slice().reverse().forEach(lvl => {
-      const v = lvl[tier.key];
+      const v = (lowN || tier.rows.length === 0) ? null : lvl[tier.key];
       const dispPct = v !== null ? Math.round(v) : 0;
       const dispStr = v !== null ? dispPct + '%' : '—';
       html += `<div class="pyr-bar-row">
@@ -2098,22 +2385,33 @@ function renderSentiment() {
   html += `</div></div>`;
 
   // ── Verbatims ─────────────────────────────────────────────────────────
-  const pos = rows.map(r => gv(r, C.Q42)).filter(v => v && v.length > 10);
-  const neg = rows.map(r => gv(r, C.Q43)).filter(v => v && v.length > 10);
+  const posData = rows.map(r => ({ text: gv(r, C.Q42), dept: gv(r, C.DEPT) })).filter(v => v.text && v.text.length > 10);
+  const negData = rows.map(r => ({ text: gv(r, C.Q43), dept: gv(r, C.DEPT) })).filter(v => v.text && v.text.length > 10);
 
-  if (pos.length) {
-    html += `<div class="chart-card"><div class="chart-card-title">What Employees Look Forward To <span>sample verbatims</span></div><div class="verbatim-list">`;
-    pos.slice(0, 8).forEach(v => html += `<div class="verbatim-item">"${esc(v)}"</div>`);
-    if (pos.length > 8) html += `<div style="font-size:0.72rem;color:var(--text-muted);padding-top:0.4rem">+ ${pos.length-8} more responses</div>`;
-    html += `</div></div>`;
-  }
-  if (neg.length) {
-    html += `<div class="chart-card"><div class="chart-card-title">What Employees Don't Look Forward To <span>sample verbatims</span></div><div class="verbatim-list">`;
-    neg.slice(0, 8).forEach(v => html += `<div class="verbatim-item neg">"${esc(v)}"</div>`);
-    if (neg.length > 8) html += `<div style="font-size:0.72rem;color:var(--text-muted);padding-top:0.4rem">+ ${neg.length-8} more responses</div>`;
-    html += `</div></div>`;
-  }
-  if (!pos.length && !neg.length) {
+  if (posData.length || negData.length) {
+    html += `<div class="chart-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem">
+        <div class="chart-card-title" style="margin-bottom:0">Verbatim Responses <span>${posData.length + negData.length} total</span></div>
+      </div>
+      <input type="text" class="verbatim-search" placeholder="🔍 Search verbatims..." oninput="filterVerbatims(this.value)">`;
+    if (posData.length) {
+      html += `<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#17E88F;margin-bottom:0.5rem">What Employees Look Forward To (${posData.length})</div>`;
+      html += `<div class="verbatim-list" style="margin-bottom:1.25rem">`;
+      posData.forEach(v => {
+        html += `<div class="verbatim-item">"${esc(v.text)}"${v.dept ? `<span class="verbatim-dept">${esc(v.dept)}</span>` : ''}</div>`;
+      });
+      html += `</div>`;
+    }
+    if (negData.length) {
+      html += `<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#D2785A;margin-bottom:0.5rem">What Employees Don't Look Forward To (${negData.length})</div>`;
+      html += `<div class="verbatim-list">`;
+      negData.forEach(v => {
+        html += `<div class="verbatim-item neg">"${esc(v.text)}"${v.dept ? `<span class="verbatim-dept">${esc(v.dept)}</span>` : ''}</div>`;
+      });
+      html += `</div>`;
+    }
+    html += `</div>`;
+  } else {
     html += `<div class="field-notice">No verbatim responses found. Columns Q42.A1 and Q43.A1 may be empty in this dataset.</div>`;
   }
 
