@@ -350,7 +350,7 @@ nav {
 .derived-note strong { color: var(--text); }
 
 /* PYRAMID */
-.pyramid-wrap { display: grid; grid-template-columns: 240px 1fr; gap: 2rem; align-items: center; }
+.pyramid-wrap { display: grid; grid-template-columns: 350px 1fr; gap: 1.5rem; align-items: center; }
 .pyramid-slope-rows { display: flex; flex-direction: column; gap: 0.5rem; }
 .slope-labels { display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-muted); margin-bottom: 0.75rem; padding-right: 0.5rem; }
 .slope-row { display: flex; align-items: center; gap: 0.75rem; }
@@ -1597,28 +1597,149 @@ function renderWorkStyles() {
 }
 
 // ─── SENTIMENT ────────────────────────────────────────────────────────────────
-function pyramidSVG(pyrData) {
-  // Triangle pyramid — bottom to top: Physical → Connections → Belonging
-  const W = 220, H = 230;
-  // Each band: trapezoid defined by top and bottom edges
-  const bands = [
-    { data: pyrData[0], y0: Math.round(H*0.67), y1: H,               xL0: Math.round(W*0.05), xR0: Math.round(W*0.95), xL1: Math.round(W*0.22), xR1: Math.round(W*0.78) },
-    { data: pyrData[1], y0: Math.round(H*0.33), y1: Math.round(H*0.67), xL0: Math.round(W*0.22), xR0: Math.round(W*0.78), xL1: Math.round(W*0.37), xR1: Math.round(W*0.63) },
-    { data: pyrData[2], y0: 0,                  y1: Math.round(H*0.33), xL0: Math.round(W*0.37), xR0: Math.round(W*0.63), xL1: Math.round(W*0.50), xR1: Math.round(W*0.50) },
+// ── Shared pyramid band geometry ────────────────────────────────────────────
+function pyramidBands(W, H) {
+  return [
+    // bottom band — Physical Environment
+    { y0: Math.round(H*0.66), y1: H,                  xL0: Math.round(W*0.04), xR0: Math.round(W*0.96), xL1: Math.round(W*0.21), xR1: Math.round(W*0.79) },
+    // middle band — Connections
+    { y0: Math.round(H*0.33), y1: Math.round(H*0.66), xL0: Math.round(W*0.21), xR0: Math.round(W*0.79), xL1: Math.round(W*0.37), xR1: Math.round(W*0.63) },
+    // top band — Belonging & Values
+    { y0: 0,                   y1: Math.round(H*0.33), xL0: Math.round(W*0.37), xR0: Math.round(W*0.63), xL1: Math.round(W*0.50), xR1: Math.round(W*0.50) },
   ];
-  const textColors = ['#17E88F','#F2F4F3','#001A14'];
-  let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
+}
+
+function pyramidSVG(pyrData) {
+  const W = 230, H = 240;
+  const bands = pyramidBands(W, H);
+  // Labels outside the pyramid to the right, with connector ticks
+  // (avoids cramped-top text problem entirely)
+  const LX = W + 8; // label x start (outside SVG, in a wider viewBox)
+  const VW = W + 110; // viewBox wider to fit labels
+
+  let svg = `<svg viewBox="0 0 ${VW} ${H}" width="${VW}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
+
   bands.forEach((b, i) => {
-    const d = b.data;
+    const d = pyrData[i];
     const path = `M ${b.xL1},${b.y0} L ${b.xR1},${b.y0} L ${b.xR0},${b.y1} L ${b.xL0},${b.y1} Z`;
-    const cy = (b.y0 + b.y1) / 2;
+    const cy   = (b.y0 + b.y1) / 2;
     const pctStr = d.overall !== null ? Math.round(d.overall) + '%' : '—';
-    svg += `<path d="${path}" fill="${d.color}" stroke="rgba(0,26,20,0.5)" stroke-width="1.5"/>`;
-    svg += `<text x="${W/2}" y="${cy - 6}" text-anchor="middle" dominant-baseline="middle" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="${textColors[i]}">${d.short}</text>`;
-    svg += `<text x="${W/2}" y="${cy + 8}" text-anchor="middle" dominant-baseline="middle" font-family="DM Sans,sans-serif" font-size="9" fill="${textColors[i]}" opacity="0.85">${pctStr}</text>`;
+
+    // Band fill
+    svg += `<path d="${path}" fill="${d.color}" stroke="rgba(0,26,20,0.6)" stroke-width="1.5"/>`;
+
+    // Percentage inside band — white + dark outline, always readable
+    svg += `<text x="${W/2}" y="${cy + 1}"
+      text-anchor="middle" dominant-baseline="middle"
+      font-family="DM Sans,Arial,sans-serif" font-size="13" font-weight="700"
+      fill="#FFFFFF" stroke="#001A14" stroke-width="3" paint-order="stroke fill"
+    >${pctStr}</text>`;
+
+    // Connector tick from right edge of band to label
+    svg += `<line x1="${b.xR0}" y1="${cy}" x2="${W + 6}" y2="${cy}" stroke="rgba(255,255,255,0.25)" stroke-width="1" stroke-dasharray="3,2"/>`;
+
+    // Label text outside
+    svg += `<text x="${LX + 2}" y="${cy - 5}"
+      dominant-baseline="middle"
+      font-family="DM Sans,Arial,sans-serif" font-size="10" font-weight="700"
+      fill="#F2F4F3"
+    >${d.name}</text>`;
+    svg += `<text x="${LX + 2}" y="${cy + 9}"
+      dominant-baseline="middle"
+      font-family="DM Sans,Arial,sans-serif" font-size="9"
+      fill="#80BBAD"
+    >avg ${pctStr}</text>`;
   });
+
   svg += `</svg>`;
   return svg;
+}
+
+// ── Export: full engagement pyramid card as transparent PNG ──────────────────
+function buildEngagementExportSVG(pyrData) {
+  const PW = 200, PH = 220;  // pyramid drawing area
+  const pad = 24;
+  const slopeX = PW + pad * 2 + 16;
+  const trackW = 260;
+  const W = slopeX + trackW + 80;
+  const H = PH + pad * 2 + 28;  // 28 = title row
+  const titleY = pad;
+  const pyrY  = pad + 28;
+
+  const bands = pyramidBands(PW, PH);
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="DM Sans,Arial,sans-serif">`;
+
+  // ── Pyramid section ──────────────────────────────────────────────────
+  pyrData.forEach((d, i) => {
+    const b = bands[i];
+    const path = `M ${pad+b.xL1},${pyrY+b.y0} L ${pad+b.xR1},${pyrY+b.y0} L ${pad+b.xR0},${pyrY+b.y1} L ${pad+b.xL0},${pyrY+b.y1} Z`;
+    const cy   = pyrY + (b.y0 + b.y1) / 2;
+    const pctStr = d.overall !== null ? Math.round(d.overall) + '%' : '—';
+    svg += `<path d="${path}" fill="${d.color}" stroke="rgba(0,26,20,0.6)" stroke-width="1.5"/>`;
+    svg += `<text x="${pad + PW/2}" y="${cy}"
+      text-anchor="middle" dominant-baseline="middle"
+      font-size="12" font-weight="700"
+      fill="#FFFFFF" stroke="#001A14" stroke-width="3" paint-order="stroke fill"
+    >${d.short} ${pctStr}</text>`;
+  });
+
+  // ── Slope bars section ───────────────────────────────────────────────
+  const slopeLabel = 'ENGAGEMENT SLOPE BY LEVEL';
+  svg += `<text x="${slopeX}" y="${pyrY - 6}" font-size="9" font-weight="700" letter-spacing="1" fill="#7A9590">${slopeLabel}</text>`;
+
+  const reversed = pyrData.slice().reverse();
+  reversed.forEach((lvl, i) => {
+    const rowY = pyrY + 18 + i * 60;
+    const slopeNum = (lvl.proAvg !== null && lvl.detAvg !== null) ? lvl.proAvg - lvl.detAvg : null;
+    const slopeStr = slopeNum !== null ? (slopeNum >= 0 ? '+' : '') + slopeNum.toFixed(1) + ' pts' : '—';
+    const fillW  = slopeNum !== null ? Math.min(trackW * 0.9, Math.max(0, slopeNum / 30 * trackW * 0.9)) : 0;
+    const sCol   = slopeNum === null ? '#6B7F7B' : slopeNum >= 10 ? '#17E88F' : slopeNum >= 5 ? '#80BBAD' : '#DBD99A';
+
+    // Level name
+    svg += `<text x="${slopeX}" y="${rowY + 1}" font-size="10.5" font-weight="600" fill="#D0D8D4">${lvl.name}</text>`;
+    // Track background
+    svg += `<rect x="${slopeX}" y="${rowY + 10}" width="${trackW}" height="20" rx="4" fill="rgba(255,255,255,0.07)"/>`;
+    // Fill bar
+    if (fillW > 0)
+      svg += `<rect x="${slopeX}" y="${rowY + 10}" width="${fillW}" height="20" rx="4" fill="${lvl.color}"/>`;
+    // Value label
+    svg += `<text x="${slopeX + trackW + 10}" y="${rowY + 23}" font-size="11" font-weight="700" fill="${sCol}">${slopeStr}</text>`;
+  });
+
+  // Footer note
+  svg += `<text x="${slopeX}" y="${pyrY + PH + 4}" font-size="8.5" fill="#5A7470">Slope = Promoter avg − Detractor avg score per level</text>`;
+
+  svg += `</svg>`;
+  return svg;
+}
+
+function exportEngagementPNG() {
+  if (!window._lastPyrData) return;
+  const svgStr  = buildEngagementExportSVG(window._lastPyrData);
+  const blob    = new Blob([svgStr], { type:'image/svg+xml;charset=utf-8' });
+  const url     = URL.createObjectURL(blob);
+  const img     = new Image();
+  img.onload    = () => {
+    const scale  = 2;
+    const parser = new DOMParser();
+    const doc    = parser.parseFromString(svgStr, 'image/svg+xml');
+    const root   = doc.documentElement;
+    const W      = parseFloat(root.getAttribute('viewBox').split(' ')[2]);
+    const H      = parseFloat(root.getAttribute('viewBox').split(' ')[3]);
+    const canvas = document.createElement('canvas');
+    canvas.width  = W * scale;
+    canvas.height = H * scale;
+    const ctx    = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    const a     = document.createElement('a');
+    a.download  = 'engagement-pyramid.png';
+    a.href      = canvas.toDataURL('image/png');
+    a.click();
+  };
+  img.src = url;
 }
 
 function renderSentiment() {
@@ -1704,9 +1825,15 @@ function renderSentiment() {
     detAvg:  levelAvg(tierRows.det, lvl.cols),
   }));
 
+  // Store for export button
+  window._lastPyrData = pyrData;
+
   // ── Pyramid + Engagement Slope ────────────────────────────────────────
   html += `<div class="chart-card">
-    <div class="chart-card-title">Workplace Engagement Pyramid</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+      <div class="chart-card-title" style="margin-bottom:0">Workplace Engagement Pyramid</div>
+      <button class="export-btn" onclick="exportEngagementPNG()">&#8595; Export PNG</button>
+    </div>
     <div class="pyramid-wrap">
       ${pyramidSVG(pyrData)}
       <div class="pyramid-slopes">
