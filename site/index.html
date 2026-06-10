@@ -222,6 +222,11 @@
     color: var(--accent);
     border: 1px solid rgba(23,232,143,0.25);
   }
+  .badge-wip {
+    background: rgba(234,179,8,0.1);
+    color: #FBBF24;
+    border: 1px solid rgba(234,179,8,0.25);
+  }
   .badge-soon {
     background: rgba(255,255,255,0.05);
     color: var(--text-muted);
@@ -330,12 +335,12 @@
   <p class="hero-sub">Upload your raw research — transcripts, Mentimeter exports, notes — and get client-ready analysis in minutes, not days.</p>
   <div class="hero-counts">
     <div class="hero-count-item">
-      <div class="hero-count-num" id="ready-count">2</div>
-      <div class="hero-count-label">Tools Ready</div>
+      <div class="hero-count-num" id="ready-count">3</div>
+      <div class="hero-count-label">Ready for Use</div>
     </div>
     <div class="hero-count-item">
       <div class="hero-count-num" id="soon-count">3</div>
-      <div class="hero-count-label">Coming Soon</div>
+      <div class="hero-count-label">In Progress</div>
     </div>
     <div class="hero-count-item">
       <div class="hero-count-num">∞</div>
@@ -348,11 +353,58 @@
   <div class="section-label">Available Tools</div>
   <div class="tools-grid">
 
-    <!-- READY -->
+    <!-- ROW 1: READY FOR USE -->
+    <a class="tool-card ready" href="/cbre-workplace-tools/tools/space-analysis-portfolio.html">
+      <div class="tool-card-header">
+        <div class="tool-icon">🏙️</div>
+        <span class="tool-badge badge-ready">Ready for use</span>
+      </div>
+      <div class="tool-name">Portfolio Space Processor</div>
+      <div class="tool-desc">Upload one or multiple Kreo takeoff exports to get a portfolio-level space composition dashboard — benchmarked against GWOIR data with multi-building and per-floor filtering.</div>
+      <div class="tool-tags">
+        <span class="tool-tag">Kreo export</span>
+        <span class="tool-tag">Multi-building</span>
+        <span class="tool-tag">GWOIR benchmarks</span>
+        <span class="tool-tag">Excel export</span>
+      </div>
+      <div class="tool-arrow">→</div>
+    </a>
+
+    <a class="tool-card ready" href="/cbre-workplace-tools/tools/survey-analyzer.html">
+      <div class="tool-card-header">
+        <div class="tool-icon">📊</div>
+        <span class="tool-badge badge-ready">Ready for use</span>
+      </div>
+      <div class="tool-name">Survey Analyzer</div>
+      <div class="tool-desc">Process employee workplace surveys — quantitative summaries, verbatim theme extraction, and persona-level breakdowns.</div>
+      <div class="tool-tags">
+        <span class="tool-tag">Quant + qual</span>
+        <span class="tool-tag">Personas</span>
+        <span class="tool-tag">Verbatims</span>
+      </div>
+      <div class="tool-arrow">→</div>
+    </a>
+
+    <a class="tool-card ready" href="/cbre-workplace-tools/tools/supply-demand.html">
+      <div class="tool-card-header">
+        <div class="tool-icon">⚖️</div>
+        <span class="tool-badge badge-ready">Ready for use</span>
+      </div>
+      <div class="tool-name">Supply & Demand Analysis</div>
+      <div class="tool-desc">Model headcount scenarios against available space — compare supply vs. demand by floor, team, or building with real estate cost implications.</div>
+      <div class="tool-tags">
+        <span class="tool-tag">Headcount</span>
+        <span class="tool-tag">Scenario modeling</span>
+        <span class="tool-tag">Cost implications</span>
+      </div>
+      <div class="tool-arrow">→</div>
+    </a>
+
+    <!-- ROW 2: WORK IN PROGRESS -->
     <a class="tool-card ready" href="/cbre-workplace-tools/tools/leadership-interviews.html">
       <div class="tool-card-header">
         <div class="tool-icon">🎙️</div>
-        <span class="tool-badge badge-ready">Ready</span>
+        <span class="tool-badge badge-wip">Work in Progress</span>
       </div>
       <div class="tool-name">Leadership Interview Synthesizer</div>
       <div class="tool-desc">Upload interview transcripts and get a structured appendix with themes, representative quotes, and key takeaways — formatted for client delivery.</div>
@@ -367,7 +419,7 @@
     <a class="tool-card ready" href="/cbre-workplace-tools/tools/executive-visioning.html">
       <div class="tool-card-header">
         <div class="tool-icon">🎯</div>
-        <span class="tool-badge badge-ready">Ready</span>
+        <span class="tool-badge badge-wip">Work in Progress</span>
       </div>
       <div class="tool-name">Executive Visioning Analyzer</div>
       <div class="tool-desc">Process Mentimeter exports and session notes from executive visioning workshops into lever-by-lever analysis with implications and decision summaries.</div>
@@ -379,11 +431,10 @@
       <div class="tool-arrow">→</div>
     </a>
 
-    <!-- COMING SOON -->
     <div class="tool-card coming-soon">
       <div class="tool-card-header">
         <div class="tool-icon">👥</div>
-        <span class="tool-badge badge-soon">Coming Soon</span>
+        <span class="tool-badge badge-wip">Work in Progress</span>
       </div>
       <div class="tool-name">Focus Group Synthesizer</div>
       <div class="tool-desc">Segment-based analysis across employee groups — theme clusters, sentiment by cohort, and cross-group comparison.</div>
@@ -391,37 +442,6 @@
         <span class="tool-tag">Segments</span>
         <span class="tool-tag">Sentiment</span>
         <span class="tool-tag">Comparison</span>
-      </div>
-    </div>
-
-
-<a href="tools/space-analysis-portfolio.html" class="tool-card ready">
-      <div class="tool-card-header">
-        <div class="tool-icon">🏙️</div>
-        <span class="tool-badge badge-ready">Ready</span>
-      </div>
-      <div class="tool-name">Portfolio Space Processor</div>
-      <div class="tool-desc">Upload one or multiple Kreo takeoff exports to get a portfolio-level space composition dashboard — benchmarked against GWOIR data with multi-building and per-floor filtering.</div>
-      <div class="tool-tags">
-        <span class="tool-tag">Kreo export</span>
-        <span class="tool-tag">Multi-building</span>
-        <span class="tool-tag">GWOIR benchmarks</span>
-        <span class="tool-tag">Excel export</span>
-      </div>
-      <div class="tool-arrow">→</div>
-    </a>
-
-    <div class="tool-card coming-soon">
-      <div class="tool-card-header">
-        <div class="tool-icon">📊</div>
-        <span class="tool-badge badge-soon">Coming Soon</span>
-      </div>
-      <div class="tool-name">Survey Analyzer</div>
-      <div class="tool-desc">Process employee workplace surveys — quantitative summaries, verbatim theme extraction, and persona-level breakdowns.</div>
-      <div class="tool-tags">
-        <span class="tool-tag">Quant + qual</span>
-        <span class="tool-tag">Personas</span>
-        <span class="tool-tag">Verbatims</span>
       </div>
     </div>
 
