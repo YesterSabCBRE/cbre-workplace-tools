@@ -378,6 +378,31 @@ nav {
   .pyr-scores-grid { grid-template-columns: 1fr; }
 }
 
+/* FUTURE PREFERENCES — KEY INSIGHTS */
+.insight-summary-card { background: rgba(23,232,143,0.04); border: 1px solid rgba(23,232,143,0.18); border-radius: var(--radius); padding: 1.1rem 1.25rem; margin-bottom: 1.2rem; }
+.insight-summary-header { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.85rem; }
+.insight-summary-icon { font-size: 1rem; }
+.insight-summary-tag { margin-left: auto; font-size: 0.65rem; font-weight: 400; letter-spacing: 0.04em; color: var(--text-muted); text-transform: none; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: 100px; padding: 0.2rem 0.6rem; }
+.insight-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.insight-item { display: flex; gap: 0.65rem; align-items: flex-start; font-size: 0.84rem; color: var(--text-muted); line-height: 1.55; }
+.insight-item-icon { font-size: 1rem; flex-shrink: 0; margin-top: 0.05rem; }
+.insight-item strong { color: var(--text); font-weight: 600; }
+
+/* FUTURE PREFERENCES — LOCATION SPLIT LAYOUT */
+.loc-split-wrap { display: grid; grid-template-columns: auto 1fr; gap: 2rem; align-items: center; }
+.loc-donut-side { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+.loc-donut-legend { display: flex; flex-direction: column; gap: 0.3rem; }
+.loc-swatch-row { display: flex; align-items: center; gap: 0.45rem; font-size: 0.74rem; color: var(--text-muted); }
+.loc-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.loc-bars-side { display: flex; flex-direction: column; gap: 0.55rem; }
+.loc-bar-row { display: flex; align-items: center; gap: 0.7rem; }
+.loc-bar-label { font-size: 0.78rem; color: var(--text-muted); min-width: 110px; flex-shrink: 0; }
+.loc-bar-track { flex: 1; height: 22px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; }
+.loc-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+.loc-bar-pct { font-size: 0.78rem; font-weight: 600; min-width: 34px; text-align: right; flex-shrink: 0; }
+.loc-footnote { margin-top: 0.85rem; font-size: 0.72rem; color: var(--text-muted); border-top: 1px solid var(--card-border); padding-top: 0.6rem; line-height: 1.5; }
+@media (max-width: 680px) { .loc-split-wrap { grid-template-columns: 1fr; } }
+
 /* QUADRANT CHART */
 .quadrant-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 1.2rem 1.25rem; margin-bottom: 1rem; }
 .quadrant-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.4rem; }
@@ -1145,46 +1170,120 @@ function renderWVP() {
 // ─── FUTURE ───────────────────────────────────────────────────────────────────
 function renderFuture() {
   const rows = filteredRows;
+  const n = rows.length;
   let html = '';
 
-  // Q45 donut
-  const locOrder = ['Fully remote','Mostly home','Equal mix','Mostly office','Fully office'];
+  // ── Data prep ─────────────────────────────────────────────────────────
+  const locOrder  = ['Fully remote','Mostly home','Equal mix','Mostly office','Fully office'];
   const locColors = ['#D2785A','#DBD99A','#80BBAD','#17E88F','#003F2D'];
-  const lc = countBy(rows, C.Q45);
-  const locTotal = Object.values(lc).reduce((s,v)=>s+v,0);
-  const locEnts = locOrder.map(k => ({label:k, n:lc[k]||0})).filter(e=>e.n>0);
-  const locSegs = locEnts.map(e => ({value:e.n, color:locColors[locOrder.indexOf(e.label)]}));
-  const svg = donutSVG(locSegs,140);
-  const locLeg = locEnts.map(e => {
-    const ci = locOrder.indexOf(e.label);
-    return `<div class="donut-legend-item"><div class="donut-legend-swatch" style="background:${locColors[ci]}"></div>${e.label}<span class="donut-legend-pct">${pct(e.n,locTotal)}%</span></div>`;
+  const lc        = countBy(rows, C.Q45);
+  const locTotal  = Object.values(lc).reduce((s,v) => s+v, 0);
+  const locEnts   = locOrder.map(k => ({label:k, n:lc[k]||0, color:locColors[locOrder.indexOf(k)]}));
+
+  const rb = C.RBEN.map((col,i) => ({label:C.RBEN_L[i], p:cbPct(rows,col)})).sort((a,b)=>b.p-a.p);
+  const ob = C.OBEN.map((col,i) => ({label:C.OBEN_L[i], p:cbPct(rows,col)})).sort((a,b)=>b.p-a.p);
+
+  // ── Top 3 Insights (algorithmic — no API) ─────────────────────────────
+  const officePct   = locTotal ? pct((lc['Mostly office']||0)+(lc['Fully office']||0), locTotal) : 0;
+  const remotePct   = locTotal ? pct((lc['Mostly home']  ||0)+(lc['Fully remote']||0), locTotal) : 0;
+  const hybridPct   = locTotal ? pct(lc['Equal mix']||0, locTotal) : 0;
+  const topLocLabel = locEnts.reduce((a,b) => b.n > a.n ? b : a, locEnts[0]);
+  const topRBen     = rb[0];
+  const topOBen     = ob[0];
+
+  // Build insight sentences
+  const insights = [];
+
+  if (locTotal > 0) {
+    let locSentence = '';
+    if (officePct >= 50) {
+      locSentence = `<strong>${officePct}% of respondents prefer office-dominant arrangements</strong> (Mostly office or Fully office), signalling continued demand for dedicated workspace.`;
+    } else if (remotePct >= 50) {
+      locSentence = `<strong>${remotePct}% of respondents prefer remote-dominant arrangements</strong> (Mostly home or Fully remote), suggesting strong appetite for flexible/distributed work.`;
+    } else if (hybridPct >= 35) {
+      locSentence = `<strong>Hybrid is the dominant preference at ${hybridPct}%</strong> (Equal mix), with office-leaning at ${officePct}% and remote-leaning at ${remotePct}%.`;
+    } else {
+      locSentence = `<strong>Work location preferences are split</strong> — office-leaning ${officePct}%, hybrid ${hybridPct}%, and remote-leaning ${remotePct}%, indicating no single dominant model.`;
+    }
+    insights.push({ icon:'📍', text: locSentence });
+  }
+
+  if (rb.length && rb[0].p > 0) {
+    insights.push({ icon:'🏠', text:`<strong>${topRBen.label} (${topRBen.p}%)</strong> is the top-cited benefit of remote work — consider how hybrid policies can preserve this advantage.` });
+  }
+  if (ob.length && ob[0].p > 0) {
+    insights.push({ icon:'🏢', text:`<strong>${topOBen.label} (${topOBen.p}%)</strong> is the leading reason employees come to the office — designing the in-office experience around this driver will strengthen attendance.` });
+  }
+
+  if (insights.length) {
+    html += `<div class="insight-summary-card">
+      <div class="insight-summary-header">
+        <span class="insight-summary-icon">💡</span>
+        <span>Key Takeaways</span>
+        <span class="insight-summary-tag">auto-generated from survey data</span>
+      </div>
+      <div class="insight-list">`;
+    insights.slice(0,3).forEach(ins =>
+      html += `<div class="insight-item"><span class="insight-item-icon">${ins.icon}</span><span>${ins.text}</span></div>`
+    );
+    html += `</div></div>`;
+  }
+
+  // ── Preferred Work Location — donut + bar distribution ────────────────
+  const locBarRows = locEnts.filter(e => e.n > 0).map(e => {
+    const p2 = locTotal ? pct(e.n, locTotal) : 0;
+    return `<div class="loc-bar-row">
+      <span class="loc-bar-label">${e.label}</span>
+      <div class="loc-bar-track">
+        <div class="loc-bar-fill" style="width:${p2}%;background:${e.color}"></div>
+      </div>
+      <span class="loc-bar-pct" style="color:${e.color}">${p2}%</span>
+    </div>`;
   }).join('');
 
-  html += `<div class="chart-card"><div class="chart-card-title">Preferred Future Work Location</div>
-    <div class="donut-wrap">
-      <div class="donut-svg-wrap">${svg}<div class="donut-center-text"><div class="donut-center-value">${locTotal}</div><div class="donut-center-label">responses</div></div></div>
-      <div class="donut-legend">${locLeg}</div>
-    </div></div>`;
+  const locSegs = locEnts.filter(e => e.n > 0).map(e => ({value:e.n, color:e.color}));
+  const svg     = donutSVG(locSegs, 120);
+  const skipN   = n - locTotal;
 
-  // Remote benefits
-  const rb = C.RBEN.map((col,i)=>({label:C.RBEN_L[i],p:cbPct(rows,col)})).sort((a,b)=>b.p-a.p);
+  html += `<div class="chart-card">
+    <div class="chart-card-title">Preferred Future Work Location</div>
+    <div class="loc-split-wrap">
+      <div class="loc-donut-side">
+        <div class="donut-svg-wrap" style="width:120px;height:120px">
+          ${svg}
+          <div class="donut-center-text">
+            <div class="donut-center-value">${locTotal}</div>
+            <div class="donut-center-label">responses</div>
+          </div>
+        </div>
+        <div class="loc-donut-legend">
+          ${locEnts.filter(e=>e.n>0).map(e=>`<div class="loc-swatch-row"><span class="loc-swatch" style="background:${e.color}"></span>${e.label}</div>`).join('')}
+        </div>
+      </div>
+      <div class="loc-bars-side">
+        ${locBarRows}
+      </div>
+    </div>
+    ${skipN > 0 ? `<div class="loc-footnote">† ${locTotal} of ${n} respondents answered this question; ${skipN} skipped or left it blank.</div>` : ''}
+  </div>`;
+
+  // ── Remote benefits ───────────────────────────────────────────────────
   html += `<div class="chart-card"><div class="chart-card-title">Remote Work Benefits <span>% who selected</span></div><div class="h-bar-chart">`;
-  rb.forEach(({label,p})=>html+=hBar(label,p));
+  rb.forEach(({label,p}) => html += hBar(label, p));
   html += `</div></div>`;
 
-  // Office benefits
-  const ob = C.OBEN.map((col,i)=>({label:C.OBEN_L[i],p:cbPct(rows,col)})).sort((a,b)=>b.p-a.p);
+  // ── Office benefits ───────────────────────────────────────────────────
   html += `<div class="chart-card"><div class="chart-card-title">Office Benefits <span>% who selected</span></div><div class="h-bar-chart">`;
-  ob.forEach(({label,p})=>html+=hBar(label,p));
+  ob.forEach(({label,p}) => html += hBar(label, p));
   html += `</div></div>`;
 
-  // Trade-offs
-  const td = C.TRADE.map((col,i)=>({label:C.TRADE_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
+  // ── Trade-offs ────────────────────────────────────────────────────────
+  const td = C.TRADE.map((col,i) => ({label:C.TRADE_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
   html += `<div class="chart-card"><div class="chart-card-title">Trade-off Preferences</div><div class="stacked-chart">`;
-  td.forEach(d=>html+=stackedBar(d.label,d.d,d.t,d.avg));
+  td.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
   html += `</div>${likertLegend()}</div>`;
 
-  // Amenities
+  // ── Amenities ─────────────────────────────────────────────────────────
   const ammData = C.AMM.map((col,i) => {
     let off=0,bld=0,nbr=0,not=0,tot=0;
     rows.forEach(r => {
@@ -1196,13 +1295,13 @@ function renderFuture() {
       else if(v.includes('not important')) not++;
     });
     return {label:C.AMM_L[i],off,bld,nbr,not,tot};
-  }).sort((a,b)=>(b.off/Math.max(b.tot,1))-(a.off/Math.max(a.tot,1)));
+  }).sort((a,b) => (b.off/Math.max(b.tot,1)) - (a.off/Math.max(a.tot,1)));
 
   html += `<div class="chart-card"><div class="chart-card-title">Amenity Location Importance</div><div class="stacked-chart">`;
   ammData.forEach(({label,off,bld,nbr,not,tot}) => {
     if(!tot) return;
-    const segs = [[off,'#17E88F','Within office'],[bld,'#80BBAD','Within building'],[nbr,'#DBD99A','Neighborhood'],[not,'#D2785A','Not important']].map(([n,color,name]) => {
-      const w=pct(n,tot); if(!w) return '';
+    const segs = [[off,'#17E88F','Within office'],[bld,'#80BBAD','Within building'],[nbr,'#DBD99A','Neighborhood'],[not,'#D2785A','Not important']].map(([n2,color,name]) => {
+      const w=pct(n2,tot); if(!w) return '';
       return `<div class="bar-seg" style="width:${w}%;background:${color};color:rgba(0,0,0,0.7)" title="${name}: ${w}%">${w>8?w+'%':''}</div>`;
     }).join('');
     html += `<div class="bar-row"><span class="bar-label" title="${label}">${label}</span><div class="bar-track">${segs}</div></div>`;
