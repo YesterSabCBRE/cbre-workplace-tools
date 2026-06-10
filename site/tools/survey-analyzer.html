@@ -337,6 +337,47 @@ nav {
 /* EMPTY */
 .empty-state { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem; }
 
+/* SENTIMENT — NPS STAT CARDS */
+.sent-stat-row { display: grid; grid-template-columns: repeat(5,1fr); gap: 0.7rem; margin-bottom: 1.2rem; }
+.sent-stat-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 1rem 1.1rem; }
+.sent-stat-card.warn { border-color: rgba(219,217,154,0.35); background: rgba(219,217,154,0.06); }
+.sent-stat-code { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.35rem; }
+.sent-stat-value { font-family: 'DM Serif Display', serif; font-size: 2rem; line-height: 1; margin-bottom: 0.2rem; }
+.sent-stat-sub { font-size: 0.7rem; color: var(--text-muted); line-height: 1.4; }
+.sent-warn-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #DBD99A; margin-bottom: 0.2rem; }
+
+.derived-note { background: rgba(23,232,143,0.05); border: 1px solid rgba(23,232,143,0.15); border-radius: 8px; padding: 0.7rem 1rem; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1.2rem; line-height: 1.5; }
+.derived-note strong { color: var(--text); }
+
+/* PYRAMID */
+.pyramid-wrap { display: grid; grid-template-columns: 240px 1fr; gap: 2rem; align-items: center; }
+.pyramid-slope-rows { display: flex; flex-direction: column; gap: 0.5rem; }
+.slope-labels { display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-muted); margin-bottom: 0.75rem; padding-right: 0.5rem; }
+.slope-row { display: flex; align-items: center; gap: 0.75rem; }
+.slope-label { font-size: 0.76rem; color: var(--text-muted); min-width: 150px; }
+.slope-track { flex: 1; height: 22px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; position: relative; }
+.slope-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 6px; }
+.slope-pct { font-size: 0.68rem; font-weight: 600; color: rgba(0,0,0,0.75); }
+.slope-value { font-size: 0.75rem; font-weight: 600; min-width: 54px; text-align: right; flex-shrink: 0; }
+.pyramid-slopes { display: flex; flex-direction: column; gap: 0.6rem; justify-content: center; }
+
+/* PYRAMID SCORE COLS */
+.pyr-scores-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.9rem; margin-bottom: 1.2rem; }
+.pyr-score-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 1.1rem 1.15rem; }
+.pyr-score-title { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.2rem; }
+.pyr-score-sub { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.9rem; }
+.pyr-bar-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.45rem; }
+.pyr-bar-label { font-size: 0.73rem; color: var(--text-muted); min-width: 130px; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pyr-bar-track { flex: 1; height: 18px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; }
+.pyr-bar-fill { height: 100%; border-radius: 3px; }
+.pyr-bar-pct { font-size: 0.7rem; font-weight: 600; min-width: 32px; text-align: right; flex-shrink: 0; }
+
+@media (max-width: 900px) {
+  .sent-stat-row { grid-template-columns: repeat(3,1fr); }
+  .pyramid-wrap { grid-template-columns: 1fr; }
+  .pyr-scores-grid { grid-template-columns: 1fr; }
+}
+
 /* QUADRANT CHART */
 .quadrant-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 1.2rem 1.25rem; margin-bottom: 1rem; }
 .quadrant-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.4rem; }
@@ -1457,81 +1498,190 @@ function renderWorkStyles() {
 }
 
 // ─── SENTIMENT ────────────────────────────────────────────────────────────────
+function pyramidSVG(pyrData) {
+  // Triangle pyramid — bottom to top: Physical → Connections → Belonging
+  const W = 220, H = 230;
+  // Each band: trapezoid defined by top and bottom edges
+  const bands = [
+    { data: pyrData[0], y0: Math.round(H*0.67), y1: H,               xL0: Math.round(W*0.05), xR0: Math.round(W*0.95), xL1: Math.round(W*0.22), xR1: Math.round(W*0.78) },
+    { data: pyrData[1], y0: Math.round(H*0.33), y1: Math.round(H*0.67), xL0: Math.round(W*0.22), xR0: Math.round(W*0.78), xL1: Math.round(W*0.37), xR1: Math.round(W*0.63) },
+    { data: pyrData[2], y0: 0,                  y1: Math.round(H*0.33), xL0: Math.round(W*0.37), xR0: Math.round(W*0.63), xL1: Math.round(W*0.50), xR1: Math.round(W*0.50) },
+  ];
+  const textColors = ['#17E88F','#F2F4F3','#001A14'];
+  let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
+  bands.forEach((b, i) => {
+    const d = b.data;
+    const path = `M ${b.xL1},${b.y0} L ${b.xR1},${b.y0} L ${b.xR0},${b.y1} L ${b.xL0},${b.y1} Z`;
+    const cy = (b.y0 + b.y1) / 2;
+    const pctStr = d.overall !== null ? Math.round(d.overall) + '%' : '—';
+    svg += `<path d="${path}" fill="${d.color}" stroke="rgba(0,26,20,0.5)" stroke-width="1.5"/>`;
+    svg += `<text x="${W/2}" y="${cy - 6}" text-anchor="middle" dominant-baseline="middle" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="${textColors[i]}">${d.short}</text>`;
+    svg += `<text x="${W/2}" y="${cy + 8}" text-anchor="middle" dominant-baseline="middle" font-family="DM Sans,sans-serif" font-size="9" fill="${textColors[i]}" opacity="0.85">${pctStr}</text>`;
+  });
+  svg += `</svg>`;
+  return svg;
+}
+
 function renderSentiment() {
   const rows = filteredRows;
+  const n = rows.length;
   let html = '';
 
-  // NPS
-  let pro=0,pas=0,det=0,nT=0;
+  // ── NPS calc ─────────────────────────────────────────────────────────
+  let pro=0, pas=0, det=0, nT=0;
   rows.forEach(r => {
-    const v = parseScore(gv(r,C.ENPS));
-    if(v===null) return; nT++;
-    if(v>=9) pro++; else if(v>=7) pas++; else det++;
+    const v = parseScore(gv(r, C.ENPS));
+    if (v === null) return;
+    nT++;
+    if (v >= 9) pro++; else if (v >= 7) pas++; else det++;
   });
-  const nps = nT ? Math.round((pro/nT - det/nT)*100) : null;
-  const npsCol = nps===null?'var(--text-muted)':nps>=30?'#17E88F':nps>=0?'#80BBAD':'#D2785A';
-  const pP=nT?pct(pro,nT):0, paP=nT?pct(pas,nT):0, dP=nT?pct(det,nT):0;
+  const nps = nT ? Math.round((pro/nT - det/nT) * 100) : null;
+  const npsCol = nps === null ? 'var(--text-muted)' : nps >= 30 ? '#17E88F' : nps >= 0 ? '#80BBAD' : '#D2785A';
+  const pP = nT ? pct(pro, nT) : 0;
+  const paP = nT ? pct(pas, nT) : 0;
+  const dP = nT ? pct(det, nT) : 0;
+  const pasWarn = paP > 40;
 
-  // Satisfaction
-  const satS = rows.map(r=>parseScore(gv(r,C.SAT))).filter(v=>v!==null);
-  const satA = satS.length ? (satS.reduce((s,v)=>s+v,0)/satS.length).toFixed(1) : null;
-  const satCol = satA===null?'var(--text-muted)':satA>=8?'#17E88F':satA>=6?'#80BBAD':'#D2785A';
-
-  // WVP composite
-  const wAvgs = C.WVP.map(col => { const v=rows.map(r=>parseLikert(gv(r,col))).filter(v=>v!==null); return v.length?v.reduce((s,x)=>s+x,0)/v.length:null; }).filter(v=>v!==null);
-  const wComp = wAvgs.length ? (avg(wAvgs)*20).toFixed(0) : '—';
-
-  html += `<div class="cards-grid">
-    <div class="stat-card"><div class="stat-card-value" style="color:${npsCol}">${nps!==null?nps:'—'}</div><div class="stat-card-label">Employee NPS</div><div class="stat-card-sub">${nT} responses · ${pP}% promoters / ${dP}% detractors</div></div>
-    <div class="stat-card"><div class="stat-card-value" style="color:${satCol}">${satA!==null?satA+'/10':'—'}</div><div class="stat-card-label">Avg Satisfaction</div><div class="stat-card-sub">${satS.length} responses</div></div>
-    <div class="stat-card"><div class="stat-card-value">${wComp}</div><div class="stat-card-label">WVP Composite</div><div class="stat-card-sub">Out of 100</div></div>
+  // ── 5 Stat cards ─────────────────────────────────────────────────────
+  html += `<div class="sent-stat-row">
+    <div class="sent-stat-card">
+      <div class="sent-stat-value">${n}</div>
+      <div class="sent-stat-code">RESPONDENTS</div>
+      <div class="sent-stat-sub">${nT} with NPS score</div>
+    </div>
+    <div class="sent-stat-card" style="border-color:${nps!==null?npsCol+'33':'var(--card-border)'};background:${nps!==null?npsCol+'0d':'var(--card-bg)'}">
+      <div class="sent-stat-value" style="color:${npsCol}">${nps !== null ? nps : '—'}</div>
+      <div class="sent-stat-code">NPS SCORE</div>
+      <div class="sent-stat-sub">Promoters − Detractors</div>
+    </div>
+    <div class="sent-stat-card" style="border-color:rgba(23,232,143,0.25);background:rgba(23,232,143,0.06)">
+      <div class="sent-stat-value" style="color:#17E88F">${pP}%</div>
+      <div class="sent-stat-code">PROMOTERS</div>
+      <div class="sent-stat-sub">${pro} scored 9–10</div>
+    </div>
+    <div class="sent-stat-card${pasWarn ? ' warn' : ''}">
+      <div class="sent-stat-value" style="color:#80BBAD">${paP}%</div>
+      <div class="sent-stat-code">${pasWarn ? '⚠ ' : ''}PASSIVES</div>
+      <div class="sent-stat-sub">${pas} scored 7–8${pasWarn ? ' · >40%' : ''}</div>
+    </div>
+    <div class="sent-stat-card" style="border-color:rgba(210,120,90,0.25);background:rgba(210,120,90,0.06)">
+      <div class="sent-stat-value" style="color:#D2785A">${dP}%</div>
+      <div class="sent-stat-code">DETRACTORS</div>
+      <div class="sent-stat-sub">${det} scored 0–6</div>
+    </div>
   </div>`;
 
-  // NPS breakdown
-  html += `<div class="chart-card"><div class="chart-card-title">eNPS Breakdown</div><div class="nps-grid">
-    <div><div class="nps-score-big" style="color:${npsCol}">${nps!==null?nps:'—'}</div><div class="nps-score-label">Net Promoter Score</div><div style="margin-top:0.5rem;font-size:0.72rem;color:var(--text-muted)">${nT} responses</div></div>
-    <div class="nps-breakdown">
-      <div class="nps-tier"><span class="nps-tier-label">Promoters (9–10)</span><div class="nps-tier-bar" style="background:linear-gradient(90deg,#17E88F ${pP}%,var(--card-border) ${pP}%)"></div><span class="nps-tier-pct" style="color:#17E88F">${pP}%</span></div>
-      <div class="nps-tier"><span class="nps-tier-label">Passives (7–8)</span><div class="nps-tier-bar" style="background:linear-gradient(90deg,#80BBAD ${paP}%,var(--card-border) ${paP}%)"></div><span class="nps-tier-pct" style="color:#80BBAD">${paP}%</span></div>
-      <div class="nps-tier"><span class="nps-tier-label">Detractors (0–6)</span><div class="nps-tier-bar" style="background:linear-gradient(90deg,#D2785A ${dP}%,var(--card-border) ${dP}%)"></div><span class="nps-tier-pct" style="color:#D2785A">${dP}%</span></div>
-    </div></div></div>`;
+  // ── Derived note ──────────────────────────────────────────────────────
+  html += `<div class="derived-note">
+    <strong>Classification derived from the eNPS question.</strong>
+    Respondents scoring 9–10 are Promoters, 7–8 are Passives, and 0–6 are Detractors.
+    Pyramid scores below reflect average workplace satisfaction by engagement tier across three levels of the workplace experience.
+  </div>`;
 
-  // Satisfaction distribution
-  if(satS.length) {
-    const satDist = Array.from({length:11},(_,i)=>10-i).map(s=>({s,n:satS.filter(x=>x===s).length})).filter(d=>d.n>0);
-    html += `<div class="chart-card"><div class="chart-card-title">Satisfaction Score Distribution</div><div class="h-bar-chart">`;
-    satDist.forEach(({s,n}) => {
-      const p2=pct(n,satS.length), c2=s>=8?'#17E88F':s>=6?'#80BBAD':'#D2785A';
-      html += `<div class="h-bar-row">
-        <span style="font-size:0.76rem;color:var(--text);min-width:55px;flex-shrink:0">Score ${s}</span>
-        <div style="flex:1;height:20px;background:var(--card-border);border-radius:4px;overflow:hidden;">
-          <div style="height:100%;width:${p2}%;background:${c2};border-radius:4px;display:flex;align-items:center;padding-left:6px;">
-            ${p2>9?`<span style="font-size:0.65rem;font-weight:600;color:#001A14">${p2}%</span>`:''}
-          </div>
+  // ── Pyramid levels definition ─────────────────────────────────────────
+  const pyramid = [
+    { name:'Physical Environment', short:'Physical', cols:[...C.SFUNC,...C.SDES,...C.VIBE], color:'#003F2D' },
+    { name:'Connections',          short:'Connect.',  cols:[...C.REL,...C.LEARN,...C.SOC],   color:'#538184' },
+    { name:'Belonging & Values',   short:'Belonging', cols:[...C.WVP],                       color:'#80BBAD' },
+  ];
+
+  const tierRows = { pro:[], pas:[], det:[] };
+  rows.forEach(r => {
+    const v = parseScore(gv(r, C.ENPS));
+    if (v === null) return;
+    (v >= 9 ? tierRows.pro : v >= 7 ? tierRows.pas : tierRows.det).push(r);
+  });
+
+  function levelAvg(rArr, cols) {
+    const vals = rArr.flatMap(r => cols.map(c => parseLikert(gv(r, c))).filter(v => v !== null));
+    return vals.length ? (vals.reduce((s, v) => s + v, 0) / vals.length / 5 * 100) : null;
+  }
+
+  const pyrData = pyramid.map(lvl => ({
+    ...lvl,
+    overall: levelAvg(rows, lvl.cols),
+    proAvg:  levelAvg(tierRows.pro, lvl.cols),
+    pasAvg:  levelAvg(tierRows.pas, lvl.cols),
+    detAvg:  levelAvg(tierRows.det, lvl.cols),
+  }));
+
+  // ── Pyramid + Engagement Slope ────────────────────────────────────────
+  html += `<div class="chart-card">
+    <div class="chart-card-title">Workplace Engagement Pyramid</div>
+    <div class="pyramid-wrap">
+      ${pyramidSVG(pyrData)}
+      <div class="pyramid-slopes">
+        <div style="font-size:0.72rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.6rem">Engagement Slope by Level</div>`;
+
+  // Reverse so we read top-to-bottom matching pyramid (Belonging at top)
+  pyrData.slice().reverse().forEach(lvl => {
+    const slopeNum = (lvl.proAvg !== null && lvl.detAvg !== null) ? lvl.proAvg - lvl.detAvg : null;
+    const slopeStr = slopeNum !== null ? (slopeNum >= 0 ? '+' : '') + slopeNum.toFixed(1) + ' pts' : '—';
+    const barW = slopeNum !== null ? Math.min(100, Math.max(0, slopeNum * 3)) : 0;
+    const slopeCol = slopeNum === null ? 'var(--text-muted)' : slopeNum >= 10 ? '#17E88F' : slopeNum >= 5 ? '#80BBAD' : '#DBD99A';
+    html += `<div class="slope-row">
+      <span class="slope-label">${lvl.name}</span>
+      <div class="slope-track">
+        <div class="slope-fill" style="width:${barW}%;background:${lvl.color}"></div>
+      </div>
+      <span class="slope-value" style="color:${slopeCol}">${slopeStr}</span>
+    </div>`;
+  });
+
+  html += `<div style="font-size:0.68rem;color:var(--text-muted);margin-top:0.7rem;line-height:1.5">
+    Slope = Promoter avg − Detractor avg<br>Higher = Promoters rate this level meaningfully better
+  </div>
+  </div></div></div>`;
+
+  // ── 3-column Pyramid Score Breakdown ─────────────────────────────────
+  html += `<div class="chart-card">
+    <div class="chart-card-title">Pyramid Scores by Engagement Tier</div>
+    <div class="pyr-scores-grid">`;
+
+  const tiers = [
+    { label:'Promoters', key:'proAvg', color:'#17E88F', rows: tierRows.pro },
+    { label:'Passives',  key:'pasAvg', color:'#80BBAD', rows: tierRows.pas },
+    { label:'Detractors',key:'detAvg', color:'#D2785A', rows: tierRows.det },
+  ];
+
+  tiers.forEach(tier => {
+    html += `<div class="pyr-score-card">
+      <div class="pyr-score-title" style="color:${tier.color}">${tier.label}</div>
+      <div class="pyr-score-sub">${tier.rows.length} respondents</div>`;
+    pyrData.slice().reverse().forEach(lvl => {
+      const v = lvl[tier.key];
+      const dispPct = v !== null ? Math.round(v) : 0;
+      const dispStr = v !== null ? dispPct + '%' : '—';
+      html += `<div class="pyr-bar-row">
+        <span class="pyr-bar-label">${lvl.name}</span>
+        <div class="pyr-bar-track">
+          <div class="pyr-bar-fill" style="width:${dispPct}%;background:${tier.color}40;border-right:2px solid ${tier.color}"></div>
         </div>
-        <span style="font-size:0.72rem;color:var(--text-muted);min-width:60px;text-align:right">${n} (${p2}%)</span>
+        <span class="pyr-bar-pct" style="color:${tier.color}">${dispStr}</span>
       </div>`;
     });
-    html += `</div></div>`;
-  }
+    html += `</div>`;
+  });
 
-  // Verbatims
-  const pos = rows.map(r=>gv(r,C.Q42)).filter(v=>v&&v.length>10);
-  const neg = rows.map(r=>gv(r,C.Q43)).filter(v=>v&&v.length>10);
+  html += `</div></div>`;
 
-  if(pos.length) {
+  // ── Verbatims ─────────────────────────────────────────────────────────
+  const pos = rows.map(r => gv(r, C.Q42)).filter(v => v && v.length > 10);
+  const neg = rows.map(r => gv(r, C.Q43)).filter(v => v && v.length > 10);
+
+  if (pos.length) {
     html += `<div class="chart-card"><div class="chart-card-title">What Employees Look Forward To <span>sample verbatims</span></div><div class="verbatim-list">`;
-    pos.slice(0,8).forEach(v=>html+=`<div class="verbatim-item">"${esc(v)}"</div>`);
-    if(pos.length>8) html+=`<div style="font-size:0.72rem;color:var(--text-muted);padding-top:0.4rem">+ ${pos.length-8} more responses</div>`;
+    pos.slice(0, 8).forEach(v => html += `<div class="verbatim-item">"${esc(v)}"</div>`);
+    if (pos.length > 8) html += `<div style="font-size:0.72rem;color:var(--text-muted);padding-top:0.4rem">+ ${pos.length-8} more responses</div>`;
     html += `</div></div>`;
   }
-  if(neg.length) {
+  if (neg.length) {
     html += `<div class="chart-card"><div class="chart-card-title">What Employees Don't Look Forward To <span>sample verbatims</span></div><div class="verbatim-list">`;
-    neg.slice(0,8).forEach(v=>html+=`<div class="verbatim-item neg">"${esc(v)}"</div>`);
-    if(neg.length>8) html+=`<div style="font-size:0.72rem;color:var(--text-muted);padding-top:0.4rem">+ ${neg.length-8} more responses</div>`;
+    neg.slice(0, 8).forEach(v => html += `<div class="verbatim-item neg">"${esc(v)}"</div>`);
+    if (neg.length > 8) html += `<div style="font-size:0.72rem;color:var(--text-muted);padding-top:0.4rem">+ ${neg.length-8} more responses</div>`;
     html += `</div></div>`;
   }
-  if(!pos.length && !neg.length) {
+  if (!pos.length && !neg.length) {
     html += `<div class="field-notice">No verbatim responses found. Columns Q42.A1 and Q43.A1 may be empty in this dataset.</div>`;
   }
 
