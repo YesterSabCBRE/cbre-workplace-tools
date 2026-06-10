@@ -73,7 +73,8 @@ nav {
   background: var(--card-bg);
   margin-bottom: 1rem;
 }
-.upload-zone:hover, .upload-zone.dragover {
+.upload-zone:hover, .upload-zone.dragover,
+.upload-compact.dragover {
   border-color: rgba(23,232,143,0.4);
   background: rgba(23,232,143,0.04);
 }
@@ -282,6 +283,72 @@ nav {
 /* EMPTY */
 .empty-state { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem; }
 
+/* LANDING PAGE */
+.landing-hero { margin-bottom: 2.5rem; }
+.landing-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 0.75rem; }
+.landing-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.75; max-width: 640px; }
+.landing-desc strong { color: var(--text); font-weight: 600; }
+
+.landing-section { margin-bottom: 2.5rem; }
+.landing-section-title { font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 0.3rem; }
+.landing-section-sub { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.1rem; line-height: 1.6; }
+
+.module-grid { display: grid; gap: 0.85rem; }
+.module-grid-5 { grid-template-columns: repeat(5, 1fr); }
+.module-grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+.module-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.1rem 1.1rem;
+  transition: border-color 0.2s, background 0.2s;
+  cursor: default;
+}
+.module-card:hover {
+  border-color: rgba(23,232,143,0.25);
+  background: rgba(23,232,143,0.03);
+}
+.module-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  margin-bottom: 0.85rem;
+  background: rgba(23,232,143,0.1);
+  border: 1px solid rgba(23,232,143,0.15);
+}
+.module-card-title { font-size: 0.88rem; font-weight: 600; color: var(--text); margin-bottom: 0.4rem; line-height: 1.3; }
+.module-card-desc { font-size: 0.75rem; color: var(--text-muted); line-height: 1.55; }
+
+.getting-started {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+}
+.getting-started-title { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem; }
+.getting-started ol { padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.getting-started li { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+.getting-started li strong { color: var(--text); font-weight: 600; }
+
+.upload-compact {
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.4rem;
+}
+.upload-compact-label { font-size: 0.85rem; color: var(--text); flex: 1; min-width: 200px; }
+.upload-compact-label span { color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 0.15rem; }
+.upload-compact-actions { display: flex; gap: 0.65rem; flex-shrink: 0; }
+
+@media (max-width: 780px) {
+  .module-grid-5 { grid-template-columns: repeat(2, 1fr); }
+  .module-grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
 @media (max-width: 900px) {
   .app-layout.active { flex-direction: column; }
   .sidebar {
@@ -310,26 +377,99 @@ nav {
 </nav>
 
 <div class="page">
-  <div class="page-header">
-    <div class="page-eyebrow">📊 Analysis Tool</div>
-    <h1 class="page-title">Workplace Survey Analyzer</h1>
-    <p class="page-desc">Upload your survey CSV to generate instant insights across demographics, space performance, collaboration patterns, and employee sentiment.</p>
-  </div>
 
-  <!-- UPLOAD SCREEN -->
-  <div class="upload-screen" id="uploadScreen">
-    <div class="upload-zone" id="uploadZone">
-      <div class="upload-icon">📋</div>
-      <div class="upload-label">Drop your survey CSV here</div>
-      <div class="upload-sub">or click to browse · CSV with 5 header rows before data</div>
-      <input type="file" id="file-input" accept=".csv">
+  <!-- LANDING / UPLOAD SCREEN -->
+  <div id="uploadScreen">
+
+    <!-- Hero -->
+    <div class="landing-hero">
+      <div class="page-eyebrow">📊 Analysis Tool</div>
+      <h1 class="landing-title">CBRE Workplace Survey Analyzer</h1>
+      <p class="landing-desc">Analyze workplace engagement survey data to understand employee preferences, attendance drivers, and sentiment patterns. Use <strong>Standard Reporting</strong> for question-level response distributions, or <strong>Module Outputs</strong> for scored analytical models.</p>
     </div>
-    <div class="upload-actions">
-      <button class="btn-primary" onclick="document.getElementById('file-input').click()">Choose File</button>
-      <button class="btn-secondary" onclick="loadSampleData()">Load Sample Data</button>
+
+    <!-- Standard Reporting -->
+    <div class="landing-section">
+      <div class="landing-section-title">Standard Reporting</div>
+      <div class="landing-section-sub">Response distributions for every survey question, organized by section, with demographic filtering.</div>
+      <div class="module-grid module-grid-5">
+        <div class="module-card">
+          <div class="module-icon">👥</div>
+          <div class="module-card-title">Demographics</div>
+          <div class="module-card-desc">Interactive demographic slicer with cross-tabulation by department, role, generation, and tenure.</div>
+        </div>
+        <div class="module-card">
+          <div class="module-icon">🏢</div>
+          <div class="module-card-title">Space, Design &amp; Function</div>
+          <div class="module-card-desc">Space supply, functionality ratings, design perceptions, and office environment quality.</div>
+        </div>
+        <div class="module-card">
+          <div class="module-icon">🤝</div>
+          <div class="module-card-title">Relationships &amp; Collaboration</div>
+          <div class="module-card-desc">Work split, meeting cadence, relationships, learning opportunities, and hosting behaviors.</div>
+        </div>
+        <div class="module-card">
+          <div class="module-icon">💡</div>
+          <div class="module-card-title">WVP &amp; Attachment</div>
+          <div class="module-card-desc">Culture, belonging, organizational attachment, and workplace value proposition scores.</div>
+        </div>
+        <div class="module-card">
+          <div class="module-icon">🔭</div>
+          <div class="module-card-title">Future Preferences</div>
+          <div class="module-card-desc">Location preferences, remote and office benefits, trade-off priorities, and amenity importance.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Module Outputs -->
+    <div class="landing-section">
+      <div class="landing-section-title">Module Outputs</div>
+      <div class="landing-section-sub">Scored analytical models that synthesize survey responses into actionable workplace metrics.</div>
+      <div class="module-grid module-grid-3">
+        <div class="module-card">
+          <div class="module-icon">📍</div>
+          <div class="module-card-title">Attendance Drivers</div>
+          <div class="module-card-desc">Understand what draws employees to the office, scored across four dimensions: <strong>Functionality</strong>, <strong>Teamwork</strong>, <strong>Exposure</strong>, and <strong>Experience</strong>.</div>
+        </div>
+        <div class="module-card">
+          <div class="module-icon">⚡</div>
+          <div class="module-card-title">Work Styles</div>
+          <div class="module-card-desc">Explore how employees allocate time across individual focus, collaboration types, and meeting sizes to inform space programming.</div>
+        </div>
+        <div class="module-card">
+          <div class="module-icon">💬</div>
+          <div class="module-card-title">Sentiment Analysis</div>
+          <div class="module-card-desc">Employee NPS classification, satisfaction scoring, WVP composite, and verbatim feedback themes.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Getting Started -->
+    <div class="getting-started">
+      <div class="getting-started-title">Getting started</div>
+      <ol>
+        <li>Upload your survey CSV below, or use the embedded <strong>sample data</strong> to explore the tool</li>
+        <li>Use <strong>Standard Reporting</strong> pages to explore raw response distributions</li>
+        <li>Use <strong>Module Outputs</strong> for scored models and analytical insights</li>
+        <li>Apply demographic filters on any page to explore different workforce segments</li>
+      </ol>
+    </div>
+
+    <!-- Upload zone (compact) -->
+    <div class="upload-compact" id="uploadZone">
+      <input type="file" id="file-input" accept=".csv" style="display:none">
+      <div class="upload-compact-label">
+        Load your survey data
+        <span>Drag &amp; drop a CSV, choose a file, or load sample data to get started</span>
+      </div>
+      <div class="upload-compact-actions">
+        <button class="btn-primary" onclick="document.getElementById('file-input').click()">Choose File</button>
+        <button class="btn-secondary" onclick="loadSampleData()">Load Sample Data</button>
+      </div>
     </div>
     <div class="upload-error" id="uploadError"></div>
-  </div>
+
+  </div><!-- /uploadScreen -->
 
   <!-- MAIN APP -->
   <div class="app-layout" id="appLayout">
