@@ -120,6 +120,7 @@ nav {
   padding: 0.9rem 1.25rem;
   margin-bottom: 1.25rem;
 }
+.control-bar-left { display: flex; flex-direction: column; gap: 0.5rem; flex-shrink: 0; }
 .n-badge {
   display: inline-flex; align-items: center; gap: 0.4rem;
   background: rgba(23,232,143,0.12);
@@ -127,8 +128,19 @@ nav {
   border-radius: 20px;
   padding: 0.35rem 0.85rem;
   font-size: 0.82rem; font-weight: 600; color: var(--accent);
-  white-space: nowrap; align-self: center;
+  white-space: nowrap;
 }
+.client-name-wrap { display: flex; flex-direction: column; gap: 0.2rem; }
+.client-name-input {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--card-border);
+  border-radius: 6px; padding: 0.38rem 0.65rem;
+  color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 500;
+  width: 190px;
+  transition: border-color 0.2s;
+}
+.client-name-input:focus { outline: none; border-color: rgba(23,232,143,0.4); }
+.client-name-input::placeholder { color: var(--text-muted); font-weight: 400; }
 .filters-row { display: flex; gap: 0.65rem; flex-wrap: wrap; flex: 1; align-items: flex-end; }
 .filter-group { display: flex; flex-direction: column; gap: 0.25rem; }
 .filter-label { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
@@ -432,6 +444,7 @@ nav {
 
 <nav>
   <a class="nav-logo" href="/cbre-workplace-tools/"><span>CBRE</span> Workplace Tools</a>
+  <span id="clientNameBadge" style="display:none;font-size:0.78rem;font-weight:500;color:var(--text-muted);background:rgba(255,255,255,0.06);border:1px solid var(--card-border);border-radius:20px;padding:0.25rem 0.85rem;"></span>
   <a class="nav-back" href="/cbre-workplace-tools/">← Back to tools</a>
 </nav>
 
@@ -553,7 +566,13 @@ nav {
 
     <!-- CONTROL BAR -->
     <div class="control-bar">
-      <div class="n-badge" id="nBadge">N = 0</div>
+      <div class="control-bar-left">
+        <div class="n-badge" id="nBadge">N = 0</div>
+        <div class="client-name-wrap">
+          <span class="filter-label">Client / Project</span>
+          <input type="text" id="clientName" class="client-name-input" placeholder="e.g. Morley Builders" oninput="updateClientName()">
+        </div>
+      </div>
       <div class="filters-row">
         <div class="filter-group">
           <span class="filter-label">Department</span>
@@ -808,6 +827,12 @@ function buildFilters() {
       o.value = v; o.textContent = v; sel.appendChild(o);
     });
   });
+}
+
+function updateClientName() {
+  const name = (document.getElementById('clientName').value || '').trim();
+  const badge = document.getElementById('clientNameBadge');
+  if (badge) { badge.textContent = name || ''; badge.style.display = name ? 'inline' : 'none'; }
 }
 
 function applyFilters() {
@@ -1190,7 +1215,7 @@ function personalityScalesSVG(chartOrder) {
   const legY = axisY + 22;
   const legX = W / 2;
   g += `<rect x="${(legX - 20).toFixed(1)}" y="${(legY - 7).toFixed(1)}" width="36" height="14" rx="7" fill="rgba(242,244,243,0.65)"/>`;
-  g += `<text x="${(legX + 22).toFixed(1)}" y="${(legY + 4).toFixed(1)}" font-size="9.5" fill="rgba(242,244,243,0.45)" text-anchor="start" font-family="DM Sans,Arial,sans-serif">Filtered Selection</text>`;
+  g += `<text x="${(legX + 22).toFixed(1)}" y="${(legY + 4).toFixed(1)}" font-size="9.5" fill="rgba(242,244,243,0.45)" text-anchor="start" font-family="DM Sans,Arial,sans-serif">Survey Average</text>`;
 
   return `<svg id="personalityScalesSVG" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block;margin:0 auto;max-width:100%">${g}</svg>`;
 }
@@ -1412,7 +1437,7 @@ function renderWorkStyles() {
       <button class="export-btn" onclick="exportPersonalityScalesPNG()">↓ Export PNG</button>
     </div>
     <p style="font-size:0.8rem;color:var(--text-muted);line-height:1.6;margin-bottom:1.5rem;max-width:600px">
-      Each survey question maps to one of five dimensions that define worker personas. These scores drive programming ratios for individual vs. collaborative space and the balance of open to enclosed settings.
+      Each survey question maps to one of five dimensions that define worker personas.
     </p>
     ${personalityScalesSVG(chartOrder)}
   </div>`;
