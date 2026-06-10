@@ -265,12 +265,54 @@ nav {
 .driver-item { font-size: 0.73rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.4rem; }
 .driver-item::before { content: '›'; color: var(--accent); }
 
-/* WORK STYLES */
-.ws-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
-.ws-label { font-size: 0.78rem; color: var(--text); min-width: 200px; flex-shrink: 0; }
-.ws-track { flex: 1; height: 28px; background: var(--card-border); border-radius: 6px; overflow: hidden; position: relative; }
-.ws-fill { height: 100%; background: linear-gradient(90deg, var(--green) 0%, var(--accent) 100%); border-radius: 6px; }
-.ws-pct { font-size: 0.76rem; font-weight: 600; color: var(--text); position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); }
+/* WORK STYLES — PERSONALITY SCALES */
+.ws-stat-row { display: grid; grid-template-columns: repeat(6,1fr); gap: 0.7rem; margin-bottom: 1.2rem; }
+.ws-stat-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 0.9rem 1rem; }
+.ws-stat-code { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.3rem; }
+.ws-stat-value { font-family: 'DM Serif Display', serif; font-size: 1.9rem; line-height: 1; color: var(--text); margin-bottom: 0.25rem; }
+.ws-stat-sub { font-size: 0.7rem; color: var(--text-muted); line-height: 1.4; }
+
+.personality-chart { display: flex; flex-direction: column; gap: 0; padding: 0.5rem 0; }
+.ps-row { display: grid; grid-template-columns: 100px 1fr 110px; align-items: center; gap: 0.75rem; height: 42px; position: relative; }
+.ps-label-left { font-size: 0.76rem; color: var(--accent); text-align: right; }
+.ps-label-right { font-size: 0.76rem; color: var(--accent); }
+.ps-track {
+  position: relative; height: 4px;
+  background: rgba(255,255,255,0.08); border-radius: 2px;
+}
+.ps-track::before, .ps-track::after,
+.ps-track .tick-20, .ps-track .tick-40, .ps-track .tick-60, .ps-track .tick-80 {
+  content: ''; position: absolute; width: 1px; height: 8px; top: -2px;
+  background: rgba(255,255,255,0.12);
+}
+.ps-track::before { left: 0; }
+.ps-track::after  { right: 0; }
+.ps-marker {
+  position: absolute; top: 50%; transform: translate(0, -50%);
+  width: 36px; height: 16px;
+  background: rgba(242,244,243,0.75); border-radius: 8px;
+  transition: left 0.4s ease;
+}
+.ps-axis {
+  display: flex; justify-content: space-between;
+  padding: 0 0 0 100px; /* align with track start accounting for left label */
+  padding-right: 110px;
+  margin-top: 0.1rem;
+}
+.ps-axis span { font-size: 0.65rem; color: var(--text-muted); }
+
+.scale-interp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-top: 0.25rem; }
+.scale-interp-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 1rem 1.1rem; }
+.scale-interp-title { font-size: 0.82rem; font-weight: 600; color: var(--text); margin-bottom: 0.45rem; }
+.scale-interp-desc { font-size: 0.76rem; color: var(--text-muted); line-height: 1.6; }
+.scale-interp-desc strong { color: var(--accent); font-weight: 500; }
+
+@media (max-width: 780px) {
+  .ws-stat-row { grid-template-columns: repeat(3, 1fr); }
+  .scale-interp-grid { grid-template-columns: 1fr; }
+  .ps-row { grid-template-columns: 80px 1fr 90px; }
+  .ps-label-left, .ps-label-right { font-size: 0.68rem; }
+}
 
 /* GRID HELPERS */
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
@@ -1247,38 +1289,101 @@ function renderAttendance() {
 // ─── WORK STYLES ──────────────────────────────────────────────────────────────
 function renderWorkStyles() {
   const rows = filteredRows;
-  const dims = [
-    {label:'Solo / Individual Work', col:C.TIME_I},
-    {label:'Time with Others', col:C.TIME_O},
-    {label:'Scheduled Collaboration', col:C.COL_S},
-    {label:'Spontaneous Collaboration', col:C.COL_U},
-    {label:'Small-Group Meetings (2–5)', col:C.MTG_S},
-    {label:'Medium Meetings (6–10)', col:C.MTG_M},
-    {label:'Large Meetings (11–16)', col:C.MTG_L},
-  ].map(d => ({...d, val: avg(numVals(rows,d.col))||0}));
 
-  let html = `<div class="cards-grid">
-    <div class="stat-card"><div class="stat-card-value">${Math.round(dims[0].val)}%</div><div class="stat-card-label">Solo Time (avg)</div><div class="stat-card-sub">Individual focus work</div></div>
-    <div class="stat-card"><div class="stat-card-value">${Math.round(dims[1].val)}%</div><div class="stat-card-label">Collaborative Time (avg)</div><div class="stat-card-sub">Time spent with others</div></div>
-    <div class="stat-card"><div class="stat-card-value">${Math.round(dims[2].val)}%</div><div class="stat-card-label">Scheduled Collab</div><div class="stat-card-sub">Planned meetings</div></div>
-    <div class="stat-card"><div class="stat-card-value">${Math.round(dims[3].val)}%</div><div class="stat-card-label">Spontaneous Collab</div><div class="stat-card-sub">Unscheduled interactions</div></div>
-  </div>`;
+  // ── Scale score derivations ─────────────────────────────────────────
+  // IC: % time collaborative (TIME.TOTHERS avg)
+  const ic = Math.round(avg(numVals(rows, C.TIME_O)) || 0);
 
-  html += `<div class="chart-card"><div class="chart-card-title">Work Style Profile — Average % Allocation</div>`;
-  dims.forEach(({label,val}) => {
-    const w = Math.round(val);
-    html += `<div class="ws-row"><span class="ws-label">${label}</span><div class="ws-track"><div class="ws-fill" style="width:${w}%"></div><span class="ws-pct">${w}%</span></div></div>`;
+  // SU: % of collaborative time that is unscheduled (COLLAB.UCOLLAB avg)
+  const su = Math.round(avg(numVals(rows, C.COL_U)) || 0);
+
+  // DQ: quiet env preference normalised — avg Likert(VIBE.QUIET) / 5 × 100
+  const vibeQVals = rows.map(r => parseLikert(gv(r, 'VIBE.QUIET'))).filter(v => v !== null);
+  const dq = Math.round(vibeQVals.length ? (avg(vibeQVals) / 5 * 100) : 0);
+
+  // NP: large-meeting proportion (Q30.A3 avg) as specialised-needs proxy
+  const np = Math.round(avg(numVals(rows, C.MTG_L)) || 0);
+
+  // LM: cross-team interaction score normalised — avg Likert(RELATION.NTCONNECT) / 5 × 100
+  const ntVals = rows.map(r => parseLikert(gv(r, 'RELATION.NTCONNECT'))).filter(v => v !== null);
+  const lm = Math.round(ntVals.length ? (avg(ntVals) / 5 * 100) : 0);
+
+  const n = rows.length;
+
+  const scales = [
+    { code:'IC', pct: ic, low:'Individual',  high:'Collaborative',
+      desc:'Balance between solo focused work and team collaboration. Lower = individual preference; higher = collaborative preference.' },
+    { code:'SU', pct: su, low:'Scheduled',   high:'Unscheduled',
+      desc:'Work pattern preferences. Lower = structured, planned patterns; higher = flexible, spontaneous interactions.' },
+    { code:'DQ', pct: dq, low:'Dynamic',     high:'Quiet',
+      desc:'Environmental preferences. Lower = bustling, energetic environments; higher = calm, quiet workspaces.' },
+    { code:'NP', pct: np, low:'Universal',   high:'Specific',
+      desc:'Workspace needs. Lower = standard equipment needs; higher = specialized requirements (labs, unique hardware).' },
+    { code:'LM', pct: lm, low:'Local',       high:'Multiregional',
+      desc:'Team distribution. Lower = co-located teams; higher = distributed, multi-location collaboration.' },
+  ];
+
+  // ── Stat cards ──────────────────────────────────────────────────────
+  let html = `<div class="ws-stat-row">
+    <div class="ws-stat-card">
+      <div class="ws-stat-code">RESPONDENTS</div>
+      <div class="ws-stat-value">${n}</div>
+      <div class="ws-stat-sub">of ${n} total</div>
+    </div>`;
+  scales.forEach(s => {
+    html += `<div class="ws-stat-card">
+      <div class="ws-stat-code">${s.code}</div>
+      <div class="ws-stat-value">${s.pct}%</div>
+      <div class="ws-stat-sub">${s.low} ↔ ${s.high}</div>
+    </div>`;
   });
   html += `</div>`;
 
-  // Bucket distribution
-  const bks = ['0–25%','26–50%','51–75%','76–100%'];
-  const bkCounts = [0,0,0,0];
-  numVals(rows,C.TIME_I).forEach(v => { bkCounts[v<=25?0:v<=50?1:v<=75?2:3]++; });
-  const bkT = bkCounts.reduce((s,v)=>s+v,0);
-  html += `<div class="chart-card"><div class="chart-card-title">Individual Work Time Distribution</div><div class="h-bar-chart">`;
-  bks.forEach((b,i) => html += hBar(b + ' individual time', bkT ? pct(bkCounts[i],bkT) : 0));
-  html += `</div></div>`;
+  // ── Personality Scales chart ────────────────────────────────────────
+  // Reference shows rows top-to-bottom: LM, NP, DQ, SU, IC
+  const chartOrder = [...scales].reverse();
+
+  html += `<div class="chart-card">
+    <div style="font-size:1rem;font-weight:600;color:var(--text);margin-bottom:0.4rem">Personality Scales</div>
+    <p style="font-size:0.8rem;color:var(--text-muted);line-height:1.6;margin-bottom:1.75rem;max-width:600px">
+      Each survey question maps to one of five dimensions that define worker personas. These scores drive programming ratios for individual vs. collaborative space and the balance of open to enclosed settings.
+    </p>
+    <div class="personality-chart">`;
+
+  chartOrder.forEach(s => {
+    // Clamp marker so pill stays inside track (18px = half pill width)
+    const leftPct = Math.min(Math.max(s.pct, 3), 97);
+    html += `<div class="ps-row">
+      <span class="ps-label-left">${s.low}</span>
+      <div class="ps-track">
+        <span class="tick-20" style="position:absolute;width:1px;height:8px;top:-2px;left:20%;background:rgba(255,255,255,0.12)"></span>
+        <span class="tick-40" style="position:absolute;width:1px;height:8px;top:-2px;left:40%;background:rgba(255,255,255,0.12)"></span>
+        <span class="tick-60" style="position:absolute;width:1px;height:8px;top:-2px;left:60%;background:rgba(255,255,255,0.12)"></span>
+        <span class="tick-80" style="position:absolute;width:1px;height:8px;top:-2px;left:80%;background:rgba(255,255,255,0.12)"></span>
+        <div class="ps-marker" style="left:calc(${leftPct}% - 18px)"></div>
+      </div>
+      <span class="ps-label-right">${s.high}</span>
+    </div>`;
+  });
+
+  html += `</div>
+    <div class="ps-axis"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span><span>100%</span></div>
+    <div style="display:flex;align-items:center;gap:0.5rem;justify-content:center;margin-top:1.1rem">
+      <div style="width:36px;height:14px;background:rgba(242,244,243,0.65);border-radius:7px"></div>
+      <span style="font-size:0.72rem;color:var(--text-muted)">Filtered Selection</span>
+    </div>
+  </div>`;
+
+  // ── Scale Interpretations ───────────────────────────────────────────
+  html += `<div class="section-heading" style="margin:1.6rem 0 0.75rem">Scale Interpretations</div>
+    <div class="scale-interp-grid">`;
+  scales.forEach(s => {
+    html += `<div class="scale-interp-card">
+      <div class="scale-interp-title">${s.code}: ${s.low} ↔ ${s.high}</div>
+      <div class="scale-interp-desc">${s.desc}</div>
+    </div>`;
+  });
+  html += `</div>`;
 
   document.getElementById('workStylesContent').innerHTML = html;
 }
