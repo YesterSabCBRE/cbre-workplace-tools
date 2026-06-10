@@ -283,6 +283,23 @@ nav {
 /* EMPTY */
 .empty-state { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem; }
 
+/* QUADRANT CHART */
+.quadrant-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 1.2rem 1.25rem; margin-bottom: 1rem; }
+.quadrant-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.4rem; }
+.quadrant-card-title { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); }
+.quadrant-desc { font-size: 0.78rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 1.25rem; max-width: 520px; }
+.export-btn {
+  padding: 0.35rem 0.85rem;
+  background: transparent; color: var(--accent);
+  font-family: 'DM Sans', sans-serif; font-size: 0.72rem; font-weight: 600;
+  border: 1px solid rgba(23,232,143,0.3); border-radius: 6px; cursor: pointer;
+  transition: background 0.2s; white-space: nowrap; flex-shrink: 0;
+}
+.export-btn:hover { background: rgba(23,232,143,0.08); }
+.quadrant-legend { display: flex; gap: 1.5rem; justify-content: center; margin-top: 1rem; flex-wrap: wrap; }
+.quadrant-legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.74rem; color: var(--text-muted); }
+.quadrant-legend-swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
 /* LANDING PAGE */
 .landing-hero { margin-bottom: 2.5rem; }
 .landing-title { font-family: 'DM Serif Display', serif; font-size: 2.4rem; line-height: 1.15; margin-bottom: 0.75rem; }
@@ -1092,6 +1109,91 @@ function renderFuture() {
   document.getElementById('futureContent').innerHTML = html;
 }
 
+// ─── QUADRANT SVG ─────────────────────────────────────────────────────────────
+function quadrantSVG(dims) {
+  // dims order: [Functionality, Teamwork, Exposure, Experience]
+  // Quadrant positions (clockwise from 12 o'clock):
+  //   0–90°   → top-right   → Functionality
+  //   90–180° → bottom-right → Experience
+  //   180–270°→ bottom-left  → Exposure
+  //   270–360°→ top-left     → Teamwork
+  const size = 340, cx = 170, cy = 170, R = 112, labelR = R + 36;
+  const toRad = deg => (deg - 90) * Math.PI / 180;
+
+  const quadDefs = [
+    { dim: dims[0], start: 0,   color: '#003F2D', label: ['Physical', 'Functionality'],   la: 45,  anchor: 'start' },
+    { dim: dims[3], start: 90,  color: '#80BBAD', label: ['Experience &', 'Convenience'], la: 135, anchor: 'start' },
+    { dim: dims[2], start: 180, color: '#538184', label: ['Engagement &', 'Exposure'],    la: 225, anchor: 'end'   },
+    { dim: dims[1], start: 270, color: '#17E88F', label: ['Teamwork &', 'Collaboration'], la: 315, anchor: 'end'   },
+  ];
+
+  let g = '';
+
+  // Background fill + outer ring
+  g += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="rgba(0,26,20,0.6)" stroke="rgba(255,255,255,0.10)" stroke-width="1.5"/>`;
+
+  // Concentric guide rings
+  [0.33, 0.66].forEach(f => {
+    g += `<circle cx="${cx}" cy="${cy}" r="${(R*f).toFixed(1)}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>`;
+  });
+
+  // Axis lines
+  g += `<line x1="${cx}" y1="${cy-R}" x2="${cx}" y2="${cy+R}" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>`;
+  g += `<line x1="${cx-R}" y1="${cy}" x2="${cx+R}" y2="${cy}" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>`;
+
+  // Quadrant fills
+  quadDefs.forEach(({ dim, start, color }) => {
+    const score = Math.min(Math.max((dim.score || 0) / 100, 0.05), 1.0);
+    const r = R * score;
+    const x1 = cx + r * Math.cos(toRad(start));
+    const y1 = cy + r * Math.sin(toRad(start));
+    const x2 = cx + r * Math.cos(toRad(start + 90));
+    const y2 = cy + r * Math.sin(toRad(start + 90));
+    g += `<path d="M${cx},${cy} L${x1.toFixed(1)},${y1.toFixed(1)} A${r.toFixed(1)},${r.toFixed(1)} 0 0,1 ${x2.toFixed(1)},${y2.toFixed(1)} Z" fill="${color}" opacity="0.90"/>`;
+  });
+
+  // Centre dot
+  g += `<circle cx="${cx}" cy="${cy}" r="3.5" fill="rgba(242,244,243,0.25)"/>`;
+
+  // Labels
+  quadDefs.forEach(({ label, la, anchor }) => {
+    const lRad = (la - 90) * Math.PI / 180;
+    const tx = cx + labelR * Math.cos(lRad);
+    const ty = cy + labelR * Math.sin(lRad);
+    label.forEach((line, i) => {
+      const ly = ty + (i - (label.length - 1) / 2) * 12;
+      g += `<text x="${tx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="9.5" fill="rgba(242,244,243,0.55)" text-anchor="${anchor}" dominant-baseline="middle" font-family="DM Sans,sans-serif">${line}</text>`;
+    });
+  });
+
+  return `<svg id="attendanceQuadrant" xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="display:block;margin:0 auto">${g}</svg>`;
+}
+
+function exportQuadrantPNG() {
+  const svg = document.getElementById('attendanceQuadrant');
+  if (!svg) return;
+  const pad = 40, svgSize = 340, canvasSize = svgSize + pad * 2;
+  const svgStr = new XMLSerializer().serializeToString(svg);
+  const canvas = document.createElement('canvas');
+  canvas.width = canvasSize; canvas.height = canvasSize;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#001A14';
+  ctx.fillRect(0, 0, canvasSize, canvasSize);
+  const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => {
+    ctx.drawImage(img, pad, pad, svgSize, svgSize);
+    URL.revokeObjectURL(url);
+    const a = document.createElement('a');
+    a.download = 'attendance-drivers-quadrant.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); alert('Export failed — try a different browser.'); };
+  img.src = url;
+}
+
 // ─── ATTENDANCE DRIVERS ───────────────────────────────────────────────────────
 function renderAttendance() {
   const rows = filteredRows;
@@ -1103,11 +1205,9 @@ function renderAttendance() {
     { icon:'✨', name:'Experience', score: avg([gp('OPOTBEN.BWLB'),gp('OPOTBEN.OPRIVATE'),gp('OPOTBEN.ODISTRACT')])||0, items:['Work-life separation','Private workspace','Fewer distractions'] },
   ];
   const top = [...dims].sort((a,b)=>b.score-a.score)[0];
-  const avgSel = rows.length ? (rows.reduce((s,r)=>s+C.OBEN.filter(col=>gv(r,col)!=='').length,0)/rows.length).toFixed(1) : '—';
 
-  let html = `<div class="cards-grid">
+  let html = `<div class="cards-grid" style="grid-template-columns:1fr">
     <div class="stat-card"><div class="stat-card-value">${top?.name||'—'}</div><div class="stat-card-label">Top Attendance Driver</div><div class="stat-card-sub">${top?Math.round(top.score)+'% of respondents':''}</div></div>
-    <div class="stat-card"><div class="stat-card-value">${avgSel}</div><div class="stat-card-label">Avg Reasons Selected</div><div class="stat-card-sub">Per respondent (9 options)</div></div>
   </div><div class="driver-cards">`;
 
   dims.forEach(({icon,name,score,items}) => {
@@ -1120,6 +1220,20 @@ function renderAttendance() {
   });
 
   html += `</div>`;
+
+  // Quadrant chart
+  const qColors = ['#003F2D','#17E88F','#538184','#80BBAD'];
+  const qLabels = ['Functionality','Teamwork','Exposure','Experience'];
+  const legend = qLabels.map((l,i)=>`<div class="quadrant-legend-item"><div class="quadrant-legend-swatch" style="background:${qColors[i]}"></div>${l}</div>`).join('');
+  html += `<div class="quadrant-card">
+    <div class="quadrant-card-header">
+      <div class="quadrant-card-title">Attendance Quadrants</div>
+      <button class="export-btn" onclick="exportQuadrantPNG()">↓ Export PNG</button>
+    </div>
+    <p class="quadrant-desc">Why do employees come to the office? Some have functional reasons like equipment access; others prioritize team exposure or experience. Understanding these drivers helps shape hybrid policy and workplace strategy.</p>
+    ${quadrantSVG(dims)}
+    <div class="quadrant-legend">${legend}</div>
+  </div>`;
 
   // Full breakdown
   const ob2 = C.OBEN.map((col,i)=>({label:C.OBEN_L[i],p:gp(col)})).sort((a,b)=>b.p-a.p);
