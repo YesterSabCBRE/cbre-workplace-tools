@@ -1071,6 +1071,52 @@ function renderSpace() {
   const rows = filteredRows;
   let html = '';
 
+  // ── Key Takeaways ─────────────────────────────────────────────────────
+  // Supply: find space type with highest "too little" %
+  const supplyItems = C.SSUPPLY.map((col,i) => { const d = supplyDist(rows,col); return {label:C.SSUPPLY_L[i], tooLittlePct: d.t ? pct(d.l,d.t) : 0, rightPct: d.t ? pct(d.r,d.t) : 0}; });
+  const worstSupply = [...supplyItems].sort((a,b) => b.tooLittlePct - a.tooLittlePct)[0];
+  const bestSupply  = [...supplyItems].sort((a,b) => b.rightPct - a.rightPct)[0];
+
+  // Functionality: lowest and highest rated
+  const funcItems = C.SFUNC.map((col,i) => ({label:C.SFUNC_L[i], ...likertDist(rows,col)})).filter(d => d.avg !== null);
+  const lowestFunc  = funcItems.length ? [...funcItems].sort((a,b) => (a.avg||0)-(b.avg||0))[0] : null;
+  const highestFunc = funcItems.length ? [...funcItems].sort((a,b) => (b.avg||0)-(a.avg||0))[0] : null;
+
+  // Vibe: quiet vs dynamic lean
+  const quietAvg   = likertDist(rows,'VIBE.QUIET').avg;
+  const dynamicAvg = likertDist(rows,'VIBE.DYNAMIC').avg;
+
+  const spaceInsights = [];
+
+  if (worstSupply && worstSupply.tooLittlePct > 0) {
+    if (worstSupply.tooLittlePct >= 40) {
+      spaceInsights.push({ icon:'⚠️', text:`<strong>${worstSupply.tooLittlePct}% of respondents say ${worstSupply.label.toLowerCase()} are insufficient</strong> — the most cited supply gap and the highest-priority space addition to consider.` });
+    } else {
+      spaceInsights.push({ icon:'📦', text:`<strong>${worstSupply.label}</strong> has the largest perceived shortage, with ${worstSupply.tooLittlePct}% of respondents saying there is too little. ${bestSupply.rightPct > 60 ? `By contrast, ${bestSupply.label.toLowerCase()} are widely seen as well-stocked (${bestSupply.rightPct}% right amount).` : ''}` });
+    }
+  }
+
+  if (lowestFunc) {
+    const loScore = lowestFunc.avg !== null ? lowestFunc.avg.toFixed(1) : '—';
+    const hiScore = highestFunc && highestFunc.avg !== null ? highestFunc.avg.toFixed(1) : '—';
+    spaceInsights.push({ icon:'🔧', text:`<strong>${lowestFunc.label}</strong> is the lowest-rated functionality item (avg ${loScore}/5) and represents the clearest physical improvement opportunity. <strong>${highestFunc?.label}</strong> scores highest at ${hiScore}/5.` });
+  }
+
+  if (quietAvg !== null && dynamicAvg !== null) {
+    const lean = quietAvg > dynamicAvg ? 'quieter, library-like' : 'dynamic, energetic';
+    const leanScore = quietAvg > dynamicAvg ? quietAvg.toFixed(1) : dynamicAvg.toFixed(1);
+    const otherScore = quietAvg > dynamicAvg ? dynamicAvg.toFixed(1) : quietAvg.toFixed(1);
+    spaceInsights.push({ icon:'🎧', text:`Employees lean toward a <strong>${lean} environment</strong> (${leanScore}/5 vs ${otherScore}/5 for the alternative). Design programming should prioritise acoustic comfort and ${quietAvg > dynamicAvg ? 'focus-friendly zones' : 'collaborative, activating spaces'}.` });
+  }
+
+  if (spaceInsights.length) {
+    html += `<div class="insight-summary-card">
+      <div class="insight-summary-header"><span class="insight-summary-icon">💡</span><span>Key Takeaways</span><span class="insight-summary-tag">auto-generated from survey data</span></div>
+      <div class="insight-list">`;
+    spaceInsights.slice(0,3).forEach(ins => html += `<div class="insight-item"><span class="insight-item-icon">${ins.icon}</span><span>${ins.text}</span></div>`);
+    html += `</div></div>`;
+  }
+
   // Supply
   html += `<div class="chart-card"><div class="chart-card-title">Space Supply Adequacy</div><div class="stacked-chart">`;
   C.SSUPPLY.forEach((col,i) => html += supplyBar(C.SSUPPLY_L[i], supplyDist(rows,col)));
@@ -1106,6 +1152,49 @@ function renderSpace() {
 function renderRel() {
   const rows = filteredRows;
   let html = '';
+
+  // ── Key Takeaways ─────────────────────────────────────────────────────
+  const toNum = v => v !== null ? v : 0;
+
+  // Time split
+  const timeWithOthers = Math.round(avg(numVals(rows, C.TIME_O)) || 0);
+  const unscheduledPct = Math.round(avg(numVals(rows, C.COL_U)) || 0);
+
+  // Weakest and strongest relationship dimension
+  const relItems  = C.REL.map((col,i) => ({label:C.REL_L[i], ...likertDist(rows,col)})).filter(d => d.avg !== null);
+  const lowestRel  = relItems.length ? [...relItems].sort((a,b) => toNum(a.avg)-toNum(b.avg))[0] : null;
+  const highestRel = relItems.length ? [...relItems].sort((a,b) => toNum(b.avg)-toNum(a.avg))[0] : null;
+
+  // Top learning and social opportunity
+  const learnItems = C.LEARN.map((col,i) => ({label:C.LEARN_L[i], ...likertDist(rows,col)})).filter(d => d.avg !== null);
+  const topLearn   = learnItems.length ? [...learnItems].sort((a,b) => toNum(b.avg)-toNum(a.avg))[0] : null;
+
+  const socItems   = C.SOC.map((col,i) => ({label:C.SOC_L[i], ...likertDist(rows,col)})).filter(d => d.avg !== null);
+  const topSocial  = socItems.length ? [...socItems].sort((a,b) => toNum(b.avg)-toNum(a.avg))[0] : null;
+  const lowSocial  = socItems.length ? [...socItems].sort((a,b) => toNum(a.avg)-toNum(b.avg))[0] : null;
+
+  const relInsights = [];
+
+  if (timeWithOthers > 0) {
+    const collab = timeWithOthers >= 60 ? 'highly collaborative' : timeWithOthers >= 40 ? 'balanced between individual and collaborative' : 'individually oriented';
+    relInsights.push({ icon:'🤝', text:`Employees spend an average of <strong>${timeWithOthers}% of their work time with others</strong>, characterising the workforce as <strong>${collab}</strong>. ${unscheduledPct > 40 ? `${unscheduledPct}% of that collaborative time is unscheduled, suggesting spontaneous interaction is a key feature of the workplace.` : `Most collaboration (${100-unscheduledPct}%) is planned and scheduled.`}` });
+  }
+
+  if (lowestRel && highestRel) {
+    relInsights.push({ icon:'👥', text:`<strong>${lowestRel.label}</strong> is the lowest-rated relationship dimension (avg ${lowestRel.avg?.toFixed(1)||'—'}/5) and the highest-priority connection to strengthen. <strong>${highestRel.label}</strong> scores strongest at ${highestRel.avg?.toFixed(1)||'—'}/5.` });
+  }
+
+  if (topLearn && topSocial) {
+    relInsights.push({ icon:'📚', text:`The most valued learning opportunity is <strong>${topLearn.label}</strong> (${topLearn.avg?.toFixed(1)||'—'}/5). For social programming, <strong>${topSocial.label.toLowerCase()}</strong> rank highest while <strong>${lowSocial?.label.toLowerCase()}</strong> show the most room to grow.` });
+  }
+
+  if (relInsights.length) {
+    html += `<div class="insight-summary-card">
+      <div class="insight-summary-header"><span class="insight-summary-icon">💡</span><span>Key Takeaways</span><span class="insight-summary-tag">auto-generated from survey data</span></div>
+      <div class="insight-list">`;
+    relInsights.slice(0,3).forEach(ins => html += `<div class="insight-item"><span class="insight-item-icon">${ins.icon}</span><span>${ins.text}</span></div>`);
+    html += `</div></div>`;
+  }
 
   // Relationships
   const rd = C.REL.map((col,i) => ({label:C.REL_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
@@ -1167,7 +1256,51 @@ function renderWVP() {
   const comp = avgs.length ? (avg(avgs)*20).toFixed(0) : '—';
   const sorted = [...wvpD].sort((a,b)=>(b.avg||0)-(a.avg||0));
 
-  let html = `<div class="cards-grid">
+  // ── Key Takeaways ─────────────────────────────────────────────────────
+  const compNum = parseFloat(comp);
+  const aboveThreshold = avgs.filter(v => v >= 3.5).length;
+  const topItem    = sorted[0];
+  const bottomItem = sorted[sorted.length - 1];
+  const midItems   = sorted.filter(d => d.avg !== null && d.avg >= 3.0 && d.avg < 3.5);
+
+  const wvpInsights = [];
+
+  if (!isNaN(compNum)) {
+    const health = compNum >= 70 ? 'strong' : compNum >= 55 ? 'moderate' : 'developing';
+    const healthNote = compNum >= 70
+      ? 'Employees broadly identify with the organisation\'s culture and values.'
+      : compNum >= 55
+        ? 'There is meaningful connection, but pockets of disengagement exist that warrant attention.'
+        : 'Attachment levels are low — cultural investment and leadership signalling should be prioritised.';
+    wvpInsights.push({ icon:'🏆', text:`The WVP Composite Score is <strong>${compNum}/100</strong>, indicating <strong>${health} overall attachment</strong>. ${healthNote}` });
+  }
+
+  if (topItem?.avg !== null && bottomItem?.avg !== null) {
+    wvpInsights.push({ icon:'⭐', text:`<strong>${topItem.label}</strong> is the highest-scoring WVP dimension (${topItem.avg?.toFixed(1)}/5), representing a cultural asset to protect and communicate. <strong>${bottomItem.label}</strong> scores lowest (${bottomItem.avg?.toFixed(1)}/5) and is the highest-leverage area for improvement.` });
+  }
+
+  if (avgs.length > 0) {
+    const belowThreshold = avgs.filter(v => v < 3.0).length;
+    if (belowThreshold > 0) {
+      wvpInsights.push({ icon:'⚠️', text:`<strong>${belowThreshold} of ${avgs.length} WVP dimensions score below 3.0/5</strong>, meaning meaningful proportions of employees disagree with these statements. These represent systemic culture risks rather than isolated concerns.` });
+    } else if (aboveThreshold === avgs.length) {
+      wvpInsights.push({ icon:'✅', text:`<strong>All ${avgs.length} WVP dimensions score above 3.5/5</strong>, reflecting broad alignment with the organisation's value proposition. The focus should shift from fixing gaps to deepening the strongest dimensions.` });
+    } else {
+      wvpInsights.push({ icon:'📊', text:`<strong>${aboveThreshold} of ${avgs.length} dimensions score above 3.5/5</strong>. ${midItems.length > 0 ? `${midItems.length} dimension${midItems.length>1?'s':''} (${midItems.map(d=>d.label).join(', ')}) sit in the 3.0–3.5 range — these are improvement opportunities with relatively low activation effort.` : ''}` });
+    }
+  }
+
+  let html = '';
+
+  if (wvpInsights.length) {
+    html += `<div class="insight-summary-card">
+      <div class="insight-summary-header"><span class="insight-summary-icon">💡</span><span>Key Takeaways</span><span class="insight-summary-tag">auto-generated from survey data</span></div>
+      <div class="insight-list">`;
+    wvpInsights.slice(0,3).forEach(ins => html += `<div class="insight-item"><span class="insight-item-icon">${ins.icon}</span><span>${ins.text}</span></div>`);
+    html += `</div></div>`;
+  }
+
+  html += `<div class="cards-grid">
     <div class="stat-card"><div class="stat-card-value">${comp}</div><div class="stat-card-label">WVP Composite Score</div><div class="stat-card-sub">Out of 100</div></div>
     <div class="stat-card"><div class="stat-card-value">${sorted[0]?.avg?.toFixed(2)||'—'}</div><div class="stat-card-label">Highest — ${sorted[0]?.label||'—'}</div><div class="stat-card-sub">Avg score out of 5</div></div>
     <div class="stat-card"><div class="stat-card-value">${sorted[sorted.length-1]?.avg?.toFixed(2)||'—'}</div><div class="stat-card-label">Lowest — ${sorted[sorted.length-1]?.label||'—'}</div><div class="stat-card-sub">Priority opportunity</div></div>
