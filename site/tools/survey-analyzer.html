@@ -1320,20 +1320,44 @@ function renderFuture() {
   let html = '';
 
   // ── Data prep ─────────────────────────────────────────────────────────
-  const locOrder  = ['Fully remote','Mostly home','Equal mix','Mostly office','Fully office'];
-  const locColors = ['#D2785A','#DBD99A','#80BBAD','#17E88F','#003F2D'];
-  const lc        = countBy(rows, C.Q45);
-  const locTotal  = Object.values(lc).reduce((s,v) => s+v, 0);
-  const locEnts   = locOrder.map(k => ({label:k, n:lc[k]||0, color:locColors[locOrder.indexOf(k)]}));
+  // Canonical order + colours for known label variants (case-insensitive match)
+  const locCanonical = [
+    { key:'fully remote',  label:'Fully remote',  color:'#D2785A' },
+    { key:'mostly home',   label:'Mostly home',   color:'#DBD99A' },
+    { key:'equal mix',     label:'Equal mix',     color:'#80BBAD' },
+    { key:'mostly office', label:'Mostly office', color:'#17E88F' },
+    { key:'fully office',  label:'Fully office',  color:'#003F2D' },
+  ];
+  const fallbackColors = ['#538184','#9DB5AF','#3A5A50','#6B8F7A','#A0C4B0'];
+
+  const lc = countBy(rows, C.Q45);
+  const locTotal = Object.values(lc).reduce((s,v) => s+v, 0);
+
+  // Match each raw response key to a canonical entry (case-insensitive) or keep as-is
+  const locEnts = Object.entries(lc)
+    .filter(([,n]) => n > 0)
+    .map(([rawLabel, n], i) => {
+      const canon = locCanonical.find(c => c.key === rawLabel.toLowerCase().trim());
+      return { label: canon ? canon.label : rawLabel, rawLabel, n, color: canon ? canon.color : fallbackColors[i % fallbackColors.length] };
+    })
+    // Sort by canonical order; unrecognised labels go to end
+    .sort((a, b) => {
+      const ai = locCanonical.findIndex(c => c.key === a.rawLabel.toLowerCase().trim());
+      const bi = locCanonical.findIndex(c => c.key === b.rawLabel.toLowerCase().trim());
+      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+    });
+
+  // Helper: sum counts for labels matching a keyword (case-insensitive)
+  const lcSum = (...keywords) => locEnts.filter(e => keywords.some(k => e.rawLabel.toLowerCase().includes(k))).reduce((s,e) => s+e.n, 0);
 
   const rb = C.RBEN.map((col,i) => ({label:C.RBEN_L[i], p:cbPct(rows,col)})).sort((a,b)=>b.p-a.p);
   const ob = C.OBEN.map((col,i) => ({label:C.OBEN_L[i], p:cbPct(rows,col)})).sort((a,b)=>b.p-a.p);
 
   // ── Top 3 Insights (algorithmic — no API) ─────────────────────────────
-  const officePct   = locTotal ? pct((lc['Mostly office']||0)+(lc['Fully office']||0), locTotal) : 0;
-  const remotePct   = locTotal ? pct((lc['Mostly home']  ||0)+(lc['Fully remote']||0), locTotal) : 0;
-  const hybridPct   = locTotal ? pct(lc['Equal mix']||0, locTotal) : 0;
-  const topLocLabel = locEnts.reduce((a,b) => b.n > a.n ? b : a, locEnts[0]);
+  const officePct   = locTotal ? pct(lcSum('mostly office','fully office'), locTotal) : 0;
+  const remotePct   = locTotal ? pct(lcSum('mostly home','fully remote'),   locTotal) : 0;
+  const hybridPct   = locTotal ? pct(lcSum('equal mix','hybrid'),           locTotal) : 0;
+  const topLocLabel = locEnts.length ? locEnts.reduce((a,b) => b.n > a.n ? b : a) : null;
   const topRBen     = rb[0];
   const topOBen     = ob[0];
 
