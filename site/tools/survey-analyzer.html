@@ -1159,7 +1159,7 @@ function quadrantSVG(dims) {
   //   90–180° → bottom-right → Experience
   //   180–270°→ bottom-left  → Exposure
   //   270–360°→ top-left     → Teamwork
-  const size = 340, cx = 170, cy = 170, R = 112, labelR = R + 36;
+  const size = 520, cx = 260, cy = 260, R = 175, labelR = R + 48;
   const toRad = deg => (deg - 90) * Math.PI / 180;
 
   const quadDefs = [
@@ -1214,13 +1214,12 @@ function quadrantSVG(dims) {
 function exportQuadrantPNG() {
   const svg = document.getElementById('attendanceQuadrant');
   if (!svg) return;
-  const pad = 40, svgSize = 340, canvasSize = svgSize + pad * 2;
+  const pad = 40, svgSize = 520, canvasSize = svgSize + pad * 2;
   const svgStr = new XMLSerializer().serializeToString(svg);
   const canvas = document.createElement('canvas');
   canvas.width = canvasSize; canvas.height = canvasSize;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#001A14';
-  ctx.fillRect(0, 0, canvasSize, canvasSize);
+  // transparent background — no fillRect, so PNG exports with alpha channel
   const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const img = new Image();
@@ -1276,12 +1275,6 @@ function renderAttendance() {
     ${quadrantSVG(dims)}
     <div class="quadrant-legend">${legend}</div>
   </div>`;
-
-  // Full breakdown
-  const ob2 = C.OBEN.map((col,i)=>({label:C.OBEN_L[i],p:gp(col)})).sort((a,b)=>b.p-a.p);
-  html += `<div class="chart-card"><div class="chart-card-title">All Office Benefits — Full Breakdown</div><div class="h-bar-chart">`;
-  ob2.forEach(({label,p})=>html+=hBar(label,p));
-  html += `</div></div>`;
 
   document.getElementById('attendanceContent').innerHTML = html;
 }
