@@ -378,6 +378,19 @@ nav {
   .pyr-scores-grid { grid-template-columns: 1fr; }
 }
 
+/* TRADE-OFF PIE CHARTS */
+.tradeoff-note { font-size: 0.8rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 1.4rem; max-width: 620px; }
+.tradeoff-note strong { color: var(--text); }
+.tradeoff-pies { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+.tradeoff-pie-card { background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 10px; padding: 1.1rem 1rem 1rem; display: flex; flex-direction: column; align-items: center; }
+.tradeoff-pie-title { font-size: 0.82rem; font-weight: 600; color: var(--text); text-align: center; margin-bottom: 0.9rem; line-height: 1.4; min-height: 2.2em; display: flex; align-items: center; justify-content: center; }
+.tradeoff-breakdown { width: 100%; display: flex; flex-direction: column; gap: 0.3rem; margin-top: 0.2rem; }
+.tradeoff-row { display: flex; align-items: center; gap: 0.45rem; font-size: 0.73rem; }
+.tradeoff-swatch { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+.tradeoff-lbl { color: var(--text-muted); flex: 1; }
+.tradeoff-pct { font-weight: 600; color: var(--text); min-width: 28px; text-align: right; }
+@media (max-width: 740px) { .tradeoff-pies { grid-template-columns: 1fr; } }
+
 /* FUTURE PREFERENCES — KEY INSIGHTS */
 .insight-summary-card { background: rgba(23,232,143,0.04); border: 1px solid rgba(23,232,143,0.18); border-radius: var(--radius); padding: 1.1rem 1.25rem; margin-bottom: 1.2rem; }
 .insight-summary-header { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.85rem; }
@@ -1279,9 +1292,45 @@ function renderFuture() {
 
   // ── Trade-offs ────────────────────────────────────────────────────────
   const td = C.TRADE.map((col,i) => ({label:C.TRADE_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
-  html += `<div class="chart-card"><div class="chart-card-title">Trade-off Preferences</div><div class="stacked-chart">`;
-  td.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
-  html += `</div>${likertLegend()}</div>`;
+
+  html += `<div class="chart-card">
+    <div class="chart-card-title">Trade-off Preferences</div>
+    <p class="tradeoff-note">
+      Respondents rated each trade-off on a <strong>1–5 Likert scale</strong>
+      (1 = Strongly Disagree · 5 = Strongly Agree).
+      The centre of each chart shows the combined
+      <span style="color:var(--accent);font-weight:600">% who Agree or Strongly Agree</span>.
+    </p>
+    <div class="tradeoff-pies">`;
+
+  td.forEach(d => {
+    const agreeN   = (d.d[5]||0) + (d.d[4]||0);
+    const agreePct = d.t ? pct(agreeN, d.t) : 0;
+    const segs     = [5,4,3,2,1].map((s,i) => ({value:d.d[s]||0, color:L5_COLORS[i]}));
+    html += `<div class="tradeoff-pie-card">
+      <div class="tradeoff-pie-title">${d.label}</div>
+      <div class="donut-svg-wrap" style="width:140px;height:140px;margin:0 auto 0.9rem">
+        ${donutSVG(segs, 140)}
+        <div class="donut-center-text">
+          <div class="donut-center-value" style="font-size:1.6rem;color:var(--accent)">${agreePct}%</div>
+          <div class="donut-center-label">agree</div>
+        </div>
+      </div>
+      <div class="tradeoff-breakdown">
+        ${[5,4,3,2,1].map((s,i) => {
+          const p2 = d.t ? pct(d.d[s]||0, d.t) : 0;
+          if (!p2) return '';
+          return `<div class="tradeoff-row">
+            <span class="tradeoff-swatch" style="background:${L5_COLORS[i]}"></span>
+            <span class="tradeoff-lbl">${L5_LABELS[i]}</span>
+            <span class="tradeoff-pct">${p2}%</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  });
+
+  html += `</div></div>`;
 
   // ── Amenities ─────────────────────────────────────────────────────────
   const ammData = C.AMM.map((col,i) => {
