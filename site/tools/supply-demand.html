@@ -344,12 +344,19 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
         </div>
         <div class="accordion-body" id="body-assumptions">
           <div class="input-group">
-            <label class="input-label">Vibrancy Threshold</label>
-            <div class="input-with-unit">
-              <input type="number" class="num-input-sm" id="vibrancyThreshold" min="1" max="100" value="67" oninput="state.vibrancyThreshold=parseInt(this.value)||67;recompute()"/>
-              <span class="unit">% of seats occupied = vibrant</span>
+            <label class="input-label">Vibrancy Zone</label>
+            <div class="input-row" style="align-items:center;gap:.5rem;flex-wrap:wrap">
+              <div class="input-with-unit">
+                <input type="number" class="num-input-sm" id="vibrancyThreshold" min="1" max="100" value="67" oninput="state.vibrancyThreshold=parseInt(this.value)||67;recompute()"/>
+                <span class="unit">% floor</span>
+              </div>
+              <span style="font-size:.7rem;color:var(--text-muted)">→</span>
+              <div class="input-with-unit">
+                <input type="number" class="num-input-sm" id="oversubscribedThreshold" min="1" max="100" value="80" oninput="state.oversubscribedThreshold=parseInt(this.value)||80;recompute()"/>
+                <span class="unit">% ceiling</span>
+              </div>
             </div>
-            <div class="input-hint">2/3 rule: office feels energetic when ≥67% of seats are occupied. Below this threshold the space feels empty even if people are present.</div>
+            <div class="input-hint">Sweet spot: <span style="color:#17E88F">67–80% occupancy feels vibrant</span>. Below 67% feels empty; above 80% feels oversubscribed and too full.</div>
           </div>
 
           <div class="input-row">
@@ -396,6 +403,7 @@ var state = {
     high: { rate: 8 },
   },
   vibrancyThreshold: 67,
+  oversubscribedThreshold: 80,
   totalRSF: 0,
   targetDensity: 0,
 };
@@ -629,12 +637,15 @@ function compute() {
     gapYears[key] = idx>=0 ? years[idx] : null;
   });
 
-  // Vibrancy
+  // Vibrancy — three-zone: under / vibrant / over
   var vibrancy = {};
   scKeys.forEach(function(key){
     vibrancy[key] = demand[key].map(function(d,i){
-      var thresh = Math.round(supply[i]*state.vibrancyThreshold/100);
-      return {yr:d.yr, thresh:thresh, peak:d.peak, ok:d.peak>=thresh, pct:supply[i]>0?Math.round(d.peak/supply[i]*100):0};
+      var pct = supply[i]>0 ? Math.round(d.peak/supply[i]*100) : 0;
+      var zone = pct < state.vibrancyThreshold ? 'under'
+               : pct > state.oversubscribedThreshold ? 'over'
+               : 'vibrant';
+      return {yr:d.yr, peak:d.peak, pct:pct, zone:zone};
     });
   });
 
@@ -712,7 +723,8 @@ function buildDashboard(d) {
 }
 
 function buildStatCards(d) {
-  var utilColor = d.curUtil >= state.vibrancyThreshold ? '#17E88F' : d.curUtil >= 40 ? '#80BBAD' : '#D2785A';
+  var utilZone  = d.curUtil < state.vibrancyThreshold ? 'under' : d.curUtil > state.oversubscribedThreshold ? 'over' : 'vibrant';
+  var utilColor = utilZone==='vibrant' ? '#17E88F' : utilZone==='over' ? '#DBD99A' : '#D2785A';
   var surpColor = d.curSurp >= 0 ? '#17E88F' : '#D2785A';
   var gapBase = d.gapYears.base ? d.gapYears.base.toString() : '> '+d.years[d.years.length-1];
   var gapColor = d.gapYears.base ? (d.gapYears.base <= state.baseYear+2 ? '#D2785A' : '#80BBAD') : '#17E88F';
@@ -721,7 +733,7 @@ function buildStatCards(d) {
     + statCard(d.curSup.toLocaleString(), 'Seat Supply', buildings.reduce(function(s,b){return s+b.floors.length;},0)+' floors · '+buildings.length+' bldg'+(buildings.length!==1?'s':''), '')
     + statCard(state.currentHC.toLocaleString(), 'Current Headcount', state.baseYear+' base', '')
     + statCard(d.curPeak.toLocaleString(), 'Peak Daily Demand', state.attendanceRate+'% attendance rate', '')
-    + statCard(d.curUtil+'%', 'Utilization Today', d.curUtil>=state.vibrancyThreshold?'✓ Above vibrancy threshold':'⚠ Below vibrancy threshold', utilColor)
+    + statCard(d.curUtil+'%', 'Utilization Today', utilZone==='vibrant'?'✓ In the vibrancy zone (67–80%)':utilZone==='over'?'⚠ Oversubscribed (>'+state.oversubscribedThreshold+'%)':'⚠ Under-vibrant (<'+state.vibrancyThreshold+'%)', utilColor)
     + statCard((d.curSurp>=0?'+':'')+d.curSurp.toLocaleString(), d.curSurp>=0?'Seat Surplus':'Seat Deficit', 'seats vs. peak demand today', surpColor)
     + statCard(gapBase, 'Gap Year (Base)', 'first year demand exceeds supply', gapColor)
     + '</div>';
@@ -767,7 +779,7 @@ function buildChart(d) {
     + '</div></div>'
     + buildSVG(d)
     + '<div style="font-size:.65rem;color:rgba(242,244,243,.3);margin-top:.5rem;line-height:1.5">'
-    + 'Dashed horizontal = vibrancy threshold ('+state.vibrancyThreshold+'% of seats) &nbsp;·&nbsp; Circles on demand lines mark where demand crosses supply &nbsp;·&nbsp; Shaded band = Base–High range'
+    + 'Green band = vibrancy zone ('+state.vibrancyThreshold+'%–'+state.oversubscribedThreshold+'% occupancy) &nbsp;·&nbsp; Below = under-vibrant · Above = oversubscribed &nbsp;·&nbsp; Shaded area = Base–High demand range'
     + '</div>'
     + '</div>';
   return h;
@@ -817,11 +829,15 @@ function buildSVG(d) {
   svg += '<path d="'+spPath+'" fill="none" stroke="rgba(242,244,243,.3)" stroke-width="2" stroke-dasharray="7,4"/>';
   svg += '<text x="'+(W-M.right+6)+'" y="'+(yp(d.supply[d.years.length-1])+4)+'" font-size="9" fill="rgba(242,244,243,.4)">Supply</text>';
 
-  // Vibrancy threshold
-  var vt = d.supply[0]*state.vibrancyThreshold/100;
-  var vty = yp(vt);
-  svg += '<line x1="'+M.left+'" y1="'+vty+'" x2="'+(W-M.right)+'" y2="'+vty+'" stroke="#DBD99A" stroke-width="1" stroke-dasharray="3,4" opacity=".5"/>';
-  svg += '<text x="'+(W-M.right+6)+'" y="'+(vty+4)+'" font-size="8.5" fill="#DBD99A" opacity=".6">Vibrancy</text>';
+  // Vibrancy zone band (67%–80% of current supply)
+  var vtLo = d.supply[0]*state.vibrancyThreshold/100;
+  var vtHi = d.supply[0]*state.oversubscribedThreshold/100;
+  var vtyLo = yp(vtLo), vtyHi = yp(vtHi);
+  svg += '<rect x="'+M.left+'" y="'+vtyHi+'" width="'+(W-M.left-M.right)+'" height="'+(vtyLo-vtyHi)+'" fill="#17E88F" opacity=".06"/>';
+  svg += '<line x1="'+M.left+'" y1="'+vtyLo+'" x2="'+(W-M.right)+'" y2="'+vtyLo+'" stroke="#17E88F" stroke-width="1" stroke-dasharray="3,4" opacity=".45"/>';
+  svg += '<line x1="'+M.left+'" y1="'+vtyHi+'" x2="'+(W-M.right)+'" y2="'+vtyHi+'" stroke="#DBD99A" stroke-width="1" stroke-dasharray="3,4" opacity=".45"/>';
+  svg += '<text x="'+(W-M.right+6)+'" y="'+(vtyLo+4)+'" font-size="8" fill="#17E88F" opacity=".55">'+state.vibrancyThreshold+'%</text>';
+  svg += '<text x="'+(W-M.right+6)+'" y="'+(vtyHi+4)+'" font-size="8" fill="#DBD99A" opacity=".55">'+state.oversubscribedThreshold+'%</text>';
 
   // Demand lines
   ['base','mid','high'].forEach(function(key){
@@ -871,14 +887,14 @@ function buildTable(d) {
     + '<th style="color:var(--sc-base)">Base HC</th><th style="color:var(--sc-base)">Base Demand</th><th style="color:var(--sc-base)">Gap</th>'
     + '<th style="color:var(--sc-mid)">Mid HC</th><th style="color:var(--sc-mid)">Mid Demand</th><th style="color:var(--sc-mid)">Gap</th>'
     + '<th style="color:var(--sc-high)">High HC</th><th style="color:var(--sc-high)">High Demand</th><th style="color:var(--sc-high)">Gap</th>'
-    + '<th>Vibrant?</th>'
+    + '<th>Zone</th>'
     + '</tr></thead><tbody>';
 
   d.years.forEach(function(yr,i){
     var sup = d.supply[i];
     var b = d.demand.base[i], m = d.demand.mid[i], hh = d.demand.high[i];
     var bg = sup-b.peak, mg = sup-m.peak, hg = sup-hh.peak;
-    var vOk = d.vibrancy.base[i].ok;
+    var vZone = d.vibrancy.base[i].zone;
     var rowCls = i===0 ? ' class="curr-row"' : '';
 
     function gapCell(g){ return '<td class="'+(g<0?'neg':'')+'">'+(g>=0?'<span class="surp-badge">+'+g+'</span>':'<span class="gap-badge">'+g+'</span>')+'</td>'; }
@@ -889,7 +905,7 @@ function buildTable(d) {
       + '<td style="color:var(--sc-base)">'+b.hc.toLocaleString()+'</td><td style="color:var(--sc-base)">'+b.peak.toLocaleString()+'</td>'+gapCell(bg)
       + '<td style="color:var(--sc-mid)">'+m.hc.toLocaleString()+'</td><td style="color:var(--sc-mid)">'+m.peak.toLocaleString()+'</td>'+gapCell(mg)
       + '<td style="color:var(--sc-high)">'+hh.hc.toLocaleString()+'</td><td style="color:var(--sc-high)">'+hh.peak.toLocaleString()+'</td>'+gapCell(hg)
-      + '<td>'+(vOk?'<span style="color:#17E88F;font-size:1rem">✓</span>':'<span style="color:#D2785A;font-size:.75rem">below</span>')+'</td>'
+      + '<td>'+(vZone==='vibrant'?'<span style="color:#17E88F;font-size:.72rem;font-weight:700">✓ Vibrant</span>':vZone==='over'?'<span style="color:#DBD99A;font-size:.72rem;font-weight:700">⚠ Over</span>':'<span style="color:#D2785A;font-size:.72rem;font-weight:700">⚠ Under</span>')+'</td>'
       + '</tr>';
   });
 
@@ -967,6 +983,7 @@ function loadSample() {
   state.scenarios.mid.rate = 7;
   state.scenarios.high.rate = 10;
   state.vibrancyThreshold = 67;
+  state.oversubscribedThreshold = 80;
   state.totalRSF = 66753;
   state.targetDensity = 165;
 
@@ -985,6 +1002,7 @@ function loadSample() {
   set('rateMid',       state.scenarios.mid.rate);
   set('rateHigh',      state.scenarios.high.rate);
   set('vibrancyThreshold', state.vibrancyThreshold);
+  set('oversubscribedThreshold', state.oversubscribedThreshold);
   set('totalRSF',      state.totalRSF);
   set('targetDensity', state.targetDensity);
 
@@ -1054,13 +1072,13 @@ function exportExcel() {
   XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
 
   // Year-by-year sheet
-  var projHead = ['Year','Supply','Base HC','Base Peak Demand','Base Gap','Mid HC','Mid Peak Demand','Mid Gap','High HC','High Peak Demand','High Gap','Vibrant (Base)'];
+  var projHead = ['Year','Supply','Base HC','Base Peak Demand','Base Gap','Mid HC','Mid Peak Demand','Mid Gap','High HC','High Peak Demand','High Gap','Zone (Base)'];
   if (d.density && d.density.target>0) projHead = projHead.concat(['Base SF Needed','Base SF Gap','Mid SF Needed','Mid SF Gap','High SF Needed','High SF Gap']);
   var projRows = [projHead];
   d.years.forEach(function(yr,i){
     var sup=d.supply[i];
     var b=d.demand.base[i], m=d.demand.mid[i], hh=d.demand.high[i];
-    var row = [yr, sup, b.hc, b.peak, sup-b.peak, m.hc, m.peak, sup-m.peak, hh.hc, hh.peak, sup-hh.peak, d.vibrancy.base[i].ok ? 'Yes' : 'No'];
+    var row = [yr, sup, b.hc, b.peak, sup-b.peak, m.hc, m.peak, sup-m.peak, hh.hc, hh.peak, sup-hh.peak, d.vibrancy.base[i].zone];
     if (d.density && d.density.target>0) {
       var db=d.density.bySc.base[i], dm=d.density.bySc.mid[i], dh=d.density.bySc.high[i];
       row = row.concat([db.sfNeeded, db.sfGap, dm.sfNeeded, dm.sfGap, dh.sfNeeded, dh.sfGap]);
