@@ -652,6 +652,11 @@ select.client-name-input option { background: #0D2B22; color: var(--text); }
             <div class="methodology-title">Engagement Pyramid</div>
             <div class="methodology-desc">Three nested levels of workplace experience: <strong>Physical Environment</strong> — foundational space quality and functionality; <strong>Connections</strong> — team relationships and learning; <strong>Belonging &amp; Values</strong> — culture, WVP, and organizational identity. Each level shows average Likert scores as a % of the 5-point maximum.</div>
           </div>
+          <div class="methodology-item">
+            <div class="methodology-icon">🏅</div>
+            <div class="methodology-title">WVP Composite Score</div>
+            <div class="methodology-desc">The <strong>Workplace Value Proposition (WVP)</strong> measures the degree to which employees feel the organisation delivers on its cultural promises. Nine dimensions are averaged (Belonging, Inclusivity, Recognition, etc.) and converted to a <strong>0–100 scale</strong>. Scores <strong>≥ 70</strong> indicate strong attachment; <strong>50–69</strong> moderate; <strong>&lt; 50</strong> signals meaningful disengagement. Gaps between top and bottom dimensions highlight where cultural investment is most needed.</div>
+          </div>
         </div>
       </div>
     </details>
@@ -1369,8 +1374,33 @@ function renderWVP() {
     html += `</div></div>`;
   }
 
+  // WVP composite colour + label
+  const compNum2 = parseInt(comp);
+  const wvpColor = isNaN(compNum2) ? 'var(--teal)' : compNum2 >= 70 ? '#17E88F' : compNum2 >= 50 ? '#80BBAD' : '#D2785A';
+  const wvpBand  = isNaN(compNum2) ? '' : compNum2 >= 70 ? 'Strong attachment' : compNum2 >= 50 ? 'Moderate attachment' : 'Low attachment';
+
+  html += `<div style="background:rgba(23,232,143,0.04);border:1px solid rgba(23,232,143,0.12);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1.2rem;display:flex;gap:1.25rem;align-items:flex-start">
+    <span style="font-size:1.4rem;line-height:1;margin-top:0.1rem">🏅</span>
+    <div>
+      <div style="font-size:0.78rem;font-weight:600;color:var(--text);margin-bottom:0.3rem">About the WVP Composite Score</div>
+      <div style="font-size:0.78rem;color:var(--text-muted);line-height:1.65">
+        The <strong style="color:var(--text)">Workplace Value Proposition (WVP)</strong> measures how well employees feel the organisation delivers on its cultural promises across nine dimensions — Belonging, Inclusivity &amp; Respect, Supported &amp; Valued, Leadership Openness, Brand Reflection, Office Pride, Investment in People, Work-Life Balance, and Recognition.
+        Each dimension is scored on a 1–5 Likert scale, averaged, then converted to a <strong style="color:var(--text)">0–100 composite</strong>.
+        <span style="display:inline-flex;gap:0.75rem;margin-top:0.45rem;flex-wrap:wrap">
+          <span style="color:#17E88F">● ≥ 70 — Strong attachment</span>
+          <span style="color:#80BBAD">● 50–69 — Moderate attachment</span>
+          <span style="color:#D2785A">● &lt; 50 — Low attachment / disengagement risk</span>
+        </span>
+      </div>
+    </div>
+  </div>`;
+
   html += `<div class="cards-grid">
-    <div class="stat-card"><div class="stat-card-value">${comp}</div><div class="stat-card-label">WVP Composite Score</div><div class="stat-card-sub">Out of 100</div></div>
+    <div class="stat-card" style="border-color:${wvpColor}33;background:${wvpColor}0d">
+      <div class="stat-card-value" style="color:${wvpColor}">${comp}</div>
+      <div class="stat-card-label">WVP Composite Score</div>
+      <div class="stat-card-sub">${wvpBand || 'Out of 100'}</div>
+    </div>
     <div class="stat-card"><div class="stat-card-value">${sorted[0]?.avg?.toFixed(2)||'—'}</div><div class="stat-card-label">Highest — ${sorted[0]?.label||'—'}</div><div class="stat-card-sub">Avg score out of 5</div></div>
     <div class="stat-card"><div class="stat-card-value">${sorted[sorted.length-1]?.avg?.toFixed(2)||'—'}</div><div class="stat-card-label">Lowest — ${sorted[sorted.length-1]?.label||'—'}</div><div class="stat-card-sub">Priority opportunity</div></div>
   </div>`;
