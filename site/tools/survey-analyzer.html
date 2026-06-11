@@ -701,6 +701,7 @@ select.client-name-input option { background: #0D2B22; color: var(--text); }
     <!-- CONTROL BAR -->
     <div class="control-bar">
       <div class="control-bar-left">
+        <div class="n-badge" id="nBadge">N = 0</div>
         <div class="client-name-wrap">
           <span class="filter-label">Client / Project</span>
           <input type="text" id="clientName" class="client-name-input" placeholder="e.g. Morley Builders" oninput="updateClientName()">
@@ -987,7 +988,7 @@ function updateClientName() {
   const sector  = (document.getElementById('sectorInput')?.value || '').trim();
   const hc      = (document.getElementById('headcountInput')?.value || '').trim();
   const badge   = document.getElementById('clientNameBadge');
-  const parts   = [name, sector, hc ? 'N≈' + parseInt(hc).toLocaleString() : ''].filter(Boolean);
+  const parts   = [name, sector].filter(Boolean);
   if (badge) { badge.textContent = parts.join(' · '); badge.style.display = parts.length ? 'inline' : 'none'; }
 }
 
@@ -1004,6 +1005,7 @@ function applyFilters() {
     (!tenure || gv(r,C.TENURE) === tenure) &&
     (!freq || gv(r,C.FREQOFF) === freq)
   );
+  const nBadge = document.getElementById('nBadge'); if (nBadge) nBadge.textContent = `N = ${filteredRows.length} respondents`;
   renderActive();
 }
 
