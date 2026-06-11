@@ -699,7 +699,24 @@ function recompute() {
   var bXls = document.getElementById('btn-excel');
 
   if (!hasData) {
-    document.getElementById('dashboard').innerHTML = '<div class="empty-state"><div class="empty-icon">⚖️</div><div class="empty-title">Build your scenario</div><div class="empty-desc">Add a building with seat inventory and enter your headcount to see the analysis.</div><button class="btn-sample" onclick="loadSample()">Load Cohesity sample data</button></div>';
+    var hasBuilding = buildings.length > 0;
+    var hasSeats    = buildings.some(function(b){return b.floors.some(function(f){return (f.seats||0)>0;});});
+    var hasHC       = state.currentHC > 0;
+    function step(done, text) {
+      return '<div style="display:flex;align-items:center;gap:.65rem;font-size:.85rem;color:'+(done?'#17E88F':'rgba(242,244,243,.45)')+';">'
+        + '<span style="font-size:1.1rem">'+(done?'✅':'⬜')+'</span>'
+        + '<span style="'+(done?'':'opacity:.7')+'">'+text+'</span></div>';
+    }
+    document.getElementById('dashboard').innerHTML = '<div class="empty-state">'
+      + '<div class="empty-icon">⚖️</div>'
+      + '<div class="empty-title">Three steps to your analysis</div>'
+      + '<div style="display:flex;flex-direction:column;gap:.6rem;margin:1rem 0 1.5rem;text-align:left;width:100%;max-width:320px">'
+      + step(hasBuilding, 'Add a building in <strong>Space Inventory</strong>')
+      + step(hasSeats,    'Enter seat count on at least one floor')
+      + step(hasHC,       'Enter current headcount in <strong>Headcount & Growth</strong>')
+      + '</div>'
+      + '<button class="btn-sample" onclick="loadSample()">Load Cohesity sample data</button>'
+      + '</div>';
     if(bPng) bPng.style.display='none';
     if(bXls) bXls.style.display='none';
     return;
