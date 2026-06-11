@@ -268,6 +268,8 @@ nav {
 .verbatim-search { width: 100%; max-width: 420px; background: rgba(255,255,255,0.06); border: 1px solid var(--card-border); border-radius: 8px; padding: 0.5rem 0.85rem; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.82rem; transition: border-color 0.2s; margin-bottom: 0.85rem; display: block; }
 .verbatim-search:focus { outline: none; border-color: rgba(23,232,143,0.4); }
 .verbatim-search::placeholder { color: var(--text-muted); }
+.verbatim-more-btn { display: block; width: 100%; margin-top: 0.5rem; padding: 0.55rem 1rem; background: rgba(255,255,255,0.04); border: 1px solid var(--card-border); border-radius: 6px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 0.78rem; cursor: pointer; text-align: center; transition: background 0.2s, color 0.2s; }
+.verbatim-more-btn:hover { background: rgba(255,255,255,0.07); color: var(--text); }
 
 /* METHODOLOGY PANEL */
 .methodology-panel { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); margin-bottom: 1.5rem; overflow: hidden; }
@@ -1061,10 +1063,8 @@ function hBar(label, val, color) {
   const w = Math.min(100, Math.max(0, Math.round(val)));
   return `<div class="h-bar-row">
     <span class="h-bar-label" title="${label}">${label}</span>
-    <div style="flex:1;height:22px;background:var(--card-border);border-radius:4px;overflow:hidden;position:relative;">
-      <div style="height:100%;width:${w}%;background:${color};border-radius:4px;display:flex;align-items:center;padding-left:6px;">
-        ${w > 10 ? `<span style="font-size:0.68rem;font-weight:600;color:#001A14">${w}%</span>` : ''}
-      </div>
+    <div style="flex:1;height:22px;background:var(--card-border);border-radius:4px;overflow:hidden;">
+      <div style="height:100%;width:${w}%;background:${color};border-radius:4px;"></div>
     </div>
     <span style="font-size:0.75rem;color:var(--text-muted);min-width:36px;text-align:right">${w}%</span>
   </div>`;
@@ -1124,9 +1124,7 @@ function renderDemo() {
       return `<div class="h-bar-row" style="margin-bottom:0.35rem">
         <span style="font-size:0.74rem;color:var(--text);min-width:155px;max-width:155px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${v}">${v}</span>
         <div style="flex:1;height:20px;background:var(--card-border);border-radius:4px;overflow:hidden;">
-          <div style="height:100%;width:${w}%;background:${PAL[i%PAL.length]};border-radius:4px;display:flex;align-items:center;padding-left:6px;">
-            ${w>9?`<span style="font-size:0.65rem;font-weight:600;color:#001A14">${w}%</span>`:''}
-          </div>
+          <div style="height:100%;width:${w}%;background:${PAL[i%PAL.length]};border-radius:4px;"></div>
         </div>
         <span style="font-size:0.72rem;color:var(--text-muted);min-width:65px;text-align:right">${n} (${w}%)</span>
       </div>`;
@@ -1884,44 +1882,6 @@ function renderWorkStyles() {
   document.getElementById('workStylesContent').innerHTML = html;
 }
 
-// ── ENPS waffle / person-icon chart ──────────────────────────────────────────
-function enpsWaffleChartSVG(pro, pas, det) {
-  const nT = pro + pas + det;
-  if (!nT) return '';
-  const totalIcons = Math.min(nT, 100);
-  const proI = Math.round((pro / nT) * totalIcons);
-  const detI = Math.round((det / nT) * totalIcons);
-  const pasI = Math.max(0, totalIcons - proI - detI);
-  const people = [
-    ...Array(proI).fill('#17E88F'),
-    ...Array(pasI).fill('#80BBAD'),
-    ...Array(detI).fill('#D2785A'),
-  ];
-  const cols = 10;
-  const rows = Math.ceil(people.length / cols);
-  const pw = 16, ph = 22, gap = 3;
-  const W = cols * (pw + gap) + gap;
-  const noteH = nT > 100 ? 16 : 0;
-  const H = rows * (ph + gap) + gap + noteH;
-  let g = '';
-  people.forEach((color, idx) => {
-    const col = idx % cols;
-    const row = Math.floor(idx / cols);
-    const x = gap + col * (pw + gap);
-    const y = gap + row * (ph + gap);
-    const cx = x + pw / 2;
-    const hr = pw * 0.3;
-    g += `<circle cx="${cx.toFixed(1)}" cy="${(y + hr + 1).toFixed(1)}" r="${hr.toFixed(1)}" fill="${color}"/>`;
-    const bx = x + pw * 0.2, by = y + hr * 2 + 3, bw = pw * 0.6, bh = ph - hr * 2 - 4;
-    g += `<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="${(bw * 0.4).toFixed(1)}" fill="${color}" opacity="0.85"/>`;
-  });
-  if (nT > 100) {
-    const ey = rows * (ph + gap) + gap + 11;
-    g += `<text x="${W/2}" y="${ey}" text-anchor="middle" font-size="8.5" fill="rgba(242,244,243,0.35)" font-family="DM Sans,Arial,sans-serif">Each icon ≈ ${(nT/100).toFixed(1)} respondents (scaled to 100)</text>`;
-  }
-  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${g}</svg>`;
-}
-
 // ── Verbatim search filter ─────────────────────────────────────────────────────
 function filterVerbatims(q) {
   const term = q.toLowerCase().trim();
@@ -2246,30 +2206,42 @@ function renderSentiment() {
     </div>
   </div>`;
 
-  // ── ENPS Waffle chart ─────────────────────────────────────────────────
+  // ── ENPS Proportional breakdown ───────────────────────────────────────
   if (nT > 0) {
     html += `<div class="chart-card" style="margin-bottom:0.9rem">
       <div class="chart-card-title">eNPS Response Breakdown <span>N=${nT}</span></div>
-      <div style="display:flex;align-items:flex-start;gap:2rem;flex-wrap:wrap">
-        <div>${enpsWaffleChartSVG(pro, pas, det)}</div>
-        <div style="display:flex;flex-direction:column;gap:0.65rem;justify-content:center;padding-top:0.25rem">
-          <div style="display:flex;align-items:center;gap:0.6rem">
-            <span style="width:13px;height:13px;border-radius:3px;background:#17E88F;flex-shrink:0;display:inline-block"></span>
-            <span style="font-size:0.82rem;color:var(--text)">Promoters &nbsp;<strong style="color:#17E88F">${pro}</strong>&nbsp;<span style="color:var(--text-muted)">(${pP}%) · scored 9–10</span></span>
+      <div style="display:flex;align-items:center;gap:2.5rem;flex-wrap:wrap">
+        <div style="text-align:center;flex-shrink:0;min-width:90px">
+          <div style="font-family:'DM Serif Display',serif;font-size:3.6rem;line-height:1;color:${npsCol}">${nps !== null ? (nps >= 0 ? '+' : '') + nps : '—'}</div>
+          <div style="font-size:0.66rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-top:0.35rem">NPS Score</div>
+        </div>
+        <div style="flex:1;min-width:240px">
+          <div style="height:28px;display:flex;border-radius:6px;overflow:hidden;margin-bottom:1rem">
+            ${pP > 0 ? `<div style="width:${pP}%;background:#17E88F;"></div>` : ''}
+            ${paP > 0 ? `<div style="width:${paP}%;background:#80BBAD;"></div>` : ''}
+            ${dP > 0  ? `<div style="width:${dP}%;background:#D2785A;"></div>` : ''}
           </div>
-          <div style="display:flex;align-items:center;gap:0.6rem">
-            <span style="width:13px;height:13px;border-radius:3px;background:#80BBAD;flex-shrink:0;display:inline-block"></span>
-            <span style="font-size:0.82rem;color:var(--text)">Passives &nbsp;<strong style="color:#80BBAD">${pas}</strong>&nbsp;<span style="color:var(--text-muted)">(${paP}%) · scored 7–8</span></span>
-          </div>
-          <div style="display:flex;align-items:center;gap:0.6rem">
-            <span style="width:13px;height:13px;border-radius:3px;background:#D2785A;flex-shrink:0;display:inline-block"></span>
-            <span style="font-size:0.82rem;color:var(--text)">Detractors &nbsp;<strong style="color:#D2785A">${det}</strong>&nbsp;<span style="color:var(--text-muted)">(${dP}%) · scored 0–6</span></span>
-          </div>
-          <div style="font-size:0.74rem;color:var(--text-muted);margin-top:0.25rem;padding-top:0.5rem;border-top:1px solid var(--card-border)">
-            <strong style="color:var(--text)">NPS = % Promoters − % Detractors = ${nps !== null ? (nps >= 0 ? '+' : '') + nps : '—'}</strong><br>
-            <span>+30 or above is strong · +50 or above is excellent</span>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem">
+            <div>
+              <div style="font-size:1.5rem;font-family:'DM Serif Display',serif;line-height:1;color:#17E88F">${pP}%</div>
+              <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.2rem">Promoters · ${pro}</div>
+              <div style="font-size:0.66rem;color:rgba(242,244,243,0.35)">scored 9–10</div>
+            </div>
+            <div>
+              <div style="font-size:1.5rem;font-family:'DM Serif Display',serif;line-height:1;color:#80BBAD">${paP}%</div>
+              <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.2rem">Passives · ${pas}</div>
+              <div style="font-size:0.66rem;color:rgba(242,244,243,0.35)">scored 7–8</div>
+            </div>
+            <div>
+              <div style="font-size:1.5rem;font-family:'DM Serif Display',serif;line-height:1;color:#D2785A">${dP}%</div>
+              <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.2rem">Detractors · ${det}</div>
+              <div style="font-size:0.66rem;color:rgba(242,244,243,0.35)">scored 0–6</div>
+            </div>
           </div>
         </div>
+      </div>
+      <div style="margin-top:0.85rem;font-size:0.72rem;color:var(--text-muted);border-top:1px solid var(--card-border);padding-top:0.55rem">
+        NPS = % Promoters − % Detractors &nbsp;·&nbsp; +30 or above is strong &nbsp;·&nbsp; +50 or above is excellent
       </div>
     </div>`;
   }
@@ -2389,26 +2361,35 @@ function renderSentiment() {
   const negData = rows.map(r => ({ text: gv(r, C.Q43), dept: gv(r, C.DEPT) })).filter(v => v.text && v.text.length > 10);
 
   if (posData.length || negData.length) {
+    const VLIMIT = 25;
+    function verbatimBlock(items, cls) {
+      let h = `<div class="verbatim-list" style="margin-bottom:0.5rem">`;
+      items.slice(0, VLIMIT).forEach(v => {
+        h += `<div class="${cls}">"${esc(v.text)}"${v.dept ? `<span class="verbatim-dept">${esc(v.dept)}</span>` : ''}</div>`;
+      });
+      if (items.length > VLIMIT) {
+        h += `<div class="verbatim-overflow" style="display:none">`;
+        items.slice(VLIMIT).forEach(v => {
+          h += `<div class="${cls}">"${esc(v.text)}"${v.dept ? `<span class="verbatim-dept">${esc(v.dept)}</span>` : ''}</div>`;
+        });
+        h += `</div>`;
+        h += `<button class="verbatim-more-btn" onclick="this.previousElementSibling.style.display='block';this.style.display='none'">Show ${items.length - VLIMIT} more responses ▼</button>`;
+      }
+      h += `</div>`;
+      return h;
+    }
     html += `<div class="chart-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem">
         <div class="chart-card-title" style="margin-bottom:0">Verbatim Responses <span>${posData.length + negData.length} total</span></div>
       </div>
       <input type="text" class="verbatim-search" placeholder="🔍 Search verbatims..." oninput="filterVerbatims(this.value)">`;
     if (posData.length) {
-      html += `<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#17E88F;margin-bottom:0.5rem">What Employees Look Forward To (${posData.length})</div>`;
-      html += `<div class="verbatim-list" style="margin-bottom:1.25rem">`;
-      posData.forEach(v => {
-        html += `<div class="verbatim-item">"${esc(v.text)}"${v.dept ? `<span class="verbatim-dept">${esc(v.dept)}</span>` : ''}</div>`;
-      });
-      html += `</div>`;
+      html += `<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#17E88F;margin-bottom:0.5rem;margin-top:0.25rem">What Employees Look Forward To (${posData.length})</div>`;
+      html += verbatimBlock(posData, 'verbatim-item');
     }
     if (negData.length) {
-      html += `<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#D2785A;margin-bottom:0.5rem">What Employees Don't Look Forward To (${negData.length})</div>`;
-      html += `<div class="verbatim-list">`;
-      negData.forEach(v => {
-        html += `<div class="verbatim-item neg">"${esc(v.text)}"${v.dept ? `<span class="verbatim-dept">${esc(v.dept)}</span>` : ''}</div>`;
-      });
-      html += `</div>`;
+      html += `<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#D2785A;margin-bottom:0.5rem;margin-top:${posData.length ? '1.1rem' : '0.25rem'}">What Employees Don't Look Forward To (${negData.length})</div>`;
+      html += verbatimBlock(negData, 'verbatim-item neg');
     }
     html += `</div>`;
   } else {
