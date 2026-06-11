@@ -1469,16 +1469,18 @@ function renderFuture() {
       return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
     });
 
-  // Helper: sum counts for labels matching a keyword (case-insensitive)
+  // Helper: sum counts for labels matching any keyword (case-insensitive substring)
   const lcSum = (...keywords) => locEnts.filter(e => keywords.some(k => e.rawLabel.toLowerCase().includes(k))).reduce((s,e) => s+e.n, 0);
 
   const rb = C.RBEN.map((col,i) => ({label:C.RBEN_L[i], p:cbPct(rows,col)})).sort((a,b)=>b.p-a.p);
   const ob = C.OBEN.map((col,i) => ({label:C.OBEN_L[i], p:cbPct(rows,col)})).sort((a,b)=>b.p-a.p);
 
   // ── Top 3 Insights (algorithmic — no API) ─────────────────────────────
-  const officePct   = locTotal ? pct(lcSum('mostly office','fully office'), locTotal) : 0;
-  const remotePct   = locTotal ? pct(lcSum('mostly home','fully remote'),   locTotal) : 0;
-  const hybridPct   = locTotal ? pct(lcSum('equal mix','hybrid'),           locTotal) : 0;
+  // Keywords cover both short canonical labels AND verbose real-survey variants
+  // e.g. "Mostly at the main office (3+ days/week)", "Fully at the main office"
+  const officePct = locTotal ? pct(lcSum('mostly office','fully office','mostly at the main','fully at the main'), locTotal) : 0;
+  const remotePct = locTotal ? pct(lcSum('mostly home','fully remote','mostly at home'), locTotal) : 0;
+  const hybridPct = locTotal ? pct(lcSum('equal mix','hybrid','mix of both'), locTotal) : 0;
   const topLocLabel = locEnts.length ? locEnts.reduce((a,b) => b.n > a.n ? b : a) : null;
   const topRBen     = rb[0];
   const topOBen     = ob[0];
@@ -1527,10 +1529,7 @@ function renderFuture() {
   // Store for export
   window._lastLocData = { locEnts: visEnts, locTotal };
 
-  // ── Preferred Work Location — spectrum bar + stat tiles ───────────────
-  const spectrumBar = visEnts.map(e =>
-    `<div style="flex:${e.n};background:${e.color};transition:flex 0.4s" title="${e.label}: ${locTotal?pct(e.n,locTotal):0}%"></div>`
-  ).join('');
+  // ── Preferred Work Location — stat tiles ──────────────────────────────
 
   const tiles = visEnts.map(e => {
     const p2 = locTotal ? pct(e.n, locTotal) : 0;
@@ -1565,7 +1564,6 @@ function renderFuture() {
       <div class="chart-card-title" style="margin-bottom:0">Preferred Future Work Location</div>
       <button class="export-btn" onclick="exportLocationPNG()">↓ Export PNG</button>
     </div>
-    <div style="height:10px;display:flex;border-radius:100px;overflow:hidden;margin-bottom:1.5rem">${spectrumBar}</div>
     <div style="display:grid;grid-template-columns:repeat(${Math.min(visEnts.length,5)},1fr);gap:0.6rem">${tiles}</div>
     ${buckets}
     ${skipN > 0 ? `<div class="loc-footnote" style="margin-top:0.9rem">† ${locTotal} of ${n} respondents answered this question; ${skipN} skipped or left it blank.</div>` : ''}
