@@ -359,16 +359,13 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
             <div class="input-hint">Sweet spot: <span style="color:#17E88F">67–80% occupancy feels vibrant</span>. Below 67% feels empty; above 80% feels oversubscribed and too full.</div>
           </div>
 
-          <div class="input-row">
-            <div class="input-group-sm">
-              <label class="input-label">Total Portfolio RSF</label>
-              <input type="number" class="num-input" id="totalRSF" min="0" placeholder="0" oninput="state.totalRSF=parseInt(this.value)||0;recompute()"/>
-              <div class="input-hint">Enables SF gap analysis</div>
+          <div class="input-group">
+            <label class="input-label">Target SF / Seat <span style="font-weight:400;opacity:.5;text-transform:none;letter-spacing:0">— used to derive capacity from RSF</span></label>
+            <div class="input-with-unit">
+              <input type="number" class="num-input-sm" id="targetDensity" min="0" placeholder="150" oninput="state.targetDensity=parseInt(this.value)||0;recompute()"/>
+              <span class="unit">SF / seat</span>
             </div>
-            <div class="input-group-sm">
-              <label class="input-label">Target RSF/Person</label>
-              <input type="number" class="num-input" id="targetDensity" min="0" placeholder="0" oninput="state.targetDensity=parseInt(this.value)||0;recompute()"/>
-            </div>
+            <div class="input-hint">e.g. 150–175 SF/seat for open plan · 200–250 for mixed/private · Enter RSF per location above and this drives capacity automatically.</div>
           </div>
         </div>
       </div>
@@ -527,22 +524,22 @@ function buildBuildingCard(b) {
       + '</div>';
   }
 
-  var badgeTxt = resolved > 0
-    ? (resolved.toLocaleString() + (allExp>0?' + '+allExp+' exp':'')+' seats')
-    : '0 seats';
+  var capacityLabel = resolved > 0
+    ? resolved.toLocaleString() + ' cap' + (allExp>0?' + '+allExp+' exp':'')
+    : 'no capacity';
 
   return '<div class="bldg-card" id="bldg-'+b.id+'">'
     + '<div class="bldg-head">'
     + '<input class="bldg-name-input" value="'+esc(b.name)+'" onchange="updateBuilding('+b.id+',\'name\',this.value)" placeholder="Building / location name"/>'
-    + '<span class="bldg-seats-badge">'+badgeTxt+'</span>'
+    + '<span class="bldg-seats-badge">'+capacityLabel+'</span>'
     + '<button class="btn-remove-bldg" onclick="removeBuilding('+b.id+')" title="Remove">×</button>'
     + '</div>'
     + '<div class="floors-list">'
     +   '<div class="floor-row">'
-    +     '<span class="floor-unit" style="min-width:48px;font-size:.72rem">Seats</span>'
-    +     '<input type="number" class="floor-seats-input" value="'+(b.seats||'')+'" min="0" placeholder="e.g. 200" oninput="updateBuilding('+b.id+',\'seats\',this.value)" title="Total seats in this location"/>'
-    +     '<span class="floor-unit" style="margin-left:.5rem;margin-right:.75rem">RSF</span>'
-    +     '<input type="number" class="floor-seats-input" style="width:90px" value="'+(b.rsf||'')+'" min="0" placeholder="optional" oninput="updateBuilding('+b.id+',\'rsf\',this.value)" title="Rentable square footage"/>'
+    +     '<span class="floor-unit" style="min-width:36px;font-size:.72rem">RSF</span>'
+    +     '<input type="number" class="floor-seats-input" style="width:100px" value="'+(b.rsf||'')+'" min="0" placeholder="e.g. 22,000" oninput="updateBuilding('+b.id+',\'rsf\',this.value)" title="Rentable square footage"/>'
+    +     '<span class="floor-unit" style="margin-left:.6rem;margin-right:.4rem;opacity:.45">seats</span>'
+    +     '<input type="number" class="floor-seats-input" style="width:72px;opacity:'+(b.seats>0?'1':'.5')+'" value="'+(b.seats||'')+'" min="0" placeholder="override" oninput="updateBuilding('+b.id+',\'seats\',this.value)" title="Override seat count (optional — leave blank to derive from RSF ÷ Target SF/Seat)"/>'
     +   '</div>'
     +   derivedNote
     + '</div>'
@@ -558,14 +555,17 @@ function updateInventorySummary() {
   var totalExp = buildings.reduce(function(s,b){return s+b.expansions.reduce(function(ss,e){return ss+(e.seats||0);},0);},0);
   var badge = document.getElementById('inv-badge');
   var summary = document.getElementById('inv-summary');
-  if (badge) badge.textContent = totalSeats.toLocaleString() + ' seats';
+  var totalRSF = buildings.reduce(function(s,b){return s+(b.rsf||0);},0);
+  if (badge) badge.textContent = totalSeats > 0 ? totalSeats.toLocaleString()+' cap' : (totalRSF>0 ? totalRSF.toLocaleString()+' SF' : '0 SF');
   if (summary) {
     if (buildings.length===0) {
-      summary.textContent = 'Add a building to begin';
+      summary.textContent = 'Add a location to begin';
     } else {
-      summary.textContent = buildings.length+' building'+(buildings.length!==1?'s':'')+' · '
-        +totalSeats.toLocaleString()+' seats'
-        +(totalExp>0?' (+ '+totalExp.toLocaleString()+' planned)':'');
+      var parts = [buildings.length+' location'+(buildings.length!==1?'s':'')];
+      if (totalRSF>0) parts.push(totalRSF.toLocaleString()+' SF');
+      if (totalSeats>0) parts.push(totalSeats.toLocaleString()+' capacity');
+      if (totalExp>0) parts.push('+'+totalExp.toLocaleString()+' planned');
+      summary.textContent = parts.join(' · ');
     }
   }
 }
@@ -615,7 +615,7 @@ function compute() {
     return seats;
   });
 
-  var totalRSF = buildings.reduce(function(s,b){return s+(b.rsf||0);},0) || state.totalRSF;
+  var totalRSF = buildings.reduce(function(s,b){return s+(b.rsf||0);},0);
 
   // Demand per scenario
   var scKeys = ['base','mid','high'];
@@ -693,8 +693,8 @@ function recompute() {
       + '<div class="empty-icon">⚖️</div>'
       + '<div class="empty-title">Three steps to your analysis</div>'
       + '<div style="display:flex;flex-direction:column;gap:.6rem;margin:1rem 0 1.5rem;text-align:left;width:100%;max-width:320px">'
-      + step(hasBuilding, 'Add a building in <strong>Space Inventory</strong>')
-      + step(hasSeats,    'Enter seats (or RSF + density to derive them)')
+      + step(hasBuilding, 'Add a location in <strong>Space Inventory</strong>')
+      + step(hasSeats,    'Enter RSF + set Target SF/Seat in <strong>Model Assumptions</strong> (or enter seats directly)')
       + step(hasHC,       'Enter current headcount in <strong>Headcount & Growth</strong>')
       + '</div>'
       + '<button class="btn-sample" onclick="loadSample()">Load Cohesity sample data</button>'
@@ -984,7 +984,7 @@ function loadSample() {
   state.scenarios.high.rate = 10;
   state.vibrancyThreshold = 67;
   state.oversubscribedThreshold = 80;
-  state.totalRSF = 66753;
+
   state.targetDensity = 165;
 
   _bid=0; _fid=0; _eid=0;
@@ -1003,7 +1003,6 @@ function loadSample() {
   set('rateHigh',      state.scenarios.high.rate);
   set('vibrancyThreshold', state.vibrancyThreshold);
   set('oversubscribedThreshold', state.oversubscribedThreshold);
-  set('totalRSF',      state.totalRSF);
   set('targetDensity', state.targetDensity);
 
   renderInputs();
@@ -1046,8 +1045,10 @@ function exportExcel() {
     ['Current Headcount', state.currentHC],
     ['Base Year', state.baseYear],
     ['Attendance Rate', state.attendanceRate/100],
-    ['Current Seat Supply', d.curSup],
-    ['Vibrancy Threshold', state.vibrancyThreshold/100],
+    ['Effective Seat Capacity', d.curSup],
+    ['Target SF/Seat', state.targetDensity||'—'],
+    ['Total Portfolio RSF', d.totalRSF||'—'],
+    ['Vibrancy Zone', state.vibrancyThreshold+'%–'+state.oversubscribedThreshold+'%'],
     [],
     ['SCENARIO GROWTH RATES'],
     ['Base', state.scenarios.base.rate/100],
