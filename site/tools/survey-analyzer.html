@@ -701,7 +701,6 @@ select.client-name-input option { background: #0D2B22; color: var(--text); }
     <!-- CONTROL BAR -->
     <div class="control-bar">
       <div class="control-bar-left">
-        <div class="n-badge" id="nBadge">N = 0</div>
         <div class="client-name-wrap">
           <span class="filter-label">Client / Project</span>
           <input type="text" id="clientName" class="client-name-input" placeholder="e.g. Morley Builders" oninput="updateClientName()">
@@ -1005,7 +1004,6 @@ function applyFilters() {
     (!tenure || gv(r,C.TENURE) === tenure) &&
     (!freq || gv(r,C.FREQOFF) === freq)
   );
-  document.getElementById('nBadge').textContent = `N = ${filteredRows.length} respondents`;
   renderActive();
 }
 
