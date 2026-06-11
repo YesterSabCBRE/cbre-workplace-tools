@@ -1037,31 +1037,54 @@ function renderActive() {
 }
 
 // ─── CHART BUILDERS ───────────────────────────────────────────────────────────
+
+// Shared stacked track builder — labels inside when segment ≥ 6%, floated above for smaller ones
+function buildStackedTrack(segData) {
+  const INSIDE_MIN = 6;
+  let cum = 0;
+  const processed = segData.filter(s => s.w > 0).map(s => {
+    const mid = cum + s.w / 2;
+    cum += s.w;
+    return { ...s, mid };
+  });
+
+  const segs = processed.map(s => {
+    const inside = s.w >= INSIDE_MIN ? s.w + '%' : '';
+    const cls = s.light ? ' bar-seg-lt' : '';
+    const col = s.textColor ? `;color:${s.textColor}` : '';
+    return `<div class="bar-seg${cls}" style="width:${s.w}%;background:${s.color}${col}" title="${s.name}: ${s.w}%">${inside}</div>`;
+  }).join('');
+
+  const tinySegs = processed.filter(s => s.w < INSIDE_MIN);
+  if (tinySegs.length) {
+    const floats = tinySegs.map(s =>
+      `<span style="position:absolute;top:0;left:${s.mid}%;transform:translateX(-50%);font-size:0.6rem;font-weight:700;color:${s.color};white-space:nowrap;line-height:1;pointer-events:none;text-shadow:0 1px 3px rgba(0,15,8,0.95)">${s.w}%</span>`
+    ).join('');
+    return `<div style="flex:1;position:relative;min-width:0;padding-top:16px">${floats}<div class="bar-track" style="flex:unset;width:100%">${segs}</div></div>`;
+  }
+  return `<div class="bar-track">${segs}</div>`;
+}
+
 function stackedBar(label, d, t, a, lblClass) {
   lblClass = lblClass || 'bar-label';
   if (!t) return `<div class="bar-row"><span class="${lblClass}">${label}</span><span style="font-size:0.72rem;color:var(--text-muted)">No data</span></div>`;
-  const segs = [5,4,3,2,1].map((s,i) => {
-    const w = pct(d[s], t);
-    if (!w) return '';
-    const dark = i === 0;
-    return `<div class="bar-seg${dark?' bar-seg-lt':''}" style="width:${w}%;background:${L5_COLORS[i]}" title="${L5_LABELS[i]}: ${w}%">${w > 7 ? w+'%' : ''}</div>`;
-  }).join('');
-  return `<div class="bar-row"><span class="${lblClass}" title="${label}">${label}</span><div class="bar-track">${segs}</div><span class="bar-avg">${a !== null ? a.toFixed(1) : '—'}</span></div>`;
+  const segData = [5,4,3,2,1].map((s,i) => ({
+    w: pct(d[s], t), color: L5_COLORS[i], light: i === 0, name: L5_LABELS[i]
+  }));
+  const track = buildStackedTrack(segData);
+  return `<div class="bar-row"><span class="${lblClass}" title="${label}">${label}</span>${track}<span class="bar-avg">${a !== null ? a.toFixed(1) : '—'}</span></div>`;
 }
 
 function supplyBar(label, c) {
   if (!c.t) return `<div class="bar-row"><span class="bar-label">${label}</span><span style="font-size:0.72rem;color:var(--text-muted)">No data</span></div>`;
-  const segs = [
-    [c.r,'#17E88F','Right amount'],
-    [c.l,'#D2785A','Too little'],
-    [c.m,'#DBD99A','Too much'],
-    [c.n,'#CAD1D3','None'],
-  ].map(([n,color,name]) => {
-    const w = pct(n, c.t);
-    if (!w) return '';
-    return `<div class="bar-seg" style="width:${w}%;background:${color};color:rgba(0,0,0,0.7)" title="${name}: ${w}%">${w > 8 ? w+'%' : ''}</div>`;
-  }).join('');
-  return `<div class="bar-row"><span class="bar-label" title="${label}">${label}</span><div class="bar-track">${segs}</div></div>`;
+  const segData = [
+    {w:pct(c.r,c.t), color:'#17E88F', name:'Right amount', textColor:'rgba(0,0,0,0.7)'},
+    {w:pct(c.l,c.t), color:'#D2785A', name:'Too little',   textColor:'rgba(0,0,0,0.7)'},
+    {w:pct(c.m,c.t), color:'#DBD99A', name:'Too much',     textColor:'rgba(0,0,0,0.7)'},
+    {w:pct(c.n,c.t), color:'#CAD1D3', name:'None',         textColor:'rgba(0,0,0,0.7)'},
+  ];
+  const track = buildStackedTrack(segData);
+  return `<div class="bar-row"><span class="bar-label" title="${label}">${label}</span>${track}</div>`;
 }
 
 function hBar(label, val, color) {
@@ -1637,11 +1660,14 @@ function renderFuture() {
   html += `<div class="chart-card"><div class="chart-card-title">Amenity Location Importance</div><div class="stacked-chart">`;
   ammData.forEach(({label,off,bld,nbr,not,tot}) => {
     if(!tot) return;
-    const segs = [[off,'#17E88F','Within office'],[bld,'#80BBAD','Within building'],[nbr,'#DBD99A','Neighborhood'],[not,'#D2785A','Not important']].map(([n2,color,name]) => {
-      const w=pct(n2,tot); if(!w) return '';
-      return `<div class="bar-seg" style="width:${w}%;background:${color};color:rgba(0,0,0,0.7)" title="${name}: ${w}%">${w>8?w+'%':''}</div>`;
-    }).join('');
-    html += `<div class="bar-row"><span class="bar-label" title="${label}">${label}</span><div class="bar-track">${segs}</div></div>`;
+    const segData = [
+      {w:pct(off,tot), color:'#17E88F', name:'Within office',   textColor:'rgba(0,0,0,0.7)'},
+      {w:pct(bld,tot), color:'#80BBAD', name:'Within building', textColor:'rgba(0,0,0,0.7)'},
+      {w:pct(nbr,tot), color:'#DBD99A', name:'Neighborhood',    textColor:'rgba(0,0,0,0.7)'},
+      {w:pct(not,tot), color:'#D2785A', name:'Not important',   textColor:'rgba(0,0,0,0.7)'},
+    ];
+    const track = buildStackedTrack(segData);
+    html += `<div class="bar-row"><span class="bar-label" title="${label}">${label}</span>${track}</div>`;
   });
   html += `</div><div class="chart-legend">
     <div class="legend-item"><div class="legend-dot" style="background:#17E88F"></div>Within office</div>
