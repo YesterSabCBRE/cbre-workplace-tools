@@ -370,7 +370,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
         </div>
       </div>
 
-      <button class="btn-sample" style="font-size:.75rem;padding:.55rem 1rem" onclick="loadSample()">Load Cohesity sample data</button>
+      <button class="btn-sample" style="font-size:.75rem;padding:.55rem 1rem" onclick="loadSample()">Load Sample Demo</button>
 
     </div><!-- end sd-inputs -->
 
@@ -380,7 +380,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
         <div class="empty-icon">⚖️</div>
         <div class="empty-title">Build your scenario</div>
         <div class="empty-desc">Add a building with seat inventory and enter your headcount to generate the supply & demand analysis.</div>
-        <button class="btn-sample" onclick="loadSample()">Load Cohesity sample data</button>
+        <button class="btn-sample" onclick="loadSample()">Load Sample Demo</button>
       </div>
     </div>
 
@@ -697,7 +697,7 @@ function recompute() {
       + step(hasSeats,    'Enter RSF + set Target SF/Seat in <strong>Model Assumptions</strong> (or enter seats directly)')
       + step(hasHC,       'Enter current headcount in <strong>Headcount & Growth</strong>')
       + '</div>'
-      + '<button class="btn-sample" onclick="loadSample()">Load Cohesity sample data</button>'
+      + '<button class="btn-sample" onclick="loadSample()">Load Sample Demo</button>'
       + '</div>';
     if(bPng) bPng.style.display='none';
     if(bXls) bXls.style.display='none';
@@ -975,7 +975,7 @@ function buildBuildingBreakdown(d) {
 
 // ─── SAMPLE DATA ─────────────────────────────────────────────────────────────
 function loadSample() {
-  state.clientName = 'Cohesity';
+  state.clientName = 'Sample Client';
   state.currentHC = 500;
   state.baseYear = 2025;
   state.attendanceRate = 60;
@@ -989,7 +989,7 @@ function loadSample() {
 
   _bid=0; _fid=0; _eid=0;
   buildings = [{
-    id:++_bid, name:'Santa Clara HQ', seats:382, rsf:66753,
+    id:++_bid, name:'HQ Office', seats:382, rsf:66753,
     expansions:[{id:++_eid, year:2028, seats:228, note:'Floor 6 expansion'}]
   }];
 
