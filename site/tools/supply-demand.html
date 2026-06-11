@@ -67,14 +67,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .unit{font-size:.75rem;color:var(--text-muted);white-space:nowrap}
 
 /* ACCORDION */
-.accordion{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);overflow:hidden}
+.accordion{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius)}
 .accordion-head{display:flex;align-items:center;gap:.5rem;padding:.75rem 1rem;cursor:pointer;user-select:none;transition:background .2s}
 .accordion-head:hover{background:rgba(255,255,255,.03)}
 .accordion-head span:first-child{font-size:.82rem;font-weight:600;color:var(--text);flex:1}
 .acc-summary{font-size:.68rem;color:var(--accent);background:rgba(23,232,143,.1);border:1px solid rgba(23,232,143,.2);padding:.15rem .55rem;border-radius:100px;white-space:nowrap}
 .acc-arrow{font-size:.7rem;color:var(--text-muted);transition:transform .2s;margin-left:.25rem}
-.accordion-body{padding:0 1rem 1rem;display:flex;flex-direction:column;gap:.75rem}
-.accordion-body.collapsed{display:none !important}
+.accordion-body{padding:0 1rem 1rem;display:flex;flex-direction:column;gap:.75rem;max-height:2000px;overflow:hidden;transition:max-height .28s ease,padding .28s ease,opacity .2s ease;opacity:1}
+.accordion-body.collapsed{max-height:0!important;padding-top:0!important;padding-bottom:0!important;opacity:0!important;pointer-events:none}
 
 /* CLIENT NAME CARD */
 .client-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);padding:.85rem 1rem}
