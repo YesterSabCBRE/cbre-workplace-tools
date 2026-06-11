@@ -766,12 +766,12 @@ function makeBar(mp,wp,sp,ap,label,ht) {
   for (var i = 0; i < 4; i++) {
     var tc = (i >= 2) ? "#012A2D" : "#fff";
     var pctText = p[i].toFixed(1)+"%";
-    if (p[i] > 8) {
-      // Label inside bar
+    if (p[i] >= 3) {
+      // Label inside bar - enough room for text
       s += '<div style="width:'+p[i]+'%;background:'+cs[i]+';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:'+tc+'">'+pctText+'</div>';
     } else if (p[i] > 0) {
-      // Label outside bar (to the right)
-      s += '<div style="width:'+p[i]+'%;background:'+cs[i]+';position:relative;"><span style="position:absolute;left:100%;white-space:nowrap;margin-left:4px;font-size:9px;font-weight:600;color:'+cs[i]+'">'+pctText+'</span></div>';
+      // Small segment - no label to avoid clutter
+      s += '<div style="width:'+p[i]+'%;background:'+cs[i]+'"></div>';
     } else {
       s += '<div style="width:0%;background:'+cs[i]+'"></div>';
     }
