@@ -1498,59 +1498,79 @@ function renderFuture() {
     html += `</div></div>`;
   }
 
-  // ── Preferred Work Location — donut + bar distribution ────────────────
-  const locBarRows = locEnts.filter(e => e.n > 0).map(e => {
+  const skipN = n - locTotal;
+  const visEnts = locEnts.filter(e => e.n > 0);
+
+  // Store for export
+  window._lastLocData = { locEnts: visEnts, locTotal };
+
+  // ── Preferred Work Location — spectrum bar + stat tiles ───────────────
+  const spectrumBar = visEnts.map(e =>
+    `<div style="flex:${e.n};background:${e.color};transition:flex 0.4s" title="${e.label}: ${locTotal?pct(e.n,locTotal):0}%"></div>`
+  ).join('');
+
+  const tiles = visEnts.map(e => {
     const p2 = locTotal ? pct(e.n, locTotal) : 0;
-    return `<div class="loc-bar-row">
-      <span class="loc-bar-label">${e.label}</span>
-      <div class="loc-bar-track">
-        <div class="loc-bar-fill" style="width:${p2}%;background:${e.color}"></div>
-      </div>
-      <span class="loc-bar-pct" style="color:${e.color}">${p2}%</span>
+    return `<div style="background:${e.color}12;border:1px solid ${e.color}28;border-top:3px solid ${e.color};border-radius:10px;padding:0.9rem 0.75rem;text-align:center">
+      <div style="font-family:'DM Serif Display',serif;font-size:2rem;color:${e.color};line-height:1;margin-bottom:0.35rem">${p2}%</div>
+      <div style="font-size:0.72rem;color:var(--text);line-height:1.4;font-weight:500">${e.label}</div>
+      <div style="font-size:0.62rem;color:var(--text-muted);margin-top:0.25rem">N = ${e.n}</div>
     </div>`;
   }).join('');
 
-  const locSegs = locEnts.filter(e => e.n > 0).map(e => ({value:e.n, color:e.color}));
-  const svg     = donutSVG(locSegs, 120);
-  const skipN   = n - locTotal;
-
-  // Store for export
-  window._lastLocData = { locEnts: locEnts.filter(e => e.n > 0), locTotal };
+  const buckets = locTotal > 0 ? `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:1.25rem;background:rgba(255,255,255,0.03);border:1px solid var(--card-border);border-radius:10px;overflow:hidden">
+      <div style="padding:0.85rem;text-align:center">
+        <div style="font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:0.4rem">Remote-leaning</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:#D2785A;line-height:1">${remotePct}%</div>
+        <div style="font-size:0.65rem;color:var(--text-muted);margin-top:0.2rem">fully remote + mostly home</div>
+      </div>
+      <div style="padding:0.85rem;text-align:center;border-left:1px solid var(--card-border);border-right:1px solid var(--card-border)">
+        <div style="font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:0.4rem">Hybrid</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:#80BBAD;line-height:1">${hybridPct}%</div>
+        <div style="font-size:0.65rem;color:var(--text-muted);margin-top:0.2rem">equal mix of both</div>
+      </div>
+      <div style="padding:0.85rem;text-align:center">
+        <div style="font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:0.4rem">Office-leaning</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:#17E88F;line-height:1">${officePct}%</div>
+        <div style="font-size:0.65rem;color:var(--text-muted);margin-top:0.2rem">mostly office + fully office</div>
+      </div>
+    </div>` : '';
 
   html += `<div class="chart-card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
       <div class="chart-card-title" style="margin-bottom:0">Preferred Future Work Location</div>
       <button class="export-btn" onclick="exportLocationPNG()">↓ Export PNG</button>
     </div>
-    <div class="loc-split-wrap">
-      <div class="loc-donut-side">
-        <div class="donut-svg-wrap" style="width:120px;height:120px">
-          ${svg}
-          <div class="donut-center-text">
-            <div class="donut-center-value">${locTotal}</div>
-            <div class="donut-center-label">responses</div>
-          </div>
-        </div>
-        <div class="loc-donut-legend">
-          ${locEnts.filter(e=>e.n>0).map(e=>`<div class="loc-swatch-row"><span class="loc-swatch" style="background:${e.color}"></span>${e.label}</div>`).join('')}
-        </div>
-      </div>
-      <div class="loc-bars-side">
-        ${locBarRows}
-      </div>
-    </div>
-    ${skipN > 0 ? `<div class="loc-footnote">† ${locTotal} of ${n} respondents answered this question; ${skipN} skipped or left it blank.</div>` : ''}
+    <div style="height:10px;display:flex;border-radius:100px;overflow:hidden;margin-bottom:1.5rem">${spectrumBar}</div>
+    <div style="display:grid;grid-template-columns:repeat(${Math.min(visEnts.length,5)},1fr);gap:0.6rem">${tiles}</div>
+    ${buckets}
+    ${skipN > 0 ? `<div class="loc-footnote" style="margin-top:0.9rem">† ${locTotal} of ${n} respondents answered this question; ${skipN} skipped or left it blank.</div>` : ''}
   </div>`;
 
-  // ── Remote benefits ───────────────────────────────────────────────────
-  html += `<div class="chart-card"><div class="chart-card-title">Remote Work Benefits <span>% who selected</span></div><div class="h-bar-chart">`;
-  rb.forEach(({label,p}) => html += hBar(label, p));
-  html += `</div></div>`;
+  // ── Benefits — side-by-side chip layout ───────────────────────────────
+  const benefitChips = (items, color) => items.slice(0,7).map(({label,p}) => `
+    <div style="position:relative;padding:0.5rem 0.7rem;border-radius:6px;margin-bottom:0.3rem;overflow:hidden;border:1px solid ${color}18">
+      <div style="position:absolute;inset:0;background:${color};opacity:${(p/100)*0.18};pointer-events:none"></div>
+      <div style="position:relative;display:flex;justify-content:space-between;align-items:center;gap:0.75rem">
+        <span style="font-size:0.78rem;color:var(--text);line-height:1.4">${label}</span>
+        <span style="font-size:0.8rem;font-weight:600;color:${color};white-space:nowrap;flex-shrink:0">${p}%</span>
+      </div>
+    </div>`).join('');
 
-  // ── Office benefits ───────────────────────────────────────────────────
-  html += `<div class="chart-card"><div class="chart-card-title">Office Benefits <span>% who selected</span></div><div class="h-bar-chart">`;
-  ob.forEach(({label,p}) => html += hBar(label, p));
-  html += `</div></div>`;
+  html += `<div class="chart-card">
+    <div class="chart-card-title" style="margin-bottom:1.1rem">Work Location Drivers <span>% who selected each reason</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.75rem">
+      <div>
+        <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#DBD99A;margin-bottom:0.75rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(219,217,154,0.2)">🏠 Why work remotely?</div>
+        ${benefitChips(rb, '#DBD99A')}
+      </div>
+      <div>
+        <div style="font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#17E88F;margin-bottom:0.75rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(23,232,143,0.2)">🏢 Why come to the office?</div>
+        ${benefitChips(ob, '#17E88F')}
+      </div>
+    </div>
+  </div>`;
 
   // ── Trade-offs ────────────────────────────────────────────────────────
   const td = C.TRADE.map((col,i) => ({label:C.TRADE_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
