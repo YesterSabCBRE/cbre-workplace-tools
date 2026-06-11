@@ -120,6 +120,15 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .btn-remove-exp:hover{color:#D2785A}
 .btn-add-building{width:100%;padding:.6rem;background:none;border:1px dashed rgba(23,232,143,.25);border-radius:8px;color:rgba(23,232,143,.6);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s;margin-top:.25rem}
 .btn-add-building:hover{background:rgba(23,232,143,.05);border-color:rgba(23,232,143,.5);color:var(--accent)}
+
+/* ATTENDANCE PRESETS */
+.att-presets{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.35rem}
+.att-preset{padding:.22rem .6rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:100px;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:.67rem;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+.att-preset:hover{border-color:rgba(23,232,143,.4);color:var(--accent);background:rgba(23,232,143,.06)}
+.att-preset.active{border-color:var(--accent);color:var(--accent);background:rgba(23,232,143,.1)}
+
+/* EXPANSION OPTIONAL HINT */
+.exp-optional-hint{font-size:.62rem;color:rgba(242,244,243,.3);margin-bottom:.4rem;line-height:1.45;font-style:italic}
 .inv-summary-text{font-size:.72rem;color:var(--text-muted);text-align:center;padding:.35rem 0}
 
 /* SCENARIO ROWS */
@@ -278,10 +287,15 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
           <div class="input-group">
             <label class="input-label">Attendance Rate</label>
             <div class="input-with-unit">
-              <input type="number" class="num-input-sm" id="attendanceRate" min="1" max="100" value="65" oninput="state.attendanceRate=parseInt(this.value)||65;recompute()"/>
+              <input type="number" class="num-input-sm" id="attendanceRate" min="1" max="100" value="65" oninput="state.attendanceRate=parseInt(this.value)||65;syncAttPreset();recompute()"/>
               <span class="unit">% of HC in office on peak day</span>
             </div>
-            <div class="input-hint">e.g. 3×/week ≈ 60% · 5-day in-person = 100%</div>
+            <div class="att-presets" id="att-presets">
+              <button class="att-preset" onclick="setAttendance(10)" data-val="10">Fully Remote</button>
+              <button class="att-preset" onclick="setAttendance(50)" data-val="50">Hybrid 2–3×/wk</button>
+              <button class="att-preset" onclick="setAttendance(85)" data-val="85">Mainly In-Office 4–5×/wk</button>
+            </div>
+            <div class="input-hint">Peak day = highest concurrent headcount expected in office</div>
           </div>
 
           <div class="input-group">
@@ -336,10 +350,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
           <div class="input-group">
             <label class="input-label">Vibrancy Threshold</label>
             <div class="input-with-unit">
-              <input type="number" class="num-input-sm" id="vibrancyThreshold" min="1" max="100" value="60" oninput="state.vibrancyThreshold=parseInt(this.value)||60;recompute()"/>
+              <input type="number" class="num-input-sm" id="vibrancyThreshold" min="1" max="100" value="67" oninput="state.vibrancyThreshold=parseInt(this.value)||67;recompute()"/>
               <span class="unit">% of seats occupied = vibrant</span>
             </div>
-            <div class="input-hint">Minimum occupancy rate for the office to feel energetic (CBRE default: 60%)</div>
+            <div class="input-hint">2/3 rule: office feels energetic when ≥67% of seats are occupied. Below this threshold the space feels empty even if people are present.</div>
           </div>
 
           <div class="input-row">
@@ -385,7 +399,7 @@ var state = {
     mid:  { rate: 5 },
     high: { rate: 8 },
   },
-  vibrancyThreshold: 60,
+  vibrancyThreshold: 67,
   totalRSF: 0,
   targetDensity: 0,
 };
@@ -405,6 +419,23 @@ function toggleAcc(id) {
   if (!body) return;
   var collapsed = body.classList.toggle('collapsed');
   arr.textContent = collapsed ? '▼' : '▲';
+}
+
+// ─── ATTENDANCE PRESETS ──────────────────────────────────────────────────────
+function setAttendance(val) {
+  state.attendanceRate = val;
+  var el = document.getElementById('attendanceRate');
+  if (el) el.value = val;
+  syncAttPreset();
+  updateHCPreview();
+  recompute();
+}
+
+function syncAttPreset() {
+  var val = state.attendanceRate;
+  document.querySelectorAll('.att-preset').forEach(function(btn){
+    btn.classList.toggle('active', parseInt(btn.getAttribute('data-val')) === val);
+  });
 }
 
 // ─── BUILDINGS CRUD ─────────────────────────────────────────────────────────
@@ -508,7 +539,8 @@ function buildBuildingCard(b) {
   var expsHtml = '';
   if (b.expansions.length > 0) {
     expsHtml = '<div class="expansions-section">'
-      + '<div class="exp-header">Planned Expansions</div>'
+      + '<div class="exp-header">Planned Expansions <span style="font-weight:400;opacity:.55;text-transform:none;letter-spacing:0">— optional</span></div>'
+      + '<div class="exp-optional-hint">Only needed if you already have a signed lease or committed expansion. Leave blank to let the model show you <em>when</em> expansion is needed.</div>'
       + b.expansions.map(function(e){
           return '<div class="exp-row">'
             + '<input type="number" class="exp-input exp-year" value="'+e.year+'" min="'+state.baseYear+'" max="'+(state.baseYear+20)+'" oninput="updateExpansion('+b.id+','+e.id+',\'year\',this.value)" title="Year expansion activates"/>'
@@ -952,7 +984,7 @@ function loadSample() {
   state.scenarios.base.rate = 5;
   state.scenarios.mid.rate = 7;
   state.scenarios.high.rate = 10;
-  state.vibrancyThreshold = 51;
+  state.vibrancyThreshold = 67;
   state.totalRSF = 66753;
   state.targetDensity = 165;
 
@@ -980,6 +1012,7 @@ function loadSample() {
 
   renderInputs();
   updateHCPreview();
+  syncAttPreset();
   recompute();
 }
 
