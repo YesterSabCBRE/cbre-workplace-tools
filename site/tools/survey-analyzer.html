@@ -918,7 +918,7 @@ function supplyDist(rows, col) {
   rows.forEach(r => {
     const v = gv(r, col).toLowerCase();
     if (!v) return;
-    if (v.includes('right')) c.r++;
+    if (v.includes('right amount')) c.r++;
     else if (v.includes('too little')) c.l++;
     else if (v.includes('too much')) c.m++;
     else if (v === 'none') c.n++;
@@ -1255,6 +1255,7 @@ function renderRel() {
 
   // Time split
   const timeWithOthers = Math.round(avg(numVals(rows, C.TIME_O)) || 0);
+  const scheduledPct   = Math.round(avg(numVals(rows, C.COL_S)) || 0);
   const unscheduledPct = Math.round(avg(numVals(rows, C.COL_U)) || 0);
 
   // Weakest and strongest relationship dimension
@@ -1274,7 +1275,7 @@ function renderRel() {
 
   if (timeWithOthers > 0) {
     const collab = timeWithOthers >= 60 ? 'highly collaborative' : timeWithOthers >= 40 ? 'balanced between individual and collaborative' : 'individually oriented';
-    relInsights.push({ icon:'🤝', text:`Employees spend an average of <strong>${timeWithOthers}% of their work time with others</strong>, characterising the workforce as <strong>${collab}</strong>. ${unscheduledPct > 40 ? `${unscheduledPct}% of that collaborative time is unscheduled, suggesting spontaneous interaction is a key feature of the workplace.` : `Most collaboration (${100-unscheduledPct}%) is planned and scheduled.`}` });
+    relInsights.push({ icon:'🤝', text:`Employees spend an average of <strong>${timeWithOthers}% of their work time with others</strong>, characterising the workforce as <strong>${collab}</strong>. ${unscheduledPct > 40 ? `${unscheduledPct}% of that collaborative time is unscheduled, suggesting spontaneous interaction is a key feature of the workplace.` : `Most collaboration (${scheduledPct}%) is planned and scheduled.`}` });
   }
 
   if (lowestRel && highestRel) {
@@ -1363,10 +1364,10 @@ function renderWVP() {
   const wvpInsights = [];
 
   if (!isNaN(compNum)) {
-    const health = compNum >= 70 ? 'strong' : compNum >= 55 ? 'moderate' : 'developing';
+    const health = compNum >= 70 ? 'strong' : compNum >= 50 ? 'moderate' : 'developing';
     const healthNote = compNum >= 70
       ? 'Employees broadly identify with the organisation\'s culture and values.'
-      : compNum >= 55
+      : compNum >= 50
         ? 'There is meaningful connection, but pockets of disengagement exist that warrant attention.'
         : 'Attachment levels are low — cultural investment and leadership signalling should be prioritised.';
     wvpInsights.push({ icon:'🏆', text:`The WVP Composite Score is <strong>${compNum}/100</strong>, indicating <strong>${health} overall attachment</strong>. ${healthNote}` });
@@ -1457,10 +1458,10 @@ function renderFuture() {
 
   // Match each raw response key to a canonical entry (case-insensitive) or keep as-is
   const locEnts = Object.entries(lc)
-    .filter(([,n]) => n > 0)
-    .map(([rawLabel, n], i) => {
+    .filter(([,cnt]) => cnt > 0)
+    .map(([rawLabel, cnt], i) => {
       const canon = locCanonical.find(c => c.key === rawLabel.toLowerCase().trim());
-      return { label: canon ? canon.label : rawLabel, rawLabel, n, color: canon ? canon.color : fallbackColors[i % fallbackColors.length] };
+      return { label: canon ? canon.label : rawLabel, rawLabel, n: cnt, color: canon ? canon.color : fallbackColors[i % fallbackColors.length] };
     })
     // Sort by canonical order; unrecognised labels go to end
     .sort((a, b) => {
@@ -1646,11 +1647,13 @@ function renderFuture() {
     let off=0,bld=0,nbr=0,not=0,tot=0;
     rows.forEach(r => {
       const v = gv(r,col).toLowerCase();
-      if(!v) return; tot++;
+      if(!v) return;
       if(v.includes('office space')||v.includes('within the office')) off++;
-      else if(v.includes('building')||v.includes('site')) bld++;
+      else if(v.includes('within the building')||v.includes('within the site')) bld++;
       else if(v.includes('neighborhood')||v.includes('surrounding')) nbr++;
       else if(v.includes('not important')) not++;
+      else return; // unrecognised response — exclude from total
+      tot++;
     });
     return {label:C.AMM_L[i],off,bld,nbr,not,tot};
   }).sort((a,b) => (b.off/Math.max(b.tot,1)) - (a.off/Math.max(a.tot,1)));
