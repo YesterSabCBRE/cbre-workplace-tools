@@ -2121,13 +2121,6 @@ function pyramidSVG(pyrData) {
     // Band fill
     svg += `<path d="${path}" fill="${d.color}" stroke="rgba(0,26,20,0.6)" stroke-width="1.5"/>`;
 
-    // Percentage inside band — white + dark outline, always readable
-    svg += `<text x="${W/2}" y="${cy + 1}"
-      text-anchor="middle" dominant-baseline="middle"
-      font-family="DM Sans,Arial,sans-serif" font-size="13" font-weight="700"
-      fill="#FFFFFF" stroke="#001A14" stroke-width="3" paint-order="stroke fill"
-    >${pctStr}</text>`;
-
     // Connector tick from right edge of band to label
     svg += `<line x1="${b.xR0}" y1="${cy}" x2="${W + 6}" y2="${cy}" stroke="rgba(255,255,255,0.25)" stroke-width="1" stroke-dasharray="3,2"/>`;
 
@@ -2149,67 +2142,85 @@ function pyramidSVG(pyrData) {
 }
 
 // ── Export: full engagement pyramid card as transparent PNG ──────────────────
-function buildEngagementExportSVG(pyrData) {
-  const PW = 200, PH = 220;  // pyramid drawing area
+function buildEngagementExportSVG(pyrData, tierN) {
+  tierN = tierN || { pro: 0, pas: 0, det: 0 };
+  const PW = 200, PH = 220;
   const pad = 24;
-  const slopeX = PW + pad * 2 + 16;
-  const trackW = 260;
-  const W = slopeX + trackW + 80;
-  const H = PH + pad * 2 + 28;  // 28 = title row
-  const titleY = pad;
-  const pyrY  = pad + 28;
+  const rightX = PW + pad * 2 + 16;
+  const labelW = 70;  // tier label column
+  const barAreaW = 170; // bar track width
+  const valW = 48;    // value column
+  const trackW = labelW + barAreaW + valW;
+  const W = rightX + trackW + 10;
+  const H = PH + pad * 2 + 28;
+  const pyrY = pad + 28;
 
   const bands = pyramidBands(PW, PH);
+  const barH = 11, barGap = 4;
+  const levelH = 15 + 3 * (barH + barGap) + 10;  // name row + 3 tier bars + gap
 
   let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="DM Sans,Arial,sans-serif">`;
 
-  // ── Pyramid section ──────────────────────────────────────────────────
+  // ── Pyramid ──────────────────────────────────────────────────────────
   pyrData.forEach((d, i) => {
     const b = bands[i];
     const path = `M ${pad+b.xL1},${pyrY+b.y0} L ${pad+b.xR1},${pyrY+b.y0} L ${pad+b.xR0},${pyrY+b.y1} L ${pad+b.xL0},${pyrY+b.y1} Z`;
-    const cy   = pyrY + (b.y0 + b.y1) / 2;
+    const cy = pyrY + (b.y0 + b.y1) / 2;
     const pctStr = d.overall !== null ? Math.round(d.overall) + '%' : '—';
     svg += `<path d="${path}" fill="${d.color}" stroke="rgba(0,26,20,0.6)" stroke-width="1.5"/>`;
     svg += `<text x="${pad + PW/2}" y="${cy}"
       text-anchor="middle" dominant-baseline="middle"
-      font-size="12" font-weight="700"
+      font-size="11" font-weight="700"
       fill="#FFFFFF" stroke="#001A14" stroke-width="3" paint-order="stroke fill"
     >${d.short} ${pctStr}</text>`;
   });
 
-  // ── Slope bars section ───────────────────────────────────────────────
-  const slopeLabel = 'ENGAGEMENT SLOPE BY LEVEL';
-  svg += `<text x="${slopeX}" y="${pyrY - 6}" font-size="9" font-weight="700" letter-spacing="1" fill="#7A9590">${slopeLabel}</text>`;
+  // ── Tier comparison section ───────────────────────────────────────────
+  svg += `<text x="${rightX}" y="${pyrY - 6}" font-size="8.5" font-weight="700" letter-spacing="1" fill="#7A9590">SCORES BY ENGAGEMENT TIER</text>`;
 
-  const reversed = pyrData.slice().reverse();
-  reversed.forEach((lvl, i) => {
-    const rowY = pyrY + 18 + i * 60;
-    const slopeNum = (lvl.proAvg !== null && lvl.detAvg !== null) ? lvl.proAvg - lvl.detAvg : null;
-    const slopeStr = slopeNum !== null ? (slopeNum >= 0 ? '+' : '') + slopeNum.toFixed(1) + ' pts' : '—';
-    const fillW  = slopeNum !== null ? Math.min(trackW * 0.9, Math.max(0, slopeNum / 30 * trackW * 0.9)) : 0;
-    const sCol   = slopeNum === null ? '#6B7F7B' : slopeNum >= 10 ? '#17E88F' : slopeNum >= 5 ? '#80BBAD' : '#DBD99A';
+  const tierColors  = ['#17E88F', '#80BBAD', '#D2785A'];
+  const tierLabels  = ['Promoters', 'Passives', 'Detractors'];
+  const tierAvgKeys = ['proAvg', 'pasAvg', 'detAvg'];
+  const tierNArr    = [tierN.pro, tierN.pas, tierN.det];
+
+  pyrData.slice().reverse().forEach((lvl, i) => {
+    const rowY = pyrY + 14 + i * levelH;
+    const gap = (lvl.proAvg !== null && lvl.detAvg !== null) ? lvl.proAvg - lvl.detAvg : null;
+    const gapStr = gap !== null ? 'gap ' + (gap >= 0 ? '+' : '') + gap.toFixed(1) + ' pts' : '';
+    const gCol = gap === null ? '#6B7F7B' : gap >= 12 ? '#17E88F' : gap >= 6 ? '#80BBAD' : '#DBD99A';
 
     // Level name
-    svg += `<text x="${slopeX}" y="${rowY + 1}" font-size="10.5" font-weight="600" fill="#D0D8D4">${lvl.name}</text>`;
-    // Track background
-    svg += `<rect x="${slopeX}" y="${rowY + 10}" width="${trackW}" height="20" rx="4" fill="rgba(255,255,255,0.07)"/>`;
-    // Fill bar
-    if (fillW > 0)
-      svg += `<rect x="${slopeX}" y="${rowY + 10}" width="${fillW}" height="20" rx="4" fill="${lvl.color}"/>`;
-    // Value label
-    svg += `<text x="${slopeX + trackW + 10}" y="${rowY + 23}" font-size="11" font-weight="700" fill="${sCol}">${slopeStr}</text>`;
+    svg += `<text x="${rightX}" y="${rowY}" font-size="10" font-weight="700" fill="#D0D8D4">${lvl.name}</text>`;
+    if (gapStr) svg += `<text x="${rightX + labelW + barAreaW + 6}" y="${rowY}" font-size="8.5" font-weight="700" fill="${gCol}" text-anchor="start">${gapStr}</text>`;
+
+    tierAvgKeys.forEach((avgKey, j) => {
+      const n = tierNArr[j];
+      const isLowN = n > 0 && n < 5;
+      const val = (!isLowN && n > 0 && lvl[avgKey] !== null) ? Math.round(lvl[avgKey]) : null;
+      const fillW = val !== null ? Math.min(barAreaW, val / 100 * barAreaW) : 0;
+      const tColor = tierColors[j];
+      const barY = rowY + 4 + j * (barH + barGap);
+      const dispStr = val !== null ? val + '%' : (isLowN ? 'n<5' : '—');
+
+      svg += `<text x="${rightX}" y="${barY + barH - 1}" font-size="8" fill="${tColor}">${tierLabels[j]}</text>`;
+      svg += `<rect x="${rightX + labelW}" y="${barY}" width="${barAreaW}" height="${barH}" rx="3" fill="rgba(255,255,255,0.06)"/>`;
+      if (fillW > 0) {
+        svg += `<rect x="${rightX + labelW}" y="${barY}" width="${fillW}" height="${barH}" rx="3" fill="${tColor}45"/>`;
+        svg += `<rect x="${rightX + labelW + fillW - 2}" y="${barY}" width="2" height="${barH}" fill="${tColor}"/>`;
+      }
+      svg += `<text x="${rightX + labelW + barAreaW + 6}" y="${barY + barH - 1}" font-size="8.5" font-weight="700" fill="${tColor}">${dispStr}</text>`;
+    });
   });
 
   // Footer note
-  svg += `<text x="${slopeX}" y="${pyrY + PH + 4}" font-size="8.5" fill="#5A7470">Slope = Promoter avg − Detractor avg score per level</text>`;
-
+  svg += `<text x="${rightX}" y="${pyrY + PH + 4}" font-size="8" fill="#5A7470">Gap = Promoter avg − Detractor avg per level</text>`;
   svg += `</svg>`;
   return svg;
 }
 
 function exportEngagementPNG() {
   if (!window._lastPyrData) return;
-  const svgStr  = buildEngagementExportSVG(window._lastPyrData);
+  const svgStr  = buildEngagementExportSVG(window._lastPyrData, window._lastPyrTierN || {pro:0,pas:0,det:0});
   const blob    = new Blob([svgStr], { type:'image/svg+xml;charset=utf-8' });
   const url     = URL.createObjectURL(blob);
   const img     = new Image();
@@ -2328,7 +2339,7 @@ function renderSentiment() {
   html += `<div class="derived-note">
     <strong>Classification derived from the eNPS question.</strong>
     Respondents scoring 9–10 are Promoters, 7–8 are Passives, and 0–6 are Detractors.
-    Pyramid scores below reflect average workplace satisfaction by engagement tier across three levels of the workplace experience.
+    The pyramid breaks the workplace experience into three levels — Physical Environment, Connections, and Belonging &amp; Values — and shows how each tier scores differently across engagement groups.
   </div>`;
 
   // ── Pyramid levels definition ─────────────────────────────────────────
@@ -2360,79 +2371,56 @@ function renderSentiment() {
 
   // Store for export button
   window._lastPyrData = pyrData;
+  window._lastPyrTierN = { pro: tierRows.pro.length, pas: tierRows.pas.length, det: tierRows.det.length };
 
-  // ── Pyramid + Engagement Slope ────────────────────────────────────────
+  // ── Pyramid + Tier Comparison (one unified card) ───────────────────────
   html += `<div class="chart-card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
       <div class="chart-card-title" style="margin-bottom:0">Workplace Engagement Pyramid</div>
       <button class="export-btn" onclick="exportEngagementPNG()">&#8595; Export PNG</button>
     </div>
     <div class="pyramid-wrap">
       ${pyramidSVG(pyrData)}
       <div class="pyramid-slopes">
-        <div style="font-size:0.72rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.6rem">Engagement Slope by Level</div>`;
+        <div style="font-size:0.72rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:1rem">Scores by Engagement Tier</div>`;
 
-  // Reverse so we read top-to-bottom matching pyramid (Belonging at top)
+  // Render each level top-to-bottom (Belonging first → Physical last)
   pyrData.slice().reverse().forEach(lvl => {
-    const slopeNum = (lvl.proAvg !== null && lvl.detAvg !== null) ? lvl.proAvg - lvl.detAvg : null;
-    const slopeStr = slopeNum !== null ? (slopeNum >= 0 ? '+' : '') + slopeNum.toFixed(1) + ' pts' : '—';
-    const barW = slopeNum !== null ? Math.min(100, Math.max(0, slopeNum * 3)) : 0;
-    const slopeCol = slopeNum === null ? 'var(--text-muted)' : slopeNum >= 10 ? '#17E88F' : slopeNum >= 5 ? '#80BBAD' : '#DBD99A';
-    const proTip = lvl.proAvg !== null ? Math.round(lvl.proAvg) + '%' : 'n/a';
-    const pasTip = lvl.pasAvg !== null ? Math.round(lvl.pasAvg) + '%' : 'n/a';
-    const detTip = lvl.detAvg !== null ? Math.round(lvl.detAvg) + '%' : 'n/a';
-    html += `<div class="slope-row" title="Promoters: ${proTip} · Passives: ${pasTip} · Detractors: ${detTip}" style="cursor:default">
-      <span class="slope-label">${lvl.name}</span>
-      <div class="slope-track">
-        <div class="slope-fill" style="width:${barW}%;background:${lvl.color}"></div>
+    const gap = (lvl.proAvg !== null && lvl.detAvg !== null) ? lvl.proAvg - lvl.detAvg : null;
+    const gapStr = gap !== null ? (gap >= 0 ? '+' : '') + gap.toFixed(1) + ' pts' : '—';
+    const gapCol = gap === null ? 'var(--text-muted)' : gap >= 12 ? '#17E88F' : gap >= 6 ? '#80BBAD' : '#DBD99A';
+    const tierDefs2 = [
+      { label:'Promoters',  val:lvl.proAvg, n:tierRows.pro.length, color:'#17E88F' },
+      { label:'Passives',   val:lvl.pasAvg, n:tierRows.pas.length, color:'#80BBAD' },
+      { label:'Detractors', val:lvl.detAvg, n:tierRows.det.length, color:'#D2785A' },
+    ];
+    const tierBarsHtml = tierDefs2.map(t => {
+      const isLowN = t.n > 0 && t.n < 5;
+      const dispV = (!isLowN && t.n > 0 && t.val !== null) ? Math.round(t.val) : null;
+      const wPct = dispV !== null ? dispV : 0;
+      const dispStr = dispV !== null ? dispV + '%' : (isLowN ? 'n<5' : '—');
+      return `<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem">
+        <span style="font-size:0.67rem;color:${t.color};min-width:70px;font-weight:500">${t.label} <span style="color:var(--text-muted);font-weight:400">(${t.n})</span></span>
+        <div style="flex:1;height:14px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden">
+          <div style="width:${wPct}%;height:100%;background:${t.color}30;border-right:2px solid ${t.color}"></div>
+        </div>
+        <span style="font-size:0.75rem;font-weight:700;color:${t.color};min-width:36px;text-align:right">${dispStr}</span>
+      </div>`;
+    }).join('');
+    html += `<div style="margin-bottom:1.25rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+        <span style="font-size:0.82rem;font-weight:600;color:var(--text)">${lvl.name}</span>
+        <span title="Promoter avg minus Detractor avg — larger gap = this level most differentiates engaged from disengaged employees" style="font-size:0.67rem;font-weight:700;color:${gapCol};background:${gapCol}15;border:1px solid ${gapCol}30;border-radius:100px;padding:0.15rem 0.6rem;cursor:default">gap ${gapStr}</span>
       </div>
-      <span class="slope-value" style="color:${slopeCol}">${slopeStr}</span>
+      ${tierBarsHtml}
     </div>`;
   });
 
-  html += `<div style="font-size:0.68rem;color:var(--text-muted);margin-top:0.7rem;line-height:1.5">
-    Slope = Promoter avg − Detractor avg<br>Higher = Promoters rate this level meaningfully better
+  html += `<div style="font-size:0.66rem;color:var(--text-muted);border-top:1px solid var(--card-border);padding-top:0.55rem;line-height:1.6">
+    <strong style="color:var(--text)">Gap</strong> = Promoter avg − Detractor avg &nbsp;·&nbsp;
+    Levels with the largest gap are where workplace investment most influences whether someone becomes a promoter or detractor.
   </div>
   </div></div></div>`;
-
-  // ── 3-column Pyramid Score Breakdown ─────────────────────────────────
-  html += `<div class="chart-card">
-    <div class="chart-card-title">Pyramid Scores by Engagement Tier</div>
-    <div class="pyr-scores-grid">`;
-
-  const tiers = [
-    { label:'Promoters', key:'proAvg', color:'#17E88F', rows: tierRows.pro },
-    { label:'Passives',  key:'pasAvg', color:'#80BBAD', rows: tierRows.pas },
-    { label:'Detractors',key:'detAvg', color:'#D2785A', rows: tierRows.det },
-  ];
-
-  tiers.forEach(tier => {
-    const lowN = tier.rows.length > 0 && tier.rows.length < 5;
-    html += `<div class="pyr-score-card">
-      <div class="pyr-score-title" style="color:${tier.color}">${tier.label}</div>
-      <div class="pyr-score-sub">${tier.rows.length} respondent${tier.rows.length !== 1 ? 's' : ''}</div>`;
-    if (lowN) {
-      html += `<div class="min-n-warn">⚠ Small sample (N=${tier.rows.length}) — scores should be interpreted with caution.</div>`;
-    }
-    if (tier.rows.length === 0) {
-      html += `<div style="font-size:0.76rem;color:var(--text-muted);padding:0.4rem 0">No respondents in this tier.</div>`;
-    }
-    pyrData.slice().reverse().forEach(lvl => {
-      const v = (lowN || tier.rows.length === 0) ? null : lvl[tier.key];
-      const dispPct = v !== null ? Math.round(v) : 0;
-      const dispStr = v !== null ? dispPct + '%' : '—';
-      html += `<div class="pyr-bar-row">
-        <span class="pyr-bar-label">${lvl.name}</span>
-        <div class="pyr-bar-track">
-          <div class="pyr-bar-fill" style="width:${dispPct}%;background:${tier.color}40;border-right:2px solid ${tier.color}"></div>
-        </div>
-        <span class="pyr-bar-pct" style="color:${tier.color}">${dispStr}</span>
-      </div>`;
-    });
-    html += `</div>`;
-  });
-
-  html += `</div></div>`;
 
   // ── Verbatims ─────────────────────────────────────────────────────────
   const posData = rows.map(r => ({ text: gv(r, C.Q42), dept: gv(r, C.DEPT) })).filter(v => v.text && v.text.length > 10);
