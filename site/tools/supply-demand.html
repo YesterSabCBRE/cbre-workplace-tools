@@ -213,9 +213,178 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
   .chart-card{background:#fff!important;border:1px solid #ddd!important;page-break-inside:avoid;margin-bottom:12px}
   .stat-card{background:#f8f8f8!important;border:1px solid #ddd!important}
 }
+
+/* ─── MODE PICKER OVERLAY ─── */
+.mode-picker-overlay{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--green-deep);
+  display:flex;align-items:center;justify-content:center;
+  overflow-y:auto;
+  padding:2rem 1.5rem;
+}
+.mode-picker-overlay::before{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse 70% 50% at 30% 20%,rgba(23,232,143,.07) 0%,transparent 60%);
+  pointer-events:none;
+}
+.mode-picker-inner{
+  position:relative;max-width:900px;width:100%;text-align:center;
+}
+.mode-picker-eyebrow{
+  display:inline-flex;align-items:center;gap:.4rem;
+  font-size:.72rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:.8rem;
+}
+.mode-picker-title{
+  font-family:'DM Serif Display',serif;font-size:2.4rem;line-height:1.15;
+  color:var(--text);margin-bottom:.6rem;
+}
+.mode-picker-sub{
+  font-size:.9rem;color:var(--text-muted);line-height:1.7;max-width:520px;margin:0 auto 2.5rem;
+}
+.mode-picker-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;
+}
+@media(max-width:800px){.mode-picker-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:500px){.mode-picker-grid{grid-template-columns:1fr}}
+
+.mode-card{
+  background:var(--card-bg);border:1px solid var(--card-border);
+  border-radius:14px;padding:1.4rem 1.2rem 1.2rem;
+  text-align:left;cursor:pointer;
+  transition:transform .2s, border-color .2s, background .2s;
+  position:relative;overflow:hidden;
+}
+.mode-card:not(.mode-card-soon):hover{
+  transform:translateY(-4px);
+  border-color:rgba(23,232,143,.4);
+  background:rgba(23,232,143,.05);
+}
+.mode-card-soon{
+  opacity:.5;cursor:not-allowed;pointer-events:none;
+}
+.mode-card-icon{font-size:1.8rem;margin-bottom:.75rem;line-height:1;}
+.mode-card-name{
+  font-family:'DM Serif Display',serif;font-size:1.1rem;color:var(--text);
+  margin-bottom:.35rem;
+}
+.mode-card-q{
+  font-size:.78rem;color:var(--accent);font-weight:600;
+  margin-bottom:.5rem;line-height:1.4;
+  font-style:italic;
+}
+.mode-card-desc{font-size:.76rem;color:var(--text-muted);line-height:1.6;}
+.mode-card-soon-badge{
+  display:inline-block;margin-top:.6rem;
+  font-size:.65rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+  color:rgba(242,244,243,.5);padding:.2rem .55rem;border-radius:100px;
+}
+
+/* ─── MODE BADGE (in nav) ─── */
+.mode-badge{
+  padding:.35rem .85rem;
+  background:rgba(23,232,143,.12);
+  border:1px solid rgba(23,232,143,.35);
+  border-radius:100px;
+  color:var(--accent);
+  font-family:'DM Sans',sans-serif;
+  font-size:.73rem;font-weight:600;
+  cursor:pointer;
+  transition:all .2s;
+  white-space:nowrap;
+}
+.mode-badge:hover{background:rgba(23,232,143,.22);}
+
+/* ─── CONSOLIDATION SCENARIOS (Right-Size) ─── */
+.rs-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.75rem;}
+.rs-card{
+  background:var(--card-bg);border:1px solid var(--card-border);
+  border-radius:10px;padding:.95rem 1rem;
+}
+.rs-card-name{font-size:.8rem;font-weight:700;margin-bottom:.35rem;color:var(--text);}
+.rs-card-status{font-size:.72rem;font-weight:700;margin-bottom:.55rem;}
+.rs-card-row{display:flex;justify-content:space-between;font-size:.7rem;margin-bottom:.2rem;}
+.rs-card-key{color:var(--text-muted);}
+.rs-card-val{font-weight:600;color:var(--text);}
+
+/* ─── SPACE BRIEF (Relocate) ─── */
+.brief-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-top:.85rem;}
+@media(max-width:700px){.brief-cards{grid-template-columns:1fr}}
+.brief-card{
+  background:rgba(23,232,143,.06);
+  border:1px solid rgba(23,232,143,.25);
+  border-radius:12px;padding:1.1rem 1.1rem;
+  text-align:center;
+}
+.brief-card-label{
+  font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:rgba(23,232,143,.7);margin-bottom:.5rem;
+}
+.brief-card-val{
+  font-family:'DM Serif Display',serif;font-size:1.9rem;color:var(--accent);
+  line-height:1;margin-bottom:.3rem;
+}
+.brief-card-sub{font-size:.68rem;color:var(--text-muted);line-height:1.4;}
+.brief-note{
+  font-size:.78rem;color:var(--text-muted);line-height:1.7;
+  margin-top:.85rem;padding:.75rem 1rem;
+  background:rgba(255,255,255,.03);border:1px solid var(--card-border);
+  border-radius:8px;
+}
 </style>
 </head>
 <body>
+
+<!-- SCENARIO PICKER OVERLAY -->
+<div id="mode-picker" class="mode-picker-overlay">
+  <div class="mode-picker-inner">
+    <div class="mode-picker-eyebrow">Supply & Demand Analysis</div>
+    <h2 class="mode-picker-title">What are you trying to solve?</h2>
+    <p class="mode-picker-sub">Choose a scenario to get started. Each mode tailors the tool to your specific question.</p>
+    <div class="mode-picker-grid">
+      <div class="mode-card" onclick="selectMode('grow')">
+        <div class="mode-card-icon">🌱</div>
+        <div class="mode-card-name">Growing</div>
+        <div class="mode-card-q">"When do we run out of space?"</div>
+        <div class="mode-card-desc">Track headcount growth against seat supply. Find the gap year and plan for expansion.</div>
+      </div>
+      <div class="mode-card" onclick="selectMode('rightsize')">
+        <div class="mode-card-icon">✂️</div>
+        <div class="mode-card-name">Right-Sizing</div>
+        <div class="mode-card-q">"We have too much space. What can we shed?"</div>
+        <div class="mode-card-desc">Calculate your minimum viable footprint, test exiting each location, find the optimal consolidation path.</div>
+      </div>
+      <div class="mode-card" onclick="selectMode('relocate')">
+        <div class="mode-card-icon">📍</div>
+        <div class="mode-card-name">Relocating</div>
+        <div class="mode-card-q">"We're moving. How big should our next office be?"</div>
+        <div class="mode-card-desc">Enter headcount and density targets to get a recommended RSF range for your new space.</div>
+      </div>
+      <div class="mode-card mode-card-soon">
+        <div class="mode-card-icon">🔄</div>
+        <div class="mode-card-name">Flex Policy</div>
+        <div class="mode-card-q">"We're changing our attendance policy."</div>
+        <div class="mode-card-desc">Compare how different attendance policies shift your space needs.</div>
+        <div class="mode-card-soon-badge">Coming Soon</div>
+      </div>
+      <div class="mode-card mode-card-soon">
+        <div class="mode-card-icon">📅</div>
+        <div class="mode-card-name">Lease Decision</div>
+        <div class="mode-card-q">"Our lease is up. Should we renew or move?"</div>
+        <div class="mode-card-desc">Overlay lease expiry on growth projections to see if you're over or under-leased at renewal.</div>
+        <div class="mode-card-soon-badge">Coming Soon</div>
+      </div>
+      <div class="mode-card mode-card-soon">
+        <div class="mode-card-icon">🏢</div>
+        <div class="mode-card-name">Portfolio Review</div>
+        <div class="mode-card-q">"Which of our offices are working?"</div>
+        <div class="mode-card-desc">Benchmark utilization across a multi-city portfolio and flag consolidation candidates.</div>
+        <div class="mode-card-soon-badge">Coming Soon</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- NAV -->
 <nav>
@@ -223,16 +392,17 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
   <div class="nav-actions">
     <button class="btn-export" id="btn-png" style="display:none" onclick="exportPNG()">↓ Export PNG</button>
     <button class="btn-export" id="btn-excel" style="display:none" onclick="exportExcel()">↓ Export Excel</button>
+    <button class="mode-badge" id="mode-badge" onclick="showPicker()" style="display:none"></button>
     <a class="nav-back" href="/cbre-workplace-tools/">← Back to tools</a>
   </div>
 </nav>
 
 <!-- PAGE -->
-<div class="page">
+<div id="sd-page" class="page">
   <div class="page-header">
     <div class="page-eyebrow">⚖️ Analysis Tool</div>
     <h1 class="page-title">Supply & Demand Analysis</h1>
-    <p class="page-desc">Model headcount growth scenarios against seat supply. Compare Base, Mid, and High trajectories, identify gap years, and quantify real estate implications.</p>
+    <p id="page-desc-text" class="page-desc">Model headcount growth scenarios against seat supply. Compare Base, Mid, and High trajectories, identify gap years, and quantify real estate implications.</p>
   </div>
 
   <div class="sd-layout">
@@ -249,7 +419,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
       </div>
 
       <!-- Accordion: Space Inventory -->
-      <div class="accordion">
+      <div class="accordion" id="acc-inventory">
         <div class="accordion-head" onclick="toggleAcc('inventory')">
           <span>🏢 Space Inventory</span>
           <span class="acc-summary" id="inv-badge">0 seats</span>
@@ -390,6 +560,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 <script>
 // ─── STATE ──────────────────────────────────────────────────────────────────
 var state = {
+  mode: null,
   clientName: '',
   currentHC: 0,
   baseYear: new Date().getFullYear(),
@@ -404,10 +575,68 @@ var state = {
   totalRSF: 0,
   targetDensity: 0,
 };
+
+var MODE_META = {
+  grow:      { icon: '🌱', label: 'Growing',     desc: 'Track headcount growth against seat supply. Find the gap year and plan for expansion.' },
+  rightsize: { icon: '✂️', label: 'Right-Sizing', desc: 'Calculate your minimum viable footprint, test exiting each location, find the optimal consolidation path.' },
+  relocate:  { icon: '📍', label: 'Relocating',   desc: 'Enter headcount and density targets to get a recommended RSF range for your new space.' },
+};
 var buildings = [];
 var _bid = 0, _fid = 0, _eid = 0;
 var SC_COLORS = { base: '#17E88F', mid: '#80BBAD', high: '#D2785A' };
 var SC_LABELS = { base: 'Base', mid: 'Mid', high: 'High' };
+
+// ─── MODE SELECTION ──────────────────────────────────────────────────────────
+function selectMode(mode) {
+  state.mode = mode;
+  var picker = document.getElementById('mode-picker');
+  var page   = document.getElementById('sd-page');
+  var mb     = document.getElementById('mode-badge');
+  var inv    = document.getElementById('acc-inventory');
+  var descEl = document.getElementById('page-desc-text');
+
+  if (picker) picker.style.display = 'none';
+  if (page)   page.style.display   = '';
+
+  var meta = MODE_META[mode] || { icon: '⚖️', label: mode };
+  if (mb) {
+    mb.textContent = meta.icon + ' ' + meta.label;
+    mb.style.display = '';
+  }
+  if (descEl && meta.desc) descEl.textContent = meta.desc;
+
+  // Hide space inventory for relocate mode
+  if (inv) inv.style.display = mode === 'relocate' ? 'none' : '';
+
+  recompute();
+}
+
+function showPicker() {
+  var picker = document.getElementById('mode-picker');
+  var page   = document.getElementById('sd-page');
+  var mb     = document.getElementById('mode-badge');
+  if (picker) picker.style.display = '';
+  if (page)   page.style.display   = 'none';
+  if (mb)     mb.style.display     = 'none';
+  state.mode = null;
+}
+
+// ─── HELPER FUNCTIONS ────────────────────────────────────────────────────────
+function utilZoneColor(pct) {
+  return pct < state.vibrancyThreshold ? '#D2785A' : pct > state.oversubscribedThreshold ? '#DBD99A' : '#17E88F';
+}
+function utilZoneLabel(pct) {
+  return pct < state.vibrancyThreshold ? '⚠ Under-vibrant (<'+state.vibrancyThreshold+'%)'
+    : pct > state.oversubscribedThreshold ? '⚠ Oversubscribed (>'+state.oversubscribedThreshold+'%)'
+    : '✓ In the vibrancy zone ('+state.vibrancyThreshold+'–'+state.oversubscribedThreshold+'%)';
+}
+function emptyForMode(msg) {
+  var meta = MODE_META[state.mode] || {icon:'⚖️', label:'Analysis'};
+  return '<div class="empty-state"><div class="empty-icon">'+meta.icon+'</div>'
+    + '<div class="empty-title">'+meta.label+'</div>'
+    + '<div class="empty-desc">'+msg+'</div>'
+    + '<button class="btn-sample" onclick="loadSample()">Load Sample Demo</button></div>';
+}
 
 function esc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -673,12 +902,31 @@ function compute() {
 
 // ─── RECOMPUTE ───────────────────────────────────────────────────────────────
 function recompute() {
-  var hasData = buildings.length>0
-    && buildings.some(function(b){return resolveSeats(b)>0;})
-    && state.currentHC>0;
+  if (!state.mode) return;
 
   var bPng = document.getElementById('btn-png');
   var bXls = document.getElementById('btn-excel');
+  var dash = document.getElementById('dashboard');
+
+  // ── Relocate path ──
+  if (state.mode === 'relocate') {
+    if (!state.currentHC || state.currentHC <= 0) {
+      if (dash) dash.innerHTML = emptyForMode('Enter your current headcount in Headcount & Growth to begin your space calculation.');
+      if(bPng) bPng.style.display='none';
+      if(bXls) bXls.style.display='none';
+      return;
+    }
+    var relData = computeRelocate();
+    if (dash) dash.innerHTML = buildRelocateDashboard(relData);
+    if(bPng) bPng.style.display='';
+    if(bXls) bXls.style.display='none';
+    return;
+  }
+
+  // ── Grow / Right-Size path ──
+  var hasData = buildings.length>0
+    && buildings.some(function(b){return resolveSeats(b)>0;})
+    && state.currentHC>0;
 
   if (!hasData) {
     var hasBuilding = buildings.length > 0;
@@ -689,8 +937,9 @@ function recompute() {
         + '<span style="font-size:1.1rem">'+(done?'✅':'⬜')+'</span>'
         + '<span style="'+(done?'':'opacity:.7')+'">'+text+'</span></div>';
     }
-    document.getElementById('dashboard').innerHTML = '<div class="empty-state">'
-      + '<div class="empty-icon">⚖️</div>'
+    var icon = state.mode === 'rightsize' ? '✂️' : '⚖️';
+    if (dash) dash.innerHTML = '<div class="empty-state">'
+      + '<div class="empty-icon">'+icon+'</div>'
       + '<div class="empty-title">Three steps to your analysis</div>'
       + '<div style="display:flex;flex-direction:column;gap:.6rem;margin:1rem 0 1.5rem;text-align:left;width:100%;max-width:320px">'
       + step(hasBuilding, 'Add a location in <strong>Space Inventory</strong>')
@@ -705,13 +954,17 @@ function recompute() {
   }
 
   var data = compute();
-  document.getElementById('dashboard').innerHTML = buildDashboard(data);
+  if (state.mode === 'rightsize') {
+    if (dash) dash.innerHTML = buildRightSizeDashboard(data);
+  } else {
+    if (dash) dash.innerHTML = buildGrowDashboard(data);
+  }
   if(bPng) bPng.style.display='';
   if(bXls) bXls.style.display='';
 }
 
-// ─── BUILD DASHBOARD HTML ────────────────────────────────────────────────────
-function buildDashboard(d) {
+// ─── BUILD GROW DASHBOARD HTML ───────────────────────────────────────────────
+function buildGrowDashboard(d) {
   var h = '';
   h += buildStatCards(d);
   h += buildGapCallout(d);
@@ -723,17 +976,17 @@ function buildDashboard(d) {
 }
 
 function buildStatCards(d) {
-  var utilZone  = d.curUtil < state.vibrancyThreshold ? 'under' : d.curUtil > state.oversubscribedThreshold ? 'over' : 'vibrant';
-  var utilColor = utilZone==='vibrant' ? '#17E88F' : utilZone==='over' ? '#DBD99A' : '#D2785A';
+  var utilColor = utilZoneColor(d.curUtil);
+  var utilLabel = utilZoneLabel(d.curUtil);
   var surpColor = d.curSurp >= 0 ? '#17E88F' : '#D2785A';
   var gapBase = d.gapYears.base ? d.gapYears.base.toString() : '> '+d.years[d.years.length-1];
   var gapColor = d.gapYears.base ? (d.gapYears.base <= state.baseYear+2 ? '#D2785A' : '#80BBAD') : '#17E88F';
 
   return '<div class="stat-row">'
-    + statCard(d.curSup.toLocaleString(), 'Seat Supply', buildings.reduce(function(s,b){return s+b.floors.length;},0)+' floors · '+buildings.length+' bldg'+(buildings.length!==1?'s':''), '')
+    + statCard(d.curSup.toLocaleString(), 'Seat Supply', buildings.length+' bldg'+(buildings.length!==1?'s':''), '')
     + statCard(state.currentHC.toLocaleString(), 'Current Headcount', state.baseYear+' base', '')
     + statCard(d.curPeak.toLocaleString(), 'Peak Daily Demand', state.attendanceRate+'% attendance rate', '')
-    + statCard(d.curUtil+'%', 'Utilization Today', utilZone==='vibrant'?'✓ In the vibrancy zone (67–80%)':utilZone==='over'?'⚠ Oversubscribed (>'+state.oversubscribedThreshold+'%)':'⚠ Under-vibrant (<'+state.vibrancyThreshold+'%)', utilColor)
+    + statCard(d.curUtil+'%', 'Utilization Today', utilLabel, utilColor)
     + statCard((d.curSurp>=0?'+':'')+d.curSurp.toLocaleString(), d.curSurp>=0?'Seat Surplus':'Seat Deficit', 'seats vs. peak demand today', surpColor)
     + statCard(gapBase, 'Gap Year (Base)', 'first year demand exceeds supply', gapColor)
     + '</div>';
@@ -973,8 +1226,198 @@ function buildBuildingBreakdown(d) {
   return h;
 }
 
+// ─── RIGHT-SIZE COMPUTE ──────────────────────────────────────────────────────
+function computeRightSize(d) {
+  var N = 5;
+  var years = d.years;
+  var scKeys = ['base','mid','high'];
+
+  // For each building, compute viability if it were removed
+  var scenarios = buildings.map(function(b){
+    var otherBuildings = buildings.filter(function(ob){return ob.id !== b.id;});
+    var remainingSeats = otherBuildings.reduce(function(s,ob){return s+resolveSeats(ob);},0);
+    var remainingRSF   = otherBuildings.reduce(function(s,ob){return s+(ob.rsf||0);},0);
+
+    // Remaining supply with expansions on other buildings
+    var otherExp = [].concat.apply([], otherBuildings.map(function(ob){return ob.expansions||[];}));
+    var remainingSupply = years.map(function(yr){
+      var seats = remainingSeats;
+      otherExp.forEach(function(e){ if(yr>=(e.year||9999)) seats+=(e.seats||0); });
+      return seats;
+    });
+
+    // Gap years with remaining supply only
+    var gapYears = {};
+    scKeys.forEach(function(key){
+      var idx = -1;
+      d.demand[key].forEach(function(dem,i){ if(idx<0 && dem.peak>remainingSupply[i]) idx=i; });
+      gapYears[key] = idx>=0 ? years[idx] : null;
+    });
+
+    var viable = gapYears.high === null; // safe to shed even in high-growth scenario
+
+    return {
+      bldg: b,
+      remainingSeats: remainingSeats,
+      remainingRSF: remainingRSF,
+      gapYears: gapYears,
+      viable: viable,
+    };
+  });
+
+  // Right-size target
+  var curPeak = d.curPeak;
+  var rightSizeRSF  = state.targetDensity > 0 ? Math.round(curPeak * state.targetDensity) : 0;
+  var surplusRSF    = d.totalRSF > 0 && rightSizeRSF > 0 ? d.totalRSF - rightSizeRSF : 0;
+
+  return { scenarios: scenarios, rightSizeRSF: rightSizeRSF, surplusRSF: surplusRSF };
+}
+
+function buildRightSizeDashboard(d) {
+  var rs = computeRightSize(d);
+  var utilColor = utilZoneColor(d.curUtil);
+  var utilLabel = utilZoneLabel(d.curUtil);
+
+  // Stat row
+  var h = '<div class="stat-row">';
+  h += statCard(d.totalRSF > 0 ? d.totalRSF.toLocaleString()+' SF' : d.curSup.toLocaleString()+' seats', 'Current Footprint', buildings.length+' location'+(buildings.length!==1?'s':''), '');
+  h += statCard(state.currentHC.toLocaleString(), 'Current Headcount', state.baseYear+' base', '');
+  h += statCard(d.curPeak.toLocaleString(), 'Peak Attendance', state.attendanceRate+'% of HC', '');
+  if (rs.rightSizeRSF > 0) {
+    h += statCard(rs.rightSizeRSF.toLocaleString()+' SF', 'Right-Sized Target', 'peak × '+state.targetDensity+' SF/seat', '#17E88F');
+    h += statCard((rs.surplusRSF>=0?'+':'')+rs.surplusRSF.toLocaleString()+' SF', rs.surplusRSF>=0?'Excess SF':'SF Deficit', 'vs. right-sized target', rs.surplusRSF>=0?'#DBD99A':'#D2785A');
+  } else {
+    h += statCard('—', 'Right-Sized Target', 'set Target SF/Seat to calculate', 'rgba(242,244,243,.3)');
+    h += statCard('—', 'Excess SF', 'set Target SF/Seat to calculate', 'rgba(242,244,243,.3)');
+  }
+  h += statCard(d.curUtil+'%', 'Utilization Today', utilLabel, utilColor);
+  h += '</div>';
+
+  // Consolidation scenarios
+  if (rs.scenarios.length > 0) {
+    h += '<div class="chart-card"><div class="chart-card-head"><div class="chart-title">Consolidation Scenarios</div>'
+      + '<div style="font-size:.72rem;color:var(--text-muted)">What happens if each location is exited?</div></div>'
+      + '<div class="rs-cards">';
+    rs.scenarios.forEach(function(sc){
+      var statusColor = sc.viable ? '#17E88F' : '#DBD99A';
+      var statusText  = sc.viable ? '✓ Viable to shed' : '⚠ Caution — gap risk';
+      var gapBase = sc.gapYears.base ? sc.gapYears.base.toString() : '> '+d.years[d.years.length-1];
+      var gapMid  = sc.gapYears.mid  ? sc.gapYears.mid.toString()  : '> '+d.years[d.years.length-1];
+      var gapHigh = sc.gapYears.high ? sc.gapYears.high.toString() : '> '+d.years[d.years.length-1];
+      var borderColor = sc.viable ? 'rgba(23,232,143,.3)' : 'rgba(219,217,154,.3)';
+      h += '<div class="rs-card" style="border-color:'+borderColor+'">'
+        + '<div class="rs-card-name">Exit: '+esc(sc.bldg.name||'(unnamed)')+'</div>'
+        + '<div class="rs-card-status" style="color:'+statusColor+'">'+statusText+'</div>'
+        + '<div class="rs-card-row"><span class="rs-card-key">Remaining seats</span><span class="rs-card-val">'+sc.remainingSeats.toLocaleString()+'</span></div>'
+        + (sc.remainingRSF>0?'<div class="rs-card-row"><span class="rs-card-key">Remaining RSF</span><span class="rs-card-val">'+sc.remainingRSF.toLocaleString()+' SF</span></div>':'')
+        + '<div class="rs-card-row"><span class="rs-card-key">Gap yr · Base</span><span class="rs-card-val">'+gapBase+'</span></div>'
+        + '<div class="rs-card-row"><span class="rs-card-key">Gap yr · Mid</span><span class="rs-card-val">'+gapMid+'</span></div>'
+        + '<div class="rs-card-row"><span class="rs-card-key">Gap yr · High</span><span class="rs-card-val">'+gapHigh+'</span></div>'
+        + '</div>';
+    });
+    h += '</div></div>';
+  }
+
+  h += buildChart(d);
+  h += buildTable(d);
+  h += buildBuildingBreakdown(d);
+  return h;
+}
+
+// ─── RELOCATE COMPUTE ────────────────────────────────────────────────────────
+function computeRelocate() {
+  var N = 5;
+  var years = [];
+  for (var i=0;i<=N;i++) years.push(state.baseYear+i);
+
+  var scKeys = ['base','mid','high'];
+  var demand = {};
+  scKeys.forEach(function(key){
+    var rate = (state.scenarios[key].rate||0)/100;
+    demand[key] = years.map(function(yr,i){
+      var hc   = Math.round(state.currentHC*Math.pow(1+rate,i));
+      var peak = Math.round(hc*state.attendanceRate/100);
+      var sfNeeded = state.targetDensity>0 ? Math.round(peak*state.targetDensity) : 0;
+      return {yr:yr, hc:hc, peak:peak, sfNeeded:sfNeeded};
+    });
+  });
+
+  return {years:years, demand:demand};
+}
+
+function buildRelocateDashboard(relData) {
+  var h = '';
+  var curPeak = Math.round(state.currentHC*state.attendanceRate/100);
+  var sfToday = state.targetDensity>0 ? Math.round(curPeak*state.targetDensity) : 0;
+  var endBase = relData.demand.base[relData.demand.base.length-1];
+  var endMid  = relData.demand.mid[relData.demand.mid.length-1];
+  var endHigh = relData.demand.high[relData.demand.high.length-1];
+  var endYear = relData.years[relData.years.length-1];
+
+  // Stat row
+  h += '<div class="stat-row">';
+  h += statCard(state.currentHC.toLocaleString(), 'Current Headcount', state.baseYear+' base', '');
+  h += statCard(curPeak.toLocaleString(), 'Peak Attendance', state.attendanceRate+'% of HC', '');
+  if (sfToday>0) {
+    h += statCard(sfToday.toLocaleString()+' SF', 'Space Needed Today', 'at '+state.targetDensity+' SF/seat', '#17E88F');
+    h += statCard(endBase.sfNeeded.toLocaleString()+' SF', 'Base SF in '+endYear, 'low growth end of horizon', SC_COLORS.base);
+    h += statCard(endMid.sfNeeded.toLocaleString()+' SF', 'Mid SF in '+endYear, 'mid growth end of horizon', SC_COLORS.mid);
+    h += statCard(endHigh.sfNeeded.toLocaleString()+' SF', 'High SF in '+endYear, 'high growth end of horizon', SC_COLORS.high);
+  } else {
+    h += statCard('—', 'Space Needed Today', 'set Target SF/Seat in Model Assumptions', 'rgba(242,244,243,.3)');
+    h += statCard('—', 'Base SF in '+endYear, '', 'rgba(242,244,243,.3)');
+    h += statCard('—', 'Mid SF in '+endYear, '', 'rgba(242,244,243,.3)');
+    h += statCard('—', 'High SF in '+endYear, 'set Target SF/Seat to calculate', 'rgba(242,244,243,.3)');
+  }
+  h += '</div>';
+
+  // Space Brief recommendation
+  if (sfToday>0) {
+    h += '<div class="chart-card">'
+      + '<div class="chart-card-head"><div class="chart-title">Space Brief — Recommended Size Range</div></div>'
+      + '<div class="brief-cards">'
+      + '<div class="brief-card"><div class="brief-card-label">Minimum</div><div class="brief-card-val">'+sfToday.toLocaleString()+'</div><div class="brief-card-sub">SF · today\'s requirement<br>'+curPeak.toLocaleString()+' peak seats × '+state.targetDensity+' SF/seat</div></div>'
+      + '<div class="brief-card"><div class="brief-card-label">Recommended</div><div class="brief-card-val">'+endMid.sfNeeded.toLocaleString()+'</div><div class="brief-card-sub">SF · mid-growth by '+endYear+'<br>'+endMid.peak.toLocaleString()+' peak seats × '+state.targetDensity+' SF/seat</div></div>'
+      + '<div class="brief-card"><div class="brief-card-label">Maximum</div><div class="brief-card-val">'+endHigh.sfNeeded.toLocaleString()+'</div><div class="brief-card-sub">SF · high-growth by '+endYear+'<br>'+endHigh.peak.toLocaleString()+' peak seats × '+state.targetDensity+' SF/seat</div></div>'
+      + '</div>'
+      + '<div class="brief-note">Based on '+state.attendanceRate+'% peak attendance × '+state.targetDensity+' SF/seat density target. '
+      + 'The Recommended range accounts for mid-growth trajectory through '+endYear+'. '
+      + 'Minimum covers today\'s needs only; Maximum provides headroom for the high-growth scenario.</div>'
+      + '</div>';
+  } else {
+    h += '<div class="chart-card" style="padding:1.5rem;text-align:center;">'
+      + '<div style="font-size:.85rem;color:var(--text-muted);margin-bottom:.5rem">To see your Space Brief, enter a <strong style="color:var(--text)">Target SF / Seat</strong> in Model Assumptions.</div>'
+      + '<div style="font-size:.75rem;color:rgba(242,244,243,.35)">e.g. 150 SF/seat for open plan · 200 SF/seat for mixed · 250 SF/seat for private office</div>'
+      + '</div>';
+  }
+
+  // Year-by-year table
+  h += '<div class="chart-card"><div class="chart-title" style="margin-bottom:.85rem">Year-by-Year Projection</div>'
+    + '<div class="tbl-wrap"><table class="data-tbl"><thead><tr>'
+    + '<th>Year</th>'
+    + '<th style="color:var(--sc-base)">Base HC</th>'+(sfToday>0?'<th style="color:var(--sc-base)">Base SF</th>':'')
+    + '<th style="color:var(--sc-mid)">Mid HC</th>'+(sfToday>0?'<th style="color:var(--sc-mid)">Mid SF</th>':'')
+    + '<th style="color:var(--sc-high)">High HC</th>'+(sfToday>0?'<th style="color:var(--sc-high)">High SF</th>':'')
+    + '</tr></thead><tbody>';
+
+  relData.years.forEach(function(yr,i){
+    var b = relData.demand.base[i], m = relData.demand.mid[i], hh = relData.demand.high[i];
+    var isCurr = i===0;
+    h += '<tr'+(isCurr?' class="curr-row"':'')+'>'
+      + '<td style="font-weight:600">'+yr+(isCurr?' <span style="font-size:.65rem;color:var(--accent)">current</span>':'')+'</td>'
+      + '<td style="color:var(--sc-base)">'+b.hc.toLocaleString()+'</td>'+(sfToday>0?'<td style="color:var(--sc-base)">'+b.sfNeeded.toLocaleString()+'</td>':'')
+      + '<td style="color:var(--sc-mid)">'+m.hc.toLocaleString()+'</td>'+(sfToday>0?'<td style="color:var(--sc-mid)">'+m.sfNeeded.toLocaleString()+'</td>':'')
+      + '<td style="color:var(--sc-high)">'+hh.hc.toLocaleString()+'</td>'+(sfToday>0?'<td style="color:var(--sc-high)">'+hh.sfNeeded.toLocaleString()+'</td>':'')
+      + '</tr>';
+  });
+
+  h += '</tbody></table></div></div>';
+  return h;
+}
+
 // ─── SAMPLE DATA ─────────────────────────────────────────────────────────────
 function loadSample() {
+  if (!state.mode) selectMode('grow');
   state.clientName = 'Sample Client';
   state.currentHC = 500;
   state.baseYear = 2025;
@@ -1107,7 +1550,9 @@ function exportExcel() {
 (function(){
   var byEl = document.getElementById('baseYear');
   if (byEl) byEl.value = state.baseYear;
-  // All accordions open by default — no change needed
+  // Hide main page until a mode is selected
+  document.getElementById('sd-page').style.display = 'none';
+  var mb = document.getElementById('mode-badge'); if(mb) mb.style.display='none';
 })();
 </script>
 </body>
