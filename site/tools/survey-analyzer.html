@@ -655,7 +655,7 @@ select.client-name-input option { background: #0D2B22; color: var(--text); }
           <div class="methodology-item">
             <div class="methodology-icon">🏅</div>
             <div class="methodology-title">WVP Composite Score</div>
-            <div class="methodology-desc">The <strong>Workplace Value Proposition (WVP)</strong> measures the degree to which employees feel the organisation delivers on its cultural promises. Nine dimensions are averaged (Belonging, Inclusivity, Recognition, etc.) and converted to a <strong>0–100 scale</strong>. Scores <strong>≥ 70</strong> indicate strong attachment; <strong>50–69</strong> moderate; <strong>&lt; 50</strong> signals meaningful disengagement. Gaps between top and bottom dimensions highlight where cultural investment is most needed.</div>
+            <div class="methodology-desc">The <strong>Workplace Value Proposition (WVP)</strong> measures the degree to which employees feel the organization delivers on its cultural promises. Nine dimensions are averaged (Belonging, Inclusivity, Recognition, etc.) and converted to a <strong>0–100 scale</strong>. Scores <strong>≥ 70</strong> indicate strong attachment; <strong>50–69</strong> moderate; <strong>&lt; 50</strong> signals meaningful disengagement. Gaps between top and bottom dimensions highlight where cultural investment is most needed.</div>
           </div>
         </div>
       </div>
@@ -1203,7 +1203,7 @@ function renderSpace() {
     const lean = quietAvg > dynamicAvg ? 'quieter, library-like' : 'dynamic, energetic';
     const leanScore = quietAvg > dynamicAvg ? quietAvg.toFixed(1) : dynamicAvg.toFixed(1);
     const otherScore = quietAvg > dynamicAvg ? dynamicAvg.toFixed(1) : quietAvg.toFixed(1);
-    spaceInsights.push({ icon:'🎧', text:`Employees lean toward a <strong>${lean} environment</strong> (${leanScore}/5 vs ${otherScore}/5 for the alternative). Design programming should prioritise acoustic comfort and ${quietAvg > dynamicAvg ? 'focus-friendly zones' : 'collaborative, activating spaces'}.` });
+    spaceInsights.push({ icon:'🎧', text:`Employees lean toward a <strong>${lean} environment</strong> (${leanScore}/5 vs ${otherScore}/5 for the alternative). Design programming should prioritize acoustic comfort and ${quietAvg > dynamicAvg ? 'focus-friendly zones' : 'collaborative, activating spaces'}.` });
   }
 
   if (spaceInsights.length) {
@@ -1275,7 +1275,7 @@ function renderRel() {
 
   if (timeWithOthers > 0) {
     const collab = timeWithOthers >= 60 ? 'highly collaborative' : timeWithOthers >= 40 ? 'balanced between individual and collaborative' : 'individually oriented';
-    relInsights.push({ icon:'🤝', text:`Employees spend an average of <strong>${timeWithOthers}% of their work time with others</strong>, characterising the workforce as <strong>${collab}</strong>. ${unscheduledPct > 40 ? `${unscheduledPct}% of that collaborative time is unscheduled, suggesting spontaneous interaction is a key feature of the workplace.` : `Most collaboration (${scheduledPct}%) is planned and scheduled.`}` });
+    relInsights.push({ icon:'🤝', text:`Employees spend an average of <strong>${timeWithOthers}% of their work time with others</strong>, characterizing the workforce as <strong>${collab}</strong>. ${unscheduledPct > 40 ? `${unscheduledPct}% of that collaborative time is unscheduled, suggesting spontaneous interaction is a key feature of the workplace.` : `Most collaboration (${scheduledPct}%) is planned and scheduled.`}` });
   }
 
   if (lowestRel && highestRel) {
@@ -1366,10 +1366,10 @@ function renderWVP() {
   if (!isNaN(compNum)) {
     const health = compNum >= 70 ? 'strong' : compNum >= 50 ? 'moderate' : 'developing';
     const healthNote = compNum >= 70
-      ? 'Employees broadly identify with the organisation\'s culture and values.'
+      ? 'Employees broadly identify with the organization\'s culture and values.'
       : compNum >= 50
         ? 'There is meaningful connection, but pockets of disengagement exist that warrant attention.'
-        : 'Attachment levels are low — cultural investment and leadership signalling should be prioritised.';
+        : 'Attachment levels are low — cultural investment and leadership signaling should be prioritized.';
     wvpInsights.push({ icon:'🏆', text:`The WVP Composite Score is <strong>${compNum}/100</strong>, indicating <strong>${health} overall attachment</strong>. ${healthNote}` });
   }
 
@@ -1382,7 +1382,7 @@ function renderWVP() {
     if (belowThreshold > 0) {
       wvpInsights.push({ icon:'⚠️', text:`<strong>${belowThreshold} of ${avgs.length} WVP dimensions score below 3.0/5</strong>, meaning meaningful proportions of employees disagree with these statements. These represent systemic culture risks rather than isolated concerns.` });
     } else if (aboveThreshold === avgs.length) {
-      wvpInsights.push({ icon:'✅', text:`<strong>All ${avgs.length} WVP dimensions score above 3.5/5</strong>, reflecting broad alignment with the organisation's value proposition. The focus should shift from fixing gaps to deepening the strongest dimensions.` });
+      wvpInsights.push({ icon:'✅', text:`<strong>All ${avgs.length} WVP dimensions score above 3.5/5</strong>, reflecting broad alignment with the organization's value proposition. The focus should shift from fixing gaps to deepening the strongest dimensions.` });
     } else {
       wvpInsights.push({ icon:'📊', text:`<strong>${aboveThreshold} of ${avgs.length} dimensions score above 3.5/5</strong>. ${midItems.length > 0 ? `${midItems.length} dimension${midItems.length>1?'s':''} (${midItems.map(d=>d.label).join(', ')}) sit in the 3.0–3.5 range — these are improvement opportunities with relatively low activation effort.` : ''}` });
     }
@@ -1398,7 +1398,7 @@ function renderWVP() {
     html += `</div></div>`;
   }
 
-  // WVP composite colour + label
+  // WVP composite color + label
   const compNum2 = parseInt(comp);
   const wvpColor = isNaN(compNum2) ? 'var(--teal)' : compNum2 >= 70 ? '#17E88F' : compNum2 >= 50 ? '#80BBAD' : '#D2785A';
   const wvpBand  = isNaN(compNum2) ? '' : compNum2 >= 70 ? 'Strong attachment' : compNum2 >= 50 ? 'Moderate attachment' : 'Low attachment';
@@ -1408,7 +1408,7 @@ function renderWVP() {
     <div>
       <div style="font-size:0.78rem;font-weight:600;color:var(--text);margin-bottom:0.3rem">About the WVP Composite Score</div>
       <div style="font-size:0.78rem;color:var(--text-muted);line-height:1.65">
-        The <strong style="color:var(--text)">Workplace Value Proposition (WVP)</strong> measures how well employees feel the organisation delivers on its cultural promises across nine dimensions — Belonging, Inclusivity &amp; Respect, Supported &amp; Valued, Leadership Openness, Brand Reflection, Office Pride, Investment in People, Work-Life Balance, and Recognition.
+        The <strong style="color:var(--text)">Workplace Value Proposition (WVP)</strong> measures how well employees feel the organization delivers on its cultural promises across nine dimensions — Belonging, Inclusivity &amp; Respect, Supported &amp; Valued, Leadership Openness, Brand Reflection, Office Pride, Investment in People, Work-Life Balance, and Recognition.
         Each dimension is scored on a 1–5 Likert scale, averaged, then converted to a <strong style="color:var(--text)">0–100 composite</strong>.
         <span style="display:inline-flex;gap:0.75rem;margin-top:0.45rem;flex-wrap:wrap">
           <span style="color:#17E88F">● ≥ 70 — Strong attachment</span>
@@ -1443,7 +1443,7 @@ function renderFuture() {
   let html = '';
 
   // ── Data prep ─────────────────────────────────────────────────────────
-  // Canonical order + colours for known label variants (case-insensitive match)
+  // Canonical order + colors for known label variants (case-insensitive match)
   const locCanonical = [
     { key:'fully remote',  label:'Fully remote',  color:'#D2785A' },
     { key:'mostly home',   label:'Mostly home',   color:'#DBD99A' },
@@ -1463,7 +1463,7 @@ function renderFuture() {
       const canon = locCanonical.find(c => c.key === rawLabel.toLowerCase().trim());
       return { label: canon ? canon.label : rawLabel, rawLabel, n: cnt, color: canon ? canon.color : fallbackColors[i % fallbackColors.length] };
     })
-    // Sort by canonical order; unrecognised labels go to end
+    // Sort by canonical order; unrecognized labels go to end
     .sort((a, b) => {
       const ai = locCanonical.findIndex(c => c.key === a.rawLabel.toLowerCase().trim());
       const bi = locCanonical.findIndex(c => c.key === b.rawLabel.toLowerCase().trim());
@@ -1492,7 +1492,7 @@ function renderFuture() {
   if (locTotal > 0) {
     let locSentence = '';
     if (officePct >= 50) {
-      locSentence = `<strong>${officePct}% of respondents prefer office-dominant arrangements</strong> (Mostly office or Fully office), signalling continued demand for dedicated workspace.`;
+      locSentence = `<strong>${officePct}% of respondents prefer office-dominant arrangements</strong> (Mostly office or Fully office), signaling continued demand for dedicated workspace.`;
     } else if (remotePct >= 50) {
       locSentence = `<strong>${remotePct}% of respondents prefer remote-dominant arrangements</strong> (Mostly home or Fully remote), suggesting strong appetite for flexible/distributed work.`;
     } else if (hybridPct >= 35) {
@@ -1608,7 +1608,7 @@ function renderFuture() {
     <p class="tradeoff-note">
       Respondents rated each trade-off on a <strong>1–5 Likert scale</strong>
       (1 = Strongly Disagree · 5 = Strongly Agree).
-      The centre of each chart shows the combined
+      The center of each chart shows the combined
       <span style="color:var(--accent);font-weight:600">% who Agree or Strongly Agree</span>.
     </p>
     <div class="tradeoff-pies">`;
@@ -1652,7 +1652,7 @@ function renderFuture() {
       else if(v.includes('within the building')||v.includes('within the site')) bld++;
       else if(v.includes('neighborhood')||v.includes('surrounding')) nbr++;
       else if(v.includes('not important')) not++;
-      else return; // unrecognised response — exclude from total
+      else return; // unrecognized response — exclude from total
       tot++;
     });
     return {label:C.AMM_L[i],off,bld,nbr,not,tot};
@@ -1793,7 +1793,7 @@ function quadrantSVG(dims) {
     g += `<path d="M${cx},${cy} L${x1.toFixed(1)},${y1.toFixed(1)} A${r.toFixed(1)},${r.toFixed(1)} 0 0,1 ${x2.toFixed(1)},${y2.toFixed(1)} Z" fill="${color}" opacity="0.90"/>`;
   });
 
-  // Centre dot
+  // Center dot
   g += `<circle cx="${cx}" cy="${cy}" r="3.5" fill="rgba(242,244,243,0.25)"/>`;
 
   // Labels
@@ -1889,14 +1889,14 @@ function renderWorkStyles() {
   // SU: % of collaborative time that is unscheduled (COLLAB.UCOLLAB avg)
   const su = Math.round(avg(numVals(rows, C.COL_U)) || 0);
 
-  // DQ: quiet env preference normalised — avg Likert(VIBE.QUIET) / 5 × 100
+  // DQ: quiet env preference normalized — avg Likert(VIBE.QUIET) / 5 × 100
   const vibeQVals = rows.map(r => parseLikert(gv(r, 'VIBE.QUIET'))).filter(v => v !== null);
   const dq = Math.round(vibeQVals.length ? (avg(vibeQVals) / 5 * 100) : 0);
 
-  // NP: large-meeting proportion (Q30.A3 avg) as specialised-needs proxy
+  // NP: large-meeting proportion (Q30.A3 avg) as specialized-needs proxy
   const np = Math.round(avg(numVals(rows, C.MTG_L)) || 0);
 
-  // LM: cross-team interaction score normalised — avg Likert(RELATION.NTCONNECT) / 5 × 100
+  // LM: cross-team interaction score normalized — avg Likert(RELATION.NTCONNECT) / 5 × 100
   const ntVals = rows.map(r => parseLikert(gv(r, 'RELATION.NTCONNECT'))).filter(v => v !== null);
   const lm = Math.round(ntVals.length ? (avg(ntVals) / 5 * 100) : 0);
 
@@ -2033,7 +2033,7 @@ function exportTradeoffPNG() {
   const cardW = Math.floor((W - pad * 2) / td.length);
   let g = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="DM Sans,Arial,sans-serif">`;
   g += `<text x="${W/2}" y="18" text-anchor="middle" font-size="12" font-weight="700" fill="#F2F4F3">Trade-off Preferences</text>`;
-  g += `<text x="${W/2}" y="33" text-anchor="middle" font-size="8.5" fill="#80BBAD">Rated on a 1–5 Likert scale · Centre = % who Agree or Strongly Agree</text>`;
+  g += `<text x="${W/2}" y="33" text-anchor="middle" font-size="8.5" fill="#80BBAD">Rated on a 1–5 Likert scale · Center = % who Agree or Strongly Agree</text>`;
   td.forEach((d, idx) => {
     const agreeN = (d.d[5]||0) + (d.d[4]||0);
     const agreePct = d.t ? Math.round((agreeN / d.t) * 100) : 0;
