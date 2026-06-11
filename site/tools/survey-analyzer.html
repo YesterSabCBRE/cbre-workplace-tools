@@ -141,6 +141,8 @@ nav {
 }
 .client-name-input:focus { outline: none; border-color: rgba(23,232,143,0.4); }
 .client-name-input::placeholder { color: var(--text-muted); font-weight: 400; }
+select.client-name-input { background: #0D2B22; color: var(--text); cursor: pointer; }
+select.client-name-input option { background: #0D2B22; color: var(--text); }
 .filters-row { display: flex; gap: 0.65rem; flex-wrap: wrap; flex: 1; align-items: flex-end; }
 .filter-group { display: flex; flex-direction: column; gap: 0.25rem; }
 .filter-label { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
@@ -701,19 +703,17 @@ nav {
         </div>
         <div class="client-name-wrap">
           <span class="filter-label">Sector</span>
-          <select id="sectorInput" class="client-name-input" style="width:170px" onchange="updateClientName()">
+          <select id="sectorInput" class="client-name-input" style="width:180px" onchange="updateClientName()">
             <option value="">Select sector</option>
-            <option>Architecture &amp; Engineering</option>
-            <option>Construction</option>
-            <option>Financial Services</option>
-            <option>Government</option>
-            <option>Healthcare</option>
+            <option>Tech &amp; Media</option>
             <option>Legal</option>
-            <option>Media &amp; Entertainment</option>
+            <option>Government</option>
+            <option>Utility</option>
+            <option>Education</option>
+            <option>Financial Services</option>
             <option>Professional Services</option>
-            <option>Real Estate</option>
+            <option>Healthcare</option>
             <option>Retail</option>
-            <option>Technology</option>
           </select>
         </div>
         <div class="client-name-wrap">
