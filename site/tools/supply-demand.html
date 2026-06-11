@@ -90,14 +90,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .btn-remove-bldg:hover{color:#D2785A}
 .floors-list{padding:.5rem .75rem;display:flex;flex-direction:column;gap:.35rem}
 .floor-row{display:flex;align-items:center;gap:.4rem}
-.floor-name-input{flex:1;padding:.35rem .5rem;background:rgba(255,255,255,.04);border:1px solid transparent;border-radius:5px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.76rem;outline:none;min-width:0;transition:border-color .2s}
-.floor-name-input:focus{border-color:rgba(23,232,143,.3)}
-.floor-seats-input{width:70px;padding:.35rem .4rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:5px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;text-align:center;outline:none;transition:border-color .2s;-moz-appearance:textfield}
+.floor-seats-input{width:80px;padding:.35rem .4rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:5px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;text-align:center;outline:none;transition:border-color .2s;-moz-appearance:textfield}
 .floor-seats-input::-webkit-inner-spin-button,.floor-seats-input::-webkit-outer-spin-button{-webkit-appearance:none}
 .floor-seats-input:focus{border-color:rgba(23,232,143,.3)}
 .floor-unit{font-size:.65rem;color:var(--text-muted);white-space:nowrap}
-.btn-remove-floor{background:none;border:none;color:rgba(242,244,243,.25);font-size:.85rem;cursor:pointer;padding:0;line-height:1;transition:color .2s;flex-shrink:0}
-.btn-remove-floor:hover{color:#D2785A}
 .bldg-footer{padding:.4rem .75rem .6rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
 .btn-sm-ghost{background:none;border:1px solid var(--card-border);color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:.7rem;font-weight:600;padding:.25rem .65rem;border-radius:5px;cursor:pointer;transition:all .2s;white-space:nowrap}
 .btn-sm-ghost:hover{border-color:var(--accent);color:var(--accent)}
@@ -441,27 +437,13 @@ function syncAttPreset() {
 // ─── BUILDINGS CRUD ─────────────────────────────────────────────────────────
 function addBuilding() {
   var id = ++_bid;
-  buildings.push({ id:id, name:'Building '+id, floors:[{id:++_fid, name:'Floor 1', seats:0}], expansions:[], rsf:0, showRSF:false });
+  buildings.push({ id:id, name:'', seats:0, rsf:0, expansions:[] });
   renderInputs();
   recompute();
 }
 
 function removeBuilding(id) {
   buildings = buildings.filter(function(b){return b.id!==id;});
-  renderInputs(); recompute();
-}
-
-function addFloor(bid) {
-  var b = buildings.find(function(b){return b.id===bid;});
-  if (!b) return;
-  b.floors.push({id:++_fid, name:'Floor '+(b.floors.length+1), seats:0});
-  renderInputs(); recompute();
-}
-
-function removeFloor(bid, fid) {
-  var b = buildings.find(function(b){return b.id===bid;});
-  if (!b || b.floors.length<=1) return;
-  b.floors = b.floors.filter(function(f){return f.id!==fid;});
   renderInputs(); recompute();
 }
 
@@ -479,28 +461,12 @@ function removeExpansion(bid, eid) {
   renderInputs(); recompute();
 }
 
-function toggleRSF(bid) {
-  var b = buildings.find(function(b){return b.id===bid;});
-  if (!b) return;
-  b.showRSF = !b.showRSF;
-  renderInputs();
-}
-
 function updateBuilding(bid, field, value) {
   var b = buildings.find(function(b){return b.id===bid;});
   if (!b) return;
   if (field==='name') b.name = value;
+  else if (field==='seats') { b.seats = parseInt(value)||0; recompute(); return; }
   else if (field==='rsf') b.rsf = parseInt(value)||0;
-  recompute();
-}
-
-function updateFloor(bid, fid, field, value) {
-  var b = buildings.find(function(b){return b.id===bid;});
-  if (!b) return;
-  var f = b.floors.find(function(f){return f.id===fid;});
-  if (!f) return;
-  if (field==='name') f.name = value;
-  else if (field==='seats') f.seats = parseInt(value)||0;
   recompute();
 }
 
@@ -515,6 +481,13 @@ function updateExpansion(bid, eid, field, value) {
   recompute();
 }
 
+// resolve seats for a building (direct or RSF-derived)
+function resolveSeats(b) {
+  if (b.seats > 0) return b.seats;
+  if (b.rsf > 0 && state.targetDensity > 0) return Math.round(b.rsf / state.targetDensity);
+  return 0;
+}
+
 // ─── RENDER INPUTS ──────────────────────────────────────────────────────────
 function renderInputs() {
   var container = document.getElementById('buildings-container');
@@ -524,57 +497,56 @@ function renderInputs() {
 }
 
 function buildBuildingCard(b) {
-  var bSeats = b.floors.reduce(function(s,f){return s+(f.seats||0);},0);
+  var resolved = resolveSeats(b);
   var allExp = b.expansions.reduce(function(s,e){return s+(e.seats||0);},0);
-
-  var floorsHtml = b.floors.map(function(f){
-    return '<div class="floor-row">'
-      + '<input class="floor-name-input" value="'+esc(f.name)+'" onchange="updateFloor('+b.id+','+f.id+',\'name\',this.value)" placeholder="Floor name"/>'
-      + '<input type="number" class="floor-seats-input" value="'+(f.seats||'')+'" min="0" placeholder="0" oninput="updateFloor('+b.id+','+f.id+',\'seats\',this.value)" title="Seats on this floor"/>'
-      + '<span class="floor-unit">seats</span>'
-      + (b.floors.length>1 ? '<button class="btn-remove-floor" onclick="removeFloor('+b.id+','+f.id+')" title="Remove floor">×</button>' : '')
-      + '</div>';
-  }).join('');
+  var derivedNote = (b.seats===0 && b.rsf>0 && state.targetDensity>0)
+    ? '<div class="input-hint" style="color:var(--accent);margin-top:.2rem">= '+resolved.toLocaleString()+' derived seats ('+b.rsf.toLocaleString()+' SF ÷ '+state.targetDensity+' SF/seat)</div>'
+    : '';
 
   var expsHtml = '';
   if (b.expansions.length > 0) {
     expsHtml = '<div class="expansions-section">'
       + '<div class="exp-header">Planned Expansions <span style="font-weight:400;opacity:.55;text-transform:none;letter-spacing:0">— optional</span></div>'
-      + '<div class="exp-optional-hint">Only needed if you already have a signed lease or committed expansion. Leave blank to let the model show you <em>when</em> expansion is needed.</div>'
+      + '<div class="exp-optional-hint">Only fill in if you have a committed expansion. Leave blank to see when expansion is needed.</div>'
       + b.expansions.map(function(e){
           return '<div class="exp-row">'
             + '<input type="number" class="exp-input exp-year" value="'+e.year+'" min="'+state.baseYear+'" max="'+(state.baseYear+20)+'" oninput="updateExpansion('+b.id+','+e.id+',\'year\',this.value)" title="Year expansion activates"/>'
             + '<input type="number" class="exp-input exp-seats" value="'+(e.seats||'')+'" min="0" placeholder="+seats" oninput="updateExpansion('+b.id+','+e.id+',\'seats\',this.value)"/>'
-            + '<input class="exp-input exp-note" value="'+esc(e.note)+'" placeholder="Label (e.g. Floor 6)" onchange="updateExpansion('+b.id+','+e.id+',\'note\',this.value)"/>'
+            + '<input class="exp-input exp-note" value="'+esc(e.note)+'" placeholder="Label (e.g. new floor)" onchange="updateExpansion('+b.id+','+e.id+',\'note\',this.value)"/>'
             + '<button class="btn-remove-exp" onclick="removeExpansion('+b.id+','+e.id+')" title="Remove expansion">×</button>'
             + '</div>';
         }).join('')
       + '</div>';
   }
 
-  var rsfHtml = b.showRSF
-    ? '<div class="rsf-row"><label>Total RSF:</label><input type="number" class="rsf-input" value="'+(b.rsf||'')+'" min="0" placeholder="0" oninput="updateBuilding('+b.id+',\'rsf\',this.value)"/><span class="floor-unit">SF</span></div>'
-    : '';
+  var badgeTxt = resolved > 0
+    ? (resolved.toLocaleString() + (allExp>0?' + '+allExp+' exp':'')+' seats')
+    : '0 seats';
 
   return '<div class="bldg-card" id="bldg-'+b.id+'">'
     + '<div class="bldg-head">'
-    + '<input class="bldg-name-input" value="'+esc(b.name)+'" onchange="updateBuilding('+b.id+',\'name\',this.value)" placeholder="Building name"/>'
-    + '<span class="bldg-seats-badge">'+(bSeats+(allExp>0?' + '+allExp+' exp':'')+' seats')+'</span>'
-    + '<button class="btn-remove-bldg" onclick="removeBuilding('+b.id+')" title="Remove building">×</button>'
+    + '<input class="bldg-name-input" value="'+esc(b.name)+'" onchange="updateBuilding('+b.id+',\'name\',this.value)" placeholder="Building / location name"/>'
+    + '<span class="bldg-seats-badge">'+badgeTxt+'</span>'
+    + '<button class="btn-remove-bldg" onclick="removeBuilding('+b.id+')" title="Remove">×</button>'
     + '</div>'
-    + '<div class="floors-list">'+floorsHtml+'</div>'
+    + '<div class="floors-list">'
+    +   '<div class="floor-row">'
+    +     '<span class="floor-unit" style="min-width:48px;font-size:.72rem">Seats</span>'
+    +     '<input type="number" class="floor-seats-input" value="'+(b.seats||'')+'" min="0" placeholder="e.g. 200" oninput="updateBuilding('+b.id+',\'seats\',this.value)" title="Total seats in this location"/>'
+    +     '<span class="floor-unit" style="margin-left:.5rem;margin-right:.75rem">RSF</span>'
+    +     '<input type="number" class="floor-seats-input" style="width:90px" value="'+(b.rsf||'')+'" min="0" placeholder="optional" oninput="updateBuilding('+b.id+',\'rsf\',this.value)" title="Rentable square footage"/>'
+    +   '</div>'
+    +   derivedNote
+    + '</div>'
     + expsHtml
-    + rsfHtml
     + '<div class="bldg-footer">'
-    + '<button class="btn-sm-ghost" onclick="addFloor('+b.id+')">+ Floor</button>'
     + '<button class="btn-sm-ghost" onclick="addExpansion('+b.id+')">+ Expansion</button>'
-    + (!b.showRSF ? '<button class="btn-sm-ghost" onclick="toggleRSF('+b.id+')">+ RSF</button>' : '')
     + '</div>'
     + '</div>';
 }
 
 function updateInventorySummary() {
-  var totalSeats = buildings.reduce(function(s,b){return s+b.floors.reduce(function(ss,f){return ss+(f.seats||0);},0);},0);
+  var totalSeats = buildings.reduce(function(s,b){return s+resolveSeats(b);},0);
   var totalExp = buildings.reduce(function(s,b){return s+b.expansions.reduce(function(ss,e){return ss+(e.seats||0);},0);},0);
   var badge = document.getElementById('inv-badge');
   var summary = document.getElementById('inv-summary');
@@ -584,7 +556,6 @@ function updateInventorySummary() {
       summary.textContent = 'Add a building to begin';
     } else {
       summary.textContent = buildings.length+' building'+(buildings.length!==1?'s':'')+' · '
-        +buildings.reduce(function(s,b){return s+b.floors.length;},0)+' floors · '
         +totalSeats.toLocaleString()+' seats'
         +(totalExp>0?' (+ '+totalExp.toLocaleString()+' planned)':'');
     }
@@ -627,7 +598,7 @@ function compute() {
   for (var i=0;i<=N;i++) years.push(state.baseYear+i);
 
   // Supply (with expansions as step function)
-  var baseSeats = buildings.reduce(function(s,b){return s+b.floors.reduce(function(ss,f){return ss+(f.seats||0);},0);},0);
+  var baseSeats = buildings.reduce(function(s,b){return s+resolveSeats(b);},0);
   var allExp = buildings.flatMap ? buildings.flatMap(function(b){return b.expansions||[];})
     : [].concat.apply([], buildings.map(function(b){return b.expansions||[];}));
   var supply = years.map(function(yr){
@@ -692,7 +663,7 @@ function compute() {
 // ─── RECOMPUTE ───────────────────────────────────────────────────────────────
 function recompute() {
   var hasData = buildings.length>0
-    && buildings.some(function(b){return b.floors.some(function(f){return (f.seats||0)>0;});})
+    && buildings.some(function(b){return resolveSeats(b)>0;})
     && state.currentHC>0;
 
   var bPng = document.getElementById('btn-png');
@@ -700,7 +671,7 @@ function recompute() {
 
   if (!hasData) {
     var hasBuilding = buildings.length > 0;
-    var hasSeats    = buildings.some(function(b){return b.floors.some(function(f){return (f.seats||0)>0;});});
+    var hasSeats    = buildings.some(function(b){return resolveSeats(b)>0;});
     var hasHC       = state.currentHC > 0;
     function step(done, text) {
       return '<div style="display:flex;align-items:center;gap:.65rem;font-size:.85rem;color:'+(done?'#17E88F':'rgba(242,244,243,.45)')+';">'
@@ -712,7 +683,7 @@ function recompute() {
       + '<div class="empty-title">Three steps to your analysis</div>'
       + '<div style="display:flex;flex-direction:column;gap:.6rem;margin:1rem 0 1.5rem;text-align:left;width:100%;max-width:320px">'
       + step(hasBuilding, 'Add a building in <strong>Space Inventory</strong>')
-      + step(hasSeats,    'Enter seat count on at least one floor')
+      + step(hasSeats,    'Enter seats (or RSF + density to derive them)')
       + step(hasHC,       'Enter current headcount in <strong>Headcount & Growth</strong>')
       + '</div>'
       + '<button class="btn-sample" onclick="loadSample()">Load Cohesity sample data</button>'
@@ -952,36 +923,30 @@ function buildDensity(d) {
 // ─── BUILDING BREAKDOWN ──────────────────────────────────────────────────────
 function buildBuildingBreakdown(d) {
   if (buildings.length===0) return '';
-  var h = '<div class="chart-card"><div class="chart-title" style="margin-bottom:.85rem">Building Inventory</div>'
+  var h = '<div class="chart-card"><div class="chart-title" style="margin-bottom:.85rem">Space Inventory</div>'
     + '<div class="tbl-wrap"><table class="data-tbl"><thead><tr>'
-    + '<th>Building / Floor</th><th>Seats</th><th>% of Portfolio</th><th>RSF</th>'
+    + '<th>Location</th><th>Seats</th><th>% of Portfolio</th><th>RSF</th><th>SF/Seat</th>'
     + '</tr></thead><tbody>';
 
   buildings.forEach(function(b){
-    var bSeats = b.floors.reduce(function(s,f){return s+(f.seats||0);},0);
+    var bSeats = resolveSeats(b);
+    var derived = b.seats === 0 && bSeats > 0;
     var pct = d.curSup>0 ? Math.round(bSeats/d.curSup*100) : 0;
+    var sfPerSeat = (b.rsf>0 && bSeats>0) ? Math.round(b.rsf/bSeats) : null;
     h += '<tr style="background:rgba(255,255,255,.02)">'
-      + '<td style="font-weight:700">'+esc(b.name)+'</td>'
-      + '<td style="font-weight:700">'+bSeats.toLocaleString()+'</td>'
+      + '<td style="font-weight:700">'+esc(b.name||'—')+'</td>'
+      + '<td style="font-weight:700">'+bSeats.toLocaleString()+(derived?' <span style="font-size:.65rem;color:var(--accent);opacity:.7">(derived)</span>':'')+'</td>'
       + '<td>'+pct+'%</td>'
       + '<td>'+(b.rsf>0?b.rsf.toLocaleString()+' SF':'—')+'</td>'
+      + '<td>'+(sfPerSeat?sfPerSeat+' SF':'—')+'</td>'
       + '</tr>';
-    b.floors.forEach(function(f){
-      h += '<tr>'
-        + '<td style="padding-left:1.5rem;color:var(--text-muted)">└ '+esc(f.name)+'</td>'
-        + '<td style="color:var(--text-muted)">'+(f.seats||0).toLocaleString()+'</td>'
-        + '<td style="color:rgba(242,244,243,.3)">'+(d.curSup>0?Math.round((f.seats||0)/d.curSup*100):0)+'%</td>'
-        + '<td>—</td>'
-        + '</tr>';
-    });
     if (b.expansions && b.expansions.length>0) {
       b.expansions.forEach(function(e){
         if ((e.seats||0)>0) {
           h += '<tr style="opacity:.65">'
-            + '<td style="padding-left:1.5rem;color:var(--accent)">+ '+(e.note||'Expansion')+' ('+e.year+')</td>'
+            + '<td style="padding-left:1.5rem;color:var(--accent)">↳ '+(e.note||'Expansion')+' ('+e.year+')</td>'
             + '<td style="color:var(--accent)">+'+e.seats.toLocaleString()+'</td>'
-            + '<td style="color:rgba(242,244,243,.3)">—</td>'
-            + '<td>—</td>'
+            + '<td colspan="3" style="color:rgba(242,244,243,.3)">planned expansion</td>'
             + '</tr>';
         }
       });
@@ -1007,11 +972,7 @@ function loadSample() {
 
   _bid=0; _fid=0; _eid=0;
   buildings = [{
-    id:++_bid, name:'Santa Clara HQ', showRSF:true, rsf:66753,
-    floors:[
-      {id:++_fid, name:'Floor 4', seats:192},
-      {id:++_fid, name:'Floor 5', seats:190},
-    ],
+    id:++_bid, name:'Santa Clara HQ', seats:382, rsf:66753,
     expansions:[{id:++_eid, year:2028, seats:228, note:'Floor 6 expansion'}]
   }];
 
@@ -1110,13 +1071,12 @@ function exportExcel() {
   XLSX.utils.book_append_sheet(wb, wsProj, 'Year-by-Year');
 
   // Building inventory sheet
-  var invRows = [['Building','Floor','Seats','RSF'],];
+  var invRows = [['Location','Seats','RSF','SF/Seat'],];
   buildings.forEach(function(b){
-    b.floors.forEach(function(f){
-      invRows.push([b.name, f.name, f.seats||0, b.rsf||0]);
-    });
+    var s = resolveSeats(b);
+    invRows.push([b.name||'—', s, b.rsf||'', s>0&&b.rsf>0?Math.round(b.rsf/s):'']);
     b.expansions.forEach(function(e){
-      invRows.push([b.name, (e.note||'Expansion')+' ('+e.year+')', e.seats||0, '']);
+      invRows.push([(e.note||'Expansion')+' ('+e.year+')', e.seats||0, '', '']);
     });
   });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(invRows), 'Building Inventory');
