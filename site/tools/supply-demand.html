@@ -4,49 +4,1082 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Supply & Demand Analysis · CBRE</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --green: #003F2D; --green-mid: #012A2D; --green-deep: #001A14;
-    --accent: #17E88F; --accent-dim: #0FB870; --teal: #538184;
-    --text: #F2F4F3; --text-muted: rgba(242,244,243,0.55);
-    --card-bg: rgba(255,255,255,0.04); --card-border: rgba(255,255,255,0.08); --radius: 12px;
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--green-deep); color: var(--text); min-height: 100vh; }
-  body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse 80% 50% at 20% -10%, rgba(23,232,143,0.06) 0%, transparent 60%); pointer-events: none; z-index: 0; }
-  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 0 2.5rem; height: 60px; background: rgba(0,26,20,0.9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--card-border); }
-  .nav-logo { font-family: 'DM Serif Display', serif; font-size: 1rem; color: var(--text); text-decoration: none; }
-  .nav-logo span { color: var(--accent); }
-  .nav-back { font-size: 0.8rem; color: var(--text-muted); text-decoration: none; display: flex; align-items: center; gap: 0.4rem; }
-  .nav-back:hover { color: var(--text); }
-  .page { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 90px 2rem 80px; }
-  .page-eyebrow { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.75rem; }
-  .page-title { font-family: 'DM Serif Display', serif; font-size: 2.2rem; line-height: 1.15; margin-bottom: 0.75rem; }
-  .page-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.7; max-width: 560px; margin-bottom: 3rem; }
-  .coming-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 3rem; text-align: center; }
-  .coming-icon { font-size: 3rem; margin-bottom: 1rem; }
-  .coming-title { font-family: 'DM Serif Display', serif; font-size: 1.5rem; margin-bottom: 0.75rem; }
-  .coming-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.7; max-width: 480px; margin: 0 auto; }
-  .badge { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(23,232,143,0.12); color: var(--accent); border: 1px solid rgba(23,232,143,0.25); padding: 0.3rem 0.75rem; border-radius: 100px; margin-bottom: 1.5rem; }
+:root {
+  --green:#003F2D;--green-mid:#012A2D;--green-deep:#001A14;
+  --accent:#17E88F;--accent-dim:#0FB870;--teal:#538184;
+  --text:#F2F4F3;--text-muted:rgba(242,244,243,0.55);
+  --card-bg:rgba(255,255,255,0.04);--card-border:rgba(255,255,255,0.08);
+  --radius:12px;
+  --sc-base:#17E88F;--sc-mid:#80BBAD;--sc-high:#D2785A;
+  --input-bg:rgba(255,255,255,0.06);--input-border:rgba(255,255,255,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--green-deep);color:var(--text);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% -10%,rgba(23,232,143,.06) 0%,transparent 60%);pointer-events:none;z-index:0}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 2.5rem;height:60px;background:rgba(0,26,20,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--card-border)}
+.nav-logo{font-family:'DM Serif Display',serif;font-size:1rem;color:var(--text);text-decoration:none}
+.nav-logo span{color:var(--accent)}
+.nav-back{font-size:.8rem;color:var(--text-muted);text-decoration:none;display:flex;align-items:center;gap:.4rem}
+.nav-back:hover{color:var(--text)}
+.nav-actions{display:flex;gap:.5rem;align-items:center}
+.btn-export{padding:.45rem 1rem;background:var(--card-bg);color:var(--accent);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;border:1px solid rgba(23,232,143,.3);border-radius:7px;cursor:pointer;transition:all .2s}
+.btn-export:hover{background:rgba(23,232,143,.1);border-color:var(--accent)}
+
+/* PAGE */
+.page{position:relative;z-index:1;max-width:1380px;margin:0 auto;padding:76px 1.5rem 80px}
+.page-header{margin-bottom:1.75rem}
+.page-eyebrow{display:inline-flex;align-items:center;gap:.4rem;font-size:.72rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:.6rem}
+.page-title{font-family:'DM Serif Display',serif;font-size:2.2rem;line-height:1.15;margin-bottom:.5rem}
+.page-desc{font-size:.88rem;color:var(--text-muted);line-height:1.7;max-width:580px}
+
+/* LAYOUT */
+.sd-layout{display:grid;grid-template-columns:390px 1fr;gap:1.5rem;align-items:start}
+@media(max-width:1000px){.sd-layout{grid-template-columns:1fr}}
+
+/* INPUTS COLUMN */
+.sd-inputs{display:flex;flex-direction:column;gap:.75rem;position:sticky;top:72px;max-height:calc(100vh - 90px);overflow-y:auto;padding-right:4px;scrollbar-width:thin;scrollbar-color:rgba(23,232,143,.2) transparent}
+.sd-inputs::-webkit-scrollbar{width:4px}
+.sd-inputs::-webkit-scrollbar-track{background:transparent}
+.sd-inputs::-webkit-scrollbar-thumb{background:rgba(23,232,143,.2);border-radius:2px}
+
+/* INPUT PRIMITIVES */
+.input-group{display:flex;flex-direction:column;gap:.3rem}
+.input-group-sm{flex:1;display:flex;flex-direction:column;gap:.3rem}
+.input-row{display:flex;gap:.65rem}
+.input-label{font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)}
+.input-hint{font-size:.65rem;color:rgba(242,244,243,.35);margin-top:.15rem;line-height:1.4}
+.text-input{width:100%;padding:.55rem .75rem;background:var(--input-bg);border:1px solid var(--input-border);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.85rem;outline:none;transition:border-color .2s}
+.text-input:focus{border-color:rgba(23,232,143,.5)}
+.num-input{width:100%;padding:.5rem .7rem;background:var(--input-bg);border:1px solid var(--input-border);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:600;outline:none;transition:border-color .2s;-moz-appearance:textfield}
+.num-input::-webkit-inner-spin-button,.num-input::-webkit-outer-spin-button{-webkit-appearance:none}
+.num-input:focus{border-color:rgba(23,232,143,.5)}
+.num-input-sm{width:72px;padding:.45rem .6rem;background:var(--input-bg);border:1px solid var(--input-border);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:600;outline:none;text-align:center;transition:border-color .2s;-moz-appearance:textfield}
+.num-input-sm::-webkit-inner-spin-button,.num-input-sm::-webkit-outer-spin-button{-webkit-appearance:none}
+.num-input-sm:focus{border-color:rgba(23,232,143,.5)}
+.input-with-unit{display:flex;align-items:center;gap:.35rem}
+.unit{font-size:.75rem;color:var(--text-muted);white-space:nowrap}
+
+/* ACCORDION */
+.accordion{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);overflow:hidden}
+.accordion-head{display:flex;align-items:center;gap:.5rem;padding:.75rem 1rem;cursor:pointer;user-select:none;transition:background .2s}
+.accordion-head:hover{background:rgba(255,255,255,.03)}
+.accordion-head span:first-child{font-size:.82rem;font-weight:600;color:var(--text);flex:1}
+.acc-summary{font-size:.68rem;color:var(--accent);background:rgba(23,232,143,.1);border:1px solid rgba(23,232,143,.2);padding:.15rem .55rem;border-radius:100px;white-space:nowrap}
+.acc-arrow{font-size:.7rem;color:var(--text-muted);transition:transform .2s;margin-left:.25rem}
+.accordion-body{padding:0 1rem 1rem;display:flex;flex-direction:column;gap:.75rem}
+.accordion-body.collapsed{display:none}
+
+/* CLIENT NAME CARD */
+.client-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);padding:.85rem 1rem}
+
+/* BUILDINGS */
+.buildings-container{display:flex;flex-direction:column;gap:.6rem}
+.bldg-card{background:rgba(255,255,255,.03);border:1px solid var(--card-border);border-radius:9px;overflow:hidden}
+.bldg-head{display:flex;align-items:center;gap:.5rem;padding:.6rem .75rem;background:rgba(255,255,255,.02);border-bottom:1px solid var(--card-border)}
+.bldg-name-input{flex:1;background:transparent;border:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:600;outline:none;min-width:0}
+.bldg-name-input::placeholder{color:var(--text-muted)}
+.bldg-seats-badge{font-size:.65rem;color:var(--accent);background:rgba(23,232,143,.1);padding:.15rem .5rem;border-radius:100px;white-space:nowrap;flex-shrink:0}
+.btn-remove-bldg{background:none;border:none;color:rgba(242,244,243,.3);font-size:.9rem;cursor:pointer;padding:0 .2rem;line-height:1;transition:color .2s;flex-shrink:0}
+.btn-remove-bldg:hover{color:#D2785A}
+.floors-list{padding:.5rem .75rem;display:flex;flex-direction:column;gap:.35rem}
+.floor-row{display:flex;align-items:center;gap:.4rem}
+.floor-name-input{flex:1;padding:.35rem .5rem;background:rgba(255,255,255,.04);border:1px solid transparent;border-radius:5px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.76rem;outline:none;min-width:0;transition:border-color .2s}
+.floor-name-input:focus{border-color:rgba(23,232,143,.3)}
+.floor-seats-input{width:70px;padding:.35rem .4rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:5px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;text-align:center;outline:none;transition:border-color .2s;-moz-appearance:textfield}
+.floor-seats-input::-webkit-inner-spin-button,.floor-seats-input::-webkit-outer-spin-button{-webkit-appearance:none}
+.floor-seats-input:focus{border-color:rgba(23,232,143,.3)}
+.floor-unit{font-size:.65rem;color:var(--text-muted);white-space:nowrap}
+.btn-remove-floor{background:none;border:none;color:rgba(242,244,243,.25);font-size:.85rem;cursor:pointer;padding:0;line-height:1;transition:color .2s;flex-shrink:0}
+.btn-remove-floor:hover{color:#D2785A}
+.bldg-footer{padding:.4rem .75rem .6rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.btn-sm-ghost{background:none;border:1px solid var(--card-border);color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:.7rem;font-weight:600;padding:.25rem .65rem;border-radius:5px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn-sm-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.rsf-row{display:flex;align-items:center;gap:.4rem;padding:.4rem .75rem;border-top:1px solid var(--card-border)}
+.rsf-row label{font-size:.68rem;color:var(--text-muted);white-space:nowrap}
+.rsf-input{width:90px;padding:.3rem .45rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:5px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:600;outline:none;text-align:center;-moz-appearance:textfield}
+.rsf-input::-webkit-inner-spin-button,.rsf-input::-webkit-outer-spin-button{-webkit-appearance:none}
+.rsf-input:focus{border-color:rgba(23,232,143,.3)}
+.expansions-section{padding:.3rem .75rem .5rem;border-top:1px solid var(--card-border)}
+.exp-header{font-size:.62rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,232,143,.6);margin-bottom:.35rem}
+.exp-row{display:flex;align-items:center;gap:.35rem;margin-bottom:.3rem}
+.exp-input{padding:.3rem .4rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:5px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.73rem;outline:none;-moz-appearance:textfield}
+.exp-input::-webkit-inner-spin-button,.exp-input::-webkit-outer-spin-button{-webkit-appearance:none}
+.exp-input:focus{border-color:rgba(23,232,143,.3)}
+.exp-year{width:58px;text-align:center;font-weight:600}
+.exp-seats{width:60px;text-align:center;font-weight:600}
+.exp-note{flex:1;min-width:0}
+.exp-note::placeholder{color:rgba(242,244,243,.2)}
+.btn-remove-exp{background:none;border:none;color:rgba(242,244,243,.25);font-size:.8rem;cursor:pointer;padding:0;line-height:1;transition:color .2s;flex-shrink:0}
+.btn-remove-exp:hover{color:#D2785A}
+.btn-add-building{width:100%;padding:.6rem;background:none;border:1px dashed rgba(23,232,143,.25);border-radius:8px;color:rgba(23,232,143,.6);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s;margin-top:.25rem}
+.btn-add-building:hover{background:rgba(23,232,143,.05);border-color:rgba(23,232,143,.5);color:var(--accent)}
+.inv-summary-text{font-size:.72rem;color:var(--text-muted);text-align:center;padding:.35rem 0}
+
+/* SCENARIO ROWS */
+.scenario-rows{display:flex;flex-direction:column;gap:.35rem}
+.scenario-row-head{display:flex;align-items:center;font-size:.65rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(242,244,243,.3);padding:0 .1rem;margin-bottom:.1rem}
+.scenario-row{display:flex;align-items:center;gap:.6rem;padding:.4rem .65rem;background:rgba(255,255,255,.03);border:1px solid var(--card-border);border-radius:7px}
+.scenario-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.scenario-label{font-size:.78rem;font-weight:600;color:var(--text);min-width:32px}
+
+/* HC PREVIEW */
+.hc-preview{background:rgba(0,0,0,.2);border:1px solid var(--card-border);border-radius:7px;overflow:hidden;margin-top:.15rem}
+.hcp-row{display:grid;grid-template-columns:52px 1fr 1fr 1fr;padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.04)}
+.hcp-row:last-child{border-bottom:none}
+.hcp-row.header{background:rgba(255,255,255,.03)}
+.hcp-row.current{background:rgba(23,232,143,.04)}
+.hcp-cell{font-size:.68rem;text-align:right}
+.hcp-cell:first-child{text-align:left;font-weight:600;color:var(--text-muted)}
+.hcp-row.header .hcp-cell{color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:.6rem}
+
+/* DASHBOARD */
+.sd-dashboard{display:flex;flex-direction:column;gap:1rem;min-height:400px}
+.chart-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);padding:1.25rem 1.4rem}
+.chart-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
+.chart-title{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)}
+.chart-legend{display:flex;gap:1rem;flex-wrap:wrap}
+.chart-legend span{font-size:.7rem;color:var(--text-muted)}
+
+/* STAT CARDS */
+.stat-row{display:grid;grid-template-columns:repeat(6,1fr);gap:.65rem}
+@media(max-width:1200px){.stat-row{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.stat-row{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:10px;padding:.9rem 1rem}
+.stat-val{font-family:'DM Serif Display',serif;font-size:1.7rem;line-height:1;margin-bottom:.3rem}
+.stat-label{font-size:.68rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.2rem}
+.stat-sub{font-size:.65rem;color:rgba(242,244,243,.35);line-height:1.4}
+
+/* DATA TABLE */
+.tbl-wrap{overflow-x:auto}
+.data-tbl{width:100%;border-collapse:collapse;font-size:.76rem}
+.data-tbl thead th{padding:.5rem .65rem;text-align:left;color:var(--text-muted);font-weight:600;font-size:.68rem;letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid rgba(23,232,143,.25);white-space:nowrap}
+.data-tbl tbody tr{border-bottom:1px solid rgba(255,255,255,.04)}
+.data-tbl tbody tr:hover{background:rgba(255,255,255,.02)}
+.data-tbl tbody td{padding:.5rem .65rem;white-space:nowrap;vertical-align:middle}
+.data-tbl .neg{color:#D2785A!important}
+.data-tbl .curr-row td{background:rgba(23,232,143,.04)}
+.gap-badge{display:inline-block;background:rgba(210,120,90,.15);border:1px solid rgba(210,120,90,.3);color:#D2785A;border-radius:4px;padding:0 .35rem;font-size:.68rem;font-weight:700;margin-left:.25rem}
+.surp-badge{display:inline-block;background:rgba(23,232,143,.1);border:1px solid rgba(23,232,143,.2);color:#17E88F;border-radius:4px;padding:0 .35rem;font-size:.68rem;font-weight:700;margin-left:.25rem}
+
+/* DENSITY GRID */
+.density-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:.65rem}
+@media(max-width:900px){.density-grid{grid-template-columns:repeat(3,1fr)}}
+.density-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:9px;padding:.85rem .9rem}
+
+/* VIBRANCY SECTION */
+.vibrancy-row{display:flex;gap:.65rem;flex-wrap:wrap}
+.vibrancy-item{flex:1;min-width:140px;background:rgba(255,255,255,.03);border:1px solid var(--card-border);border-radius:8px;padding:.7rem .85rem}
+.vib-sc{font-size:.65rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:.35rem}
+.vib-year-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.2rem}
+.vib-yr{font-size:.7rem;color:var(--text-muted)}
+.vib-pct{font-size:.75rem;font-weight:600}
+.vib-bar{height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;margin-bottom:.4rem}
+.vib-fill{height:100%;border-radius:3px;transition:width .3s}
+.vib-threshold-mark{font-size:.6rem;color:rgba(242,244,243,.3);margin-top:.2rem}
+
+/* EMPTY STATE */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:5rem 2rem;background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);min-height:400px}
+.empty-icon{font-size:3rem;margin-bottom:1rem;opacity:.4}
+.empty-title{font-family:'DM Serif Display',serif;font-size:1.4rem;margin-bottom:.6rem}
+.empty-desc{font-size:.85rem;color:var(--text-muted);line-height:1.7;max-width:380px;margin-bottom:1.5rem}
+.btn-sample{padding:.65rem 1.5rem;background:rgba(23,232,143,.12);color:var(--accent);border:1px solid rgba(23,232,143,.3);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-sample:hover{background:rgba(23,232,143,.2)}
+
+/* GAP YEAR CALLOUT */
+.gap-callout{display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem}
+.gap-card{border-radius:9px;padding:.85rem 1rem;border:1px solid}
+.gap-val{font-family:'DM Serif Display',serif;font-size:1.8rem;line-height:1;margin-bottom:.25rem}
+.gap-label{font-size:.65rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;opacity:.7;margin-bottom:.2rem}
+.gap-sub{font-size:.63rem;opacity:.55;line-height:1.4}
+
+/* PRINT */
+@media print{
+  body{background:#fff!important;color:#1a1a1a!important}
+  nav,.sd-inputs{display:none!important}
+  .sd-layout{display:block!important}
+  .sd-dashboard{display:block!important}
+  .chart-card{background:#fff!important;border:1px solid #ddd!important;page-break-inside:avoid;margin-bottom:12px}
+  .stat-card{background:#f8f8f8!important;border:1px solid #ddd!important}
+}
 </style>
 </head>
 <body>
+
+<!-- NAV -->
 <nav>
   <a class="nav-logo" href="/cbre-workplace-tools/"><span>CBRE</span> Workplace Tools</a>
-  <a class="nav-back" href="/cbre-workplace-tools/">← Back to tools</a>
-</nav>
-<div class="page">
-  <div class="page-eyebrow">⚖️ Analysis Tool</div>
-  <h1 class="page-title">Supply & Demand Analysis</h1>
-  <p class="page-desc">Model headcount scenarios against available space — compare supply vs. demand by floor, team, or building with real estate cost implications.</p>
-  <div class="coming-card">
-    <div class="coming-icon">🚧</div>
-    <div class="badge">Under Construction</div>
-    <div class="coming-title">Tool in development</div>
-    <div class="coming-desc">The Supply & Demand Analysis tool is being built. Input headcount projections and space inventory to model scenarios, identify gaps, and quantify real estate cost implications.</div>
+  <div class="nav-actions">
+    <button class="btn-export" id="btn-png" style="display:none" onclick="exportPNG()">↓ Export PNG</button>
+    <button class="btn-export" id="btn-excel" style="display:none" onclick="exportExcel()">↓ Export Excel</button>
+    <a class="nav-back" href="/cbre-workplace-tools/">← Back to tools</a>
   </div>
-</div>
+</nav>
+
+<!-- PAGE -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-eyebrow">⚖️ Analysis Tool</div>
+    <h1 class="page-title">Supply & Demand Analysis</h1>
+    <p class="page-desc">Model headcount growth scenarios against seat supply. Compare Base, Mid, and High trajectories, identify gap years, and quantify real estate implications.</p>
+  </div>
+
+  <div class="sd-layout">
+
+    <!-- ──────────────── INPUTS ──────────────── -->
+    <div class="sd-inputs">
+
+      <!-- Client name -->
+      <div class="client-card">
+        <div class="input-group">
+          <label class="input-label">Client / Project Name</label>
+          <input type="text" class="text-input" id="clientName" placeholder="e.g. Cohesity" oninput="state.clientName=this.value"/>
+        </div>
+      </div>
+
+      <!-- Accordion: Space Inventory -->
+      <div class="accordion">
+        <div class="accordion-head" onclick="toggleAcc('inventory')">
+          <span>🏢 Space Inventory</span>
+          <span class="acc-summary" id="inv-badge">0 seats</span>
+          <span class="acc-arrow" id="arr-inventory">▲</span>
+        </div>
+        <div class="accordion-body" id="body-inventory">
+          <div class="buildings-container" id="buildings-container"></div>
+          <button class="btn-add-building" onclick="addBuilding()">+ Add Building</button>
+          <div class="inv-summary-text" id="inv-summary">Add a building to begin</div>
+        </div>
+      </div>
+
+      <!-- Accordion: Headcount & Growth -->
+      <div class="accordion">
+        <div class="accordion-head" onclick="toggleAcc('headcount')">
+          <span>📈 Headcount & Growth</span>
+          <span class="acc-arrow" id="arr-headcount">▲</span>
+        </div>
+        <div class="accordion-body" id="body-headcount">
+          <div class="input-row">
+            <div class="input-group-sm">
+              <label class="input-label">Current Headcount</label>
+              <input type="number" class="num-input" id="currentHC" min="0" placeholder="500" oninput="state.currentHC=parseInt(this.value)||0;updateHCPreview();recompute()"/>
+            </div>
+            <div class="input-group-sm">
+              <label class="input-label">Base Year</label>
+              <input type="number" class="num-input" id="baseYear" min="2020" max="2040" placeholder="2025" oninput="state.baseYear=parseInt(this.value)||2025;updateHCPreview();recompute()"/>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">Attendance Rate</label>
+            <div class="input-with-unit">
+              <input type="number" class="num-input-sm" id="attendanceRate" min="1" max="100" value="65" oninput="state.attendanceRate=parseInt(this.value)||65;recompute()"/>
+              <span class="unit">% of HC in office on peak day</span>
+            </div>
+            <div class="input-hint">e.g. 3×/week ≈ 60% · 5-day in-person = 100%</div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">Annual Growth Scenarios</label>
+            <div class="scenario-rows">
+              <div class="scenario-row-head">
+                <span style="min-width:78px"></span>
+                <span style="flex:1"></span>
+                <span>Growth Rate</span>
+              </div>
+              <div class="scenario-row">
+                <div class="scenario-dot" style="background:var(--sc-base)"></div>
+                <span class="scenario-label">Base</span>
+                <div style="flex:1"></div>
+                <div class="input-with-unit">
+                  <input type="number" class="num-input-sm" id="rateBase" min="-20" max="100" step="0.5" value="3" oninput="state.scenarios.base.rate=parseFloat(this.value)||0;updateHCPreview();recompute()"/>
+                  <span class="unit">% /yr</span>
+                </div>
+              </div>
+              <div class="scenario-row">
+                <div class="scenario-dot" style="background:var(--sc-mid)"></div>
+                <span class="scenario-label">Mid</span>
+                <div style="flex:1"></div>
+                <div class="input-with-unit">
+                  <input type="number" class="num-input-sm" id="rateMid" min="-20" max="100" step="0.5" value="5" oninput="state.scenarios.mid.rate=parseFloat(this.value)||0;updateHCPreview();recompute()"/>
+                  <span class="unit">% /yr</span>
+                </div>
+              </div>
+              <div class="scenario-row">
+                <div class="scenario-dot" style="background:var(--sc-high)"></div>
+                <span class="scenario-label">High</span>
+                <div style="flex:1"></div>
+                <div class="input-with-unit">
+                  <input type="number" class="num-input-sm" id="rateHigh" min="-20" max="100" step="0.5" value="8" oninput="state.scenarios.high.rate=parseFloat(this.value)||0;updateHCPreview();recompute()"/>
+                  <span class="unit">% /yr</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="hc-preview"></div>
+        </div>
+      </div>
+
+      <!-- Accordion: Model Assumptions -->
+      <div class="accordion">
+        <div class="accordion-head" onclick="toggleAcc('assumptions')">
+          <span>⚙️ Model Assumptions</span>
+          <span class="acc-arrow" id="arr-assumptions">▲</span>
+        </div>
+        <div class="accordion-body" id="body-assumptions">
+          <div class="input-group">
+            <label class="input-label">Vibrancy Threshold</label>
+            <div class="input-with-unit">
+              <input type="number" class="num-input-sm" id="vibrancyThreshold" min="1" max="100" value="60" oninput="state.vibrancyThreshold=parseInt(this.value)||60;recompute()"/>
+              <span class="unit">% of seats occupied = vibrant</span>
+            </div>
+            <div class="input-hint">Minimum occupancy rate for the office to feel energetic (CBRE default: 60%)</div>
+          </div>
+
+          <div class="input-row">
+            <div class="input-group-sm">
+              <label class="input-label">Total Portfolio RSF</label>
+              <input type="number" class="num-input" id="totalRSF" min="0" placeholder="0" oninput="state.totalRSF=parseInt(this.value)||0;recompute()"/>
+              <div class="input-hint">Enables SF gap analysis</div>
+            </div>
+            <div class="input-group-sm">
+              <label class="input-label">Target RSF/Person</label>
+              <input type="number" class="num-input" id="targetDensity" min="0" placeholder="0" oninput="state.targetDensity=parseInt(this.value)||0;recompute()"/>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-sample" style="font-size:.75rem;padding:.55rem 1rem" onclick="loadSample()">Load Cohesity sample data</button>
+
+    </div><!-- end sd-inputs -->
+
+    <!-- ──────────────── DASHBOARD ──────────────── -->
+    <div class="sd-dashboard" id="dashboard">
+      <div class="empty-state">
+        <div class="empty-icon">⚖️</div>
+        <div class="empty-title">Build your scenario</div>
+        <div class="empty-desc">Add a building with seat inventory and enter your headcount to generate the supply & demand analysis.</div>
+        <button class="btn-sample" onclick="loadSample()">Load Cohesity sample data</button>
+      </div>
+    </div>
+
+  </div><!-- end sd-layout -->
+</div><!-- end page -->
+
+<script>
+// ─── STATE ──────────────────────────────────────────────────────────────────
+var state = {
+  clientName: '',
+  currentHC: 0,
+  baseYear: new Date().getFullYear(),
+  attendanceRate: 65,
+  scenarios: {
+    base: { rate: 3 },
+    mid:  { rate: 5 },
+    high: { rate: 8 },
+  },
+  vibrancyThreshold: 60,
+  totalRSF: 0,
+  targetDensity: 0,
+};
+var buildings = [];
+var _bid = 0, _fid = 0, _eid = 0;
+var SC_COLORS = { base: '#17E88F', mid: '#80BBAD', high: '#D2785A' };
+var SC_LABELS = { base: 'Base', mid: 'Mid', high: 'High' };
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── ACCORDION ──────────────────────────────────────────────────────────────
+function toggleAcc(id) {
+  var body = document.getElementById('body-' + id);
+  var arr  = document.getElementById('arr-' + id);
+  if (!body) return;
+  var collapsed = body.classList.toggle('collapsed');
+  arr.textContent = collapsed ? '▼' : '▲';
+}
+
+// ─── BUILDINGS CRUD ─────────────────────────────────────────────────────────
+function addBuilding() {
+  var id = ++_bid;
+  buildings.push({ id:id, name:'Building '+id, floors:[{id:++_fid, name:'Floor 1', seats:0}], expansions:[], rsf:0, showRSF:false });
+  renderInputs();
+  recompute();
+}
+
+function removeBuilding(id) {
+  buildings = buildings.filter(function(b){return b.id!==id;});
+  renderInputs(); recompute();
+}
+
+function addFloor(bid) {
+  var b = buildings.find(function(b){return b.id===bid;});
+  if (!b) return;
+  b.floors.push({id:++_fid, name:'Floor '+(b.floors.length+1), seats:0});
+  renderInputs(); recompute();
+}
+
+function removeFloor(bid, fid) {
+  var b = buildings.find(function(b){return b.id===bid;});
+  if (!b || b.floors.length<=1) return;
+  b.floors = b.floors.filter(function(f){return f.id!==fid;});
+  renderInputs(); recompute();
+}
+
+function addExpansion(bid) {
+  var b = buildings.find(function(b){return b.id===bid;});
+  if (!b) return;
+  b.expansions.push({id:++_eid, year:state.baseYear+3, seats:0, note:''});
+  renderInputs(); recompute();
+}
+
+function removeExpansion(bid, eid) {
+  var b = buildings.find(function(b){return b.id===bid;});
+  if (!b) return;
+  b.expansions = b.expansions.filter(function(e){return e.id!==eid;});
+  renderInputs(); recompute();
+}
+
+function toggleRSF(bid) {
+  var b = buildings.find(function(b){return b.id===bid;});
+  if (!b) return;
+  b.showRSF = !b.showRSF;
+  renderInputs();
+}
+
+function updateBuilding(bid, field, value) {
+  var b = buildings.find(function(b){return b.id===bid;});
+  if (!b) return;
+  if (field==='name') b.name = value;
+  else if (field==='rsf') b.rsf = parseInt(value)||0;
+  recompute();
+}
+
+function updateFloor(bid, fid, field, value) {
+  var b = buildings.find(function(b){return b.id===bid;});
+  if (!b) return;
+  var f = b.floors.find(function(f){return f.id===fid;});
+  if (!f) return;
+  if (field==='name') f.name = value;
+  else if (field==='seats') f.seats = parseInt(value)||0;
+  recompute();
+}
+
+function updateExpansion(bid, eid, field, value) {
+  var b = buildings.find(function(b){return b.id===bid;});
+  if (!b) return;
+  var e = b.expansions.find(function(e){return e.id===eid;});
+  if (!e) return;
+  if (field==='year') e.year = parseInt(value)||state.baseYear+1;
+  else if (field==='seats') e.seats = parseInt(value)||0;
+  else if (field==='note') e.note = value;
+  recompute();
+}
+
+// ─── RENDER INPUTS ──────────────────────────────────────────────────────────
+function renderInputs() {
+  var container = document.getElementById('buildings-container');
+  if (!container) return;
+  container.innerHTML = buildings.map(function(b){ return buildBuildingCard(b); }).join('');
+  updateInventorySummary();
+}
+
+function buildBuildingCard(b) {
+  var bSeats = b.floors.reduce(function(s,f){return s+(f.seats||0);},0);
+  var allExp = b.expansions.reduce(function(s,e){return s+(e.seats||0);},0);
+
+  var floorsHtml = b.floors.map(function(f){
+    return '<div class="floor-row">'
+      + '<input class="floor-name-input" value="'+esc(f.name)+'" onchange="updateFloor('+b.id+','+f.id+',\'name\',this.value)" placeholder="Floor name"/>'
+      + '<input type="number" class="floor-seats-input" value="'+(f.seats||'')+'" min="0" placeholder="0" oninput="updateFloor('+b.id+','+f.id+',\'seats\',this.value)" title="Seats on this floor"/>'
+      + '<span class="floor-unit">seats</span>'
+      + (b.floors.length>1 ? '<button class="btn-remove-floor" onclick="removeFloor('+b.id+','+f.id+')" title="Remove floor">×</button>' : '')
+      + '</div>';
+  }).join('');
+
+  var expsHtml = '';
+  if (b.expansions.length > 0) {
+    expsHtml = '<div class="expansions-section">'
+      + '<div class="exp-header">Planned Expansions</div>'
+      + b.expansions.map(function(e){
+          return '<div class="exp-row">'
+            + '<input type="number" class="exp-input exp-year" value="'+e.year+'" min="'+state.baseYear+'" max="'+(state.baseYear+20)+'" oninput="updateExpansion('+b.id+','+e.id+',\'year\',this.value)" title="Year expansion activates"/>'
+            + '<input type="number" class="exp-input exp-seats" value="'+(e.seats||'')+'" min="0" placeholder="+seats" oninput="updateExpansion('+b.id+','+e.id+',\'seats\',this.value)"/>'
+            + '<input class="exp-input exp-note" value="'+esc(e.note)+'" placeholder="Label (e.g. Floor 6)" onchange="updateExpansion('+b.id+','+e.id+',\'note\',this.value)"/>'
+            + '<button class="btn-remove-exp" onclick="removeExpansion('+b.id+','+e.id+')" title="Remove expansion">×</button>'
+            + '</div>';
+        }).join('')
+      + '</div>';
+  }
+
+  var rsfHtml = b.showRSF
+    ? '<div class="rsf-row"><label>Total RSF:</label><input type="number" class="rsf-input" value="'+(b.rsf||'')+'" min="0" placeholder="0" oninput="updateBuilding('+b.id+',\'rsf\',this.value)"/><span class="floor-unit">SF</span></div>'
+    : '';
+
+  return '<div class="bldg-card" id="bldg-'+b.id+'">'
+    + '<div class="bldg-head">'
+    + '<input class="bldg-name-input" value="'+esc(b.name)+'" onchange="updateBuilding('+b.id+',\'name\',this.value)" placeholder="Building name"/>'
+    + '<span class="bldg-seats-badge">'+(bSeats+(allExp>0?' + '+allExp+' exp':'')+' seats')+'</span>'
+    + '<button class="btn-remove-bldg" onclick="removeBuilding('+b.id+')" title="Remove building">×</button>'
+    + '</div>'
+    + '<div class="floors-list">'+floorsHtml+'</div>'
+    + expsHtml
+    + rsfHtml
+    + '<div class="bldg-footer">'
+    + '<button class="btn-sm-ghost" onclick="addFloor('+b.id+')">+ Floor</button>'
+    + '<button class="btn-sm-ghost" onclick="addExpansion('+b.id+')">+ Expansion</button>'
+    + (!b.showRSF ? '<button class="btn-sm-ghost" onclick="toggleRSF('+b.id+')">+ RSF</button>' : '')
+    + '</div>'
+    + '</div>';
+}
+
+function updateInventorySummary() {
+  var totalSeats = buildings.reduce(function(s,b){return s+b.floors.reduce(function(ss,f){return ss+(f.seats||0);},0);},0);
+  var totalExp = buildings.reduce(function(s,b){return s+b.expansions.reduce(function(ss,e){return ss+(e.seats||0);},0);},0);
+  var badge = document.getElementById('inv-badge');
+  var summary = document.getElementById('inv-summary');
+  if (badge) badge.textContent = totalSeats.toLocaleString() + ' seats';
+  if (summary) {
+    if (buildings.length===0) {
+      summary.textContent = 'Add a building to begin';
+    } else {
+      summary.textContent = buildings.length+' building'+(buildings.length!==1?'s':'')+' · '
+        +buildings.reduce(function(s,b){return s+b.floors.length;},0)+' floors · '
+        +totalSeats.toLocaleString()+' seats'
+        +(totalExp>0?' (+ '+totalExp.toLocaleString()+' planned)':'');
+    }
+  }
+}
+
+// ─── HC PREVIEW ─────────────────────────────────────────────────────────────
+function updateHCPreview() {
+  var el = document.getElementById('hc-preview');
+  if (!el) return;
+  if (!state.currentHC || state.currentHC<=0) { el.innerHTML=''; return; }
+  var years = [];
+  for (var i=0;i<=5;i++) years.push(state.baseYear+i);
+  var h = '<div class="hc-preview">'
+    + '<div class="hcp-row header">'
+    + '<span class="hcp-cell">Year</span>'
+    + '<span class="hcp-cell" style="color:var(--sc-base)">Base</span>'
+    + '<span class="hcp-cell" style="color:var(--sc-mid)">Mid</span>'
+    + '<span class="hcp-cell" style="color:var(--sc-high)">High</span>'
+    + '</div>';
+  for (var i=0;i<years.length;i++) {
+    var bHC=Math.round(state.currentHC*Math.pow(1+state.scenarios.base.rate/100,i));
+    var mHC=Math.round(state.currentHC*Math.pow(1+state.scenarios.mid.rate/100,i));
+    var hHC=Math.round(state.currentHC*Math.pow(1+state.scenarios.high.rate/100,i));
+    h += '<div class="hcp-row'+(i===0?' current':'')+'">'
+      + '<span class="hcp-cell">'+years[i]+(i===0?' ★':''  )+'</span>'
+      + '<span class="hcp-cell" style="color:var(--sc-base)">'+bHC.toLocaleString()+'</span>'
+      + '<span class="hcp-cell" style="color:var(--sc-mid)">'+mHC.toLocaleString()+'</span>'
+      + '<span class="hcp-cell" style="color:var(--sc-high)">'+hHC.toLocaleString()+'</span>'
+      + '</div>';
+  }
+  h += '</div>';
+  el.innerHTML = h;
+}
+
+// ─── COMPUTE ────────────────────────────────────────────────────────────────
+function compute() {
+  var N = 5;
+  var years = [];
+  for (var i=0;i<=N;i++) years.push(state.baseYear+i);
+
+  // Supply (with expansions as step function)
+  var baseSeats = buildings.reduce(function(s,b){return s+b.floors.reduce(function(ss,f){return ss+(f.seats||0);},0);},0);
+  var allExp = buildings.flatMap ? buildings.flatMap(function(b){return b.expansions||[];})
+    : [].concat.apply([], buildings.map(function(b){return b.expansions||[];}));
+  var supply = years.map(function(yr){
+    var seats = baseSeats;
+    allExp.forEach(function(e){ if(yr>=(e.year||9999)) seats+=(e.seats||0); });
+    return seats;
+  });
+
+  var totalRSF = buildings.reduce(function(s,b){return s+(b.rsf||0);},0) || state.totalRSF;
+
+  // Demand per scenario
+  var scKeys = ['base','mid','high'];
+  var demand = {};
+  scKeys.forEach(function(key){
+    var rate = (state.scenarios[key].rate||0)/100;
+    demand[key] = years.map(function(yr,i){
+      var hc = Math.round(state.currentHC*Math.pow(1+rate,i));
+      var peak = Math.round(hc*state.attendanceRate/100);
+      return {yr:yr, hc:hc, peak:peak};
+    });
+  });
+
+  // Gap year (first year peak > supply)
+  var gapYears = {};
+  scKeys.forEach(function(key){
+    var idx = -1;
+    demand[key].forEach(function(d,i){ if(idx<0 && d.peak>supply[i]) idx=i; });
+    gapYears[key] = idx>=0 ? years[idx] : null;
+  });
+
+  // Vibrancy
+  var vibrancy = {};
+  scKeys.forEach(function(key){
+    vibrancy[key] = demand[key].map(function(d,i){
+      var thresh = Math.round(supply[i]*state.vibrancyThreshold/100);
+      return {yr:d.yr, thresh:thresh, peak:d.peak, ok:d.peak>=thresh, pct:supply[i]>0?Math.round(d.peak/supply[i]*100):0};
+    });
+  });
+
+  var curPeak = Math.round(state.currentHC*state.attendanceRate/100);
+  var curSup  = supply[0];
+  var curUtil = curSup>0 ? Math.round(curPeak/curSup*100) : 0;
+  var curSurp = curSup - curPeak;
+
+  // Density
+  var density = null;
+  if ((totalRSF>0) && state.currentHC>0) {
+    density = { current: Math.round(totalRSF/state.currentHC), target: state.targetDensity||0, totalRSF: totalRSF, bySc:{} };
+    if (density.target>0) {
+      scKeys.forEach(function(key){
+        density.bySc[key] = demand[key].map(function(d){
+          return { yr:d.yr, hc:d.hc, sfNeeded:Math.round(d.hc*density.target), sfGap:Math.round(d.hc*density.target-totalRSF) };
+        });
+      });
+    }
+  }
+
+  return { years:years, supply:supply, demand:demand, gapYears:gapYears, vibrancy:vibrancy,
+           baseSeats:baseSeats, totalRSF:totalRSF, curPeak:curPeak, curSup:curSup, curUtil:curUtil, curSurp:curSurp, density:density };
+}
+
+// ─── RECOMPUTE ───────────────────────────────────────────────────────────────
+function recompute() {
+  var hasData = buildings.length>0
+    && buildings.some(function(b){return b.floors.some(function(f){return (f.seats||0)>0;});})
+    && state.currentHC>0;
+
+  var bPng = document.getElementById('btn-png');
+  var bXls = document.getElementById('btn-excel');
+
+  if (!hasData) {
+    document.getElementById('dashboard').innerHTML = '<div class="empty-state"><div class="empty-icon">⚖️</div><div class="empty-title">Build your scenario</div><div class="empty-desc">Add a building with seat inventory and enter your headcount to see the analysis.</div><button class="btn-sample" onclick="loadSample()">Load Cohesity sample data</button></div>';
+    if(bPng) bPng.style.display='none';
+    if(bXls) bXls.style.display='none';
+    return;
+  }
+
+  var data = compute();
+  document.getElementById('dashboard').innerHTML = buildDashboard(data);
+  if(bPng) bPng.style.display='';
+  if(bXls) bXls.style.display='';
+}
+
+// ─── BUILD DASHBOARD HTML ────────────────────────────────────────────────────
+function buildDashboard(d) {
+  var h = '';
+  h += buildStatCards(d);
+  h += buildGapCallout(d);
+  h += buildChart(d);
+  h += buildTable(d);
+  if (d.density && d.density.target>0) h += buildDensity(d);
+  h += buildBuildingBreakdown(d);
+  return h;
+}
+
+function buildStatCards(d) {
+  var utilColor = d.curUtil >= state.vibrancyThreshold ? '#17E88F' : d.curUtil >= 40 ? '#80BBAD' : '#D2785A';
+  var surpColor = d.curSurp >= 0 ? '#17E88F' : '#D2785A';
+  var gapBase = d.gapYears.base ? d.gapYears.base.toString() : '> '+d.years[d.years.length-1];
+  var gapColor = d.gapYears.base ? (d.gapYears.base <= state.baseYear+2 ? '#D2785A' : '#80BBAD') : '#17E88F';
+
+  return '<div class="stat-row">'
+    + statCard(d.curSup.toLocaleString(), 'Seat Supply', buildings.reduce(function(s,b){return s+b.floors.length;},0)+' floors · '+buildings.length+' bldg'+(buildings.length!==1?'s':''), '')
+    + statCard(state.currentHC.toLocaleString(), 'Current Headcount', state.baseYear+' base', '')
+    + statCard(d.curPeak.toLocaleString(), 'Peak Daily Demand', state.attendanceRate+'% attendance rate', '')
+    + statCard(d.curUtil+'%', 'Utilization Today', d.curUtil>=state.vibrancyThreshold?'✓ Above vibrancy threshold':'⚠ Below vibrancy threshold', utilColor)
+    + statCard((d.curSurp>=0?'+':'')+d.curSurp.toLocaleString(), d.curSurp>=0?'Seat Surplus':'Seat Deficit', 'seats vs. peak demand today', surpColor)
+    + statCard(gapBase, 'Gap Year (Base)', 'first year demand exceeds supply', gapColor)
+    + '</div>';
+}
+
+function statCard(val, label, sub, color) {
+  var s = color ? 'border-color:'+color+'33;background:'+color+'0d' : '';
+  var vc = color ? 'color:'+color : '';
+  return '<div class="stat-card" style="'+s+'">'
+    + '<div class="stat-val" style="'+vc+'">'+val+'</div>'
+    + '<div class="stat-label">'+label+'</div>'
+    + (sub ? '<div class="stat-sub">'+sub+'</div>' : '')
+    + '</div>';
+}
+
+function buildGapCallout(d) {
+  var h = '<div class="gap-callout">';
+  ['base','mid','high'].forEach(function(key){
+    var gy = d.gapYears[key];
+    var col = SC_COLORS[key];
+    var val = gy ? gy.toString() : '> '+d.years[d.years.length-1];
+    var sub = gy ? 'Peak demand exceeds '+d.supply[d.years.indexOf(gy)].toLocaleString()+' seats' : 'Supply sufficient through '+d.years[d.years.length-1];
+    h += '<div class="gap-card" style="background:'+col+'0d;border-color:'+col+'33">'
+      + '<div class="gap-label" style="color:'+col+'">'+SC_LABELS[key]+' Scenario Gap Year</div>'
+      + '<div class="gap-val" style="color:'+col+'">'+val+'</div>'
+      + '<div class="gap-sub">'+sub+'</div>'
+      + '</div>';
+  });
+  h += '</div>';
+  return h;
+}
+
+// ─── SVG CHART ───────────────────────────────────────────────────────────────
+function buildChart(d) {
+  var h = '<div class="chart-card">'
+    + '<div class="chart-card-head">'
+    + '<div class="chart-title">Supply vs. Demand · '+d.years[0]+'–'+d.years[d.years.length-1]+'</div>'
+    + '<div class="chart-legend">'
+    + '<span style="color:rgba(242,244,243,.4)">─ ─ Supply</span>'
+    + '<span style="color:var(--sc-base)">— Base</span>'
+    + '<span style="color:var(--sc-mid)">— Mid</span>'
+    + '<span style="color:var(--sc-high)">— High</span>'
+    + '</div></div>'
+    + buildSVG(d)
+    + '<div style="font-size:.65rem;color:rgba(242,244,243,.3);margin-top:.5rem;line-height:1.5">'
+    + 'Dashed horizontal = vibrancy threshold ('+state.vibrancyThreshold+'% of seats) &nbsp;·&nbsp; Circles on demand lines mark where demand crosses supply &nbsp;·&nbsp; Shaded band = Base–High range'
+    + '</div>'
+    + '</div>';
+  return h;
+}
+
+function buildSVG(d) {
+  var W=780, H=270;
+  var M={top:18,right:90,bottom:38,left:58};
+  var cw=W-M.left-M.right, ch=H-M.top-M.bottom;
+
+  var allVals = d.supply.concat(
+    d.demand.base.map(function(x){return x.peak;}),
+    d.demand.mid.map(function(x){return x.peak;}),
+    d.demand.high.map(function(x){return x.peak;})
+  );
+  var rawMax = Math.max.apply(null, allVals);
+  var yMax = Math.ceil(rawMax*1.2/100)*100;
+  if (yMax===0) yMax=100;
+
+  var xp = function(i){ return M.left + (i/(d.years.length-1))*cw; };
+  var yp = function(v){ return M.top + ch - (v/yMax)*ch; };
+
+  var svg = '<svg viewBox="0 0 '+W+' '+H+'" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="DM Sans,Arial,sans-serif" style="display:block">';
+
+  // Grid lines
+  for (var g=0;g<=5;g++) {
+    var gv=(g/5)*yMax, gy=yp(gv);
+    svg += '<line x1="'+M.left+'" y1="'+gy+'" x2="'+(W-M.right)+'" y2="'+gy+'" stroke="rgba(255,255,255,.05)" stroke-width="1"/>';
+    svg += '<text x="'+(M.left-7)+'" y="'+(gy+4)+'" text-anchor="end" font-size="9" fill="rgba(242,244,243,.3)">'+Math.round(gv).toLocaleString()+'</text>';
+  }
+
+  // Range band (base to high)
+  var basePts = d.demand.base.map(function(x,i){return xp(i)+','+yp(x.peak);}).join(' ');
+  var highPtsRev = d.demand.high.slice().reverse().map(function(x,i){return xp(d.demand.high.length-1-i)+','+yp(x.peak);}).join(' ');
+  svg += '<polygon points="'+basePts+' '+highPtsRev+'" fill="#17E88F" opacity=".06"/>';
+
+  // Supply line (step function)
+  var spPath = 'M '+xp(0)+','+yp(d.supply[0]);
+  for (var si=1;si<d.years.length;si++) {
+    if (d.supply[si]!==d.supply[si-1]) {
+      spPath += ' L '+xp(si)+','+yp(d.supply[si-1]); // horizontal to this x
+      spPath += ' L '+xp(si)+','+yp(d.supply[si]);   // vertical to new y
+    } else {
+      spPath += ' L '+xp(si)+','+yp(d.supply[si]);
+    }
+  }
+  svg += '<path d="'+spPath+'" fill="none" stroke="rgba(242,244,243,.3)" stroke-width="2" stroke-dasharray="7,4"/>';
+  svg += '<text x="'+(W-M.right+6)+'" y="'+(yp(d.supply[d.years.length-1])+4)+'" font-size="9" fill="rgba(242,244,243,.4)">Supply</text>';
+
+  // Vibrancy threshold
+  var vt = d.supply[0]*state.vibrancyThreshold/100;
+  var vty = yp(vt);
+  svg += '<line x1="'+M.left+'" y1="'+vty+'" x2="'+(W-M.right)+'" y2="'+vty+'" stroke="#DBD99A" stroke-width="1" stroke-dasharray="3,4" opacity=".5"/>';
+  svg += '<text x="'+(W-M.right+6)+'" y="'+(vty+4)+'" font-size="8.5" fill="#DBD99A" opacity=".6">Vibrancy</text>';
+
+  // Demand lines
+  ['base','mid','high'].forEach(function(key){
+    var pts = d.demand[key].map(function(x,i){return xp(i)+','+yp(x.peak);}).join(' ');
+    svg += '<polyline points="'+pts+'" fill="none" stroke="'+SC_COLORS[key]+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+
+    // Data points
+    d.demand[key].forEach(function(x,i){
+      svg += '<circle cx="'+xp(i)+'" cy="'+yp(x.peak)+'" r="3.5" fill="'+SC_COLORS[key]+'" opacity=".85">'
+        + '<title>'+d.years[i]+': '+x.peak.toLocaleString()+' peak demand ('+x.hc.toLocaleString()+' HC)</title>'
+        + '</circle>';
+    });
+
+    // Gap year circle
+    if (d.gapYears[key]) {
+      var gi = d.years.indexOf(d.gapYears[key]);
+      if (gi>=0) {
+        svg += '<circle cx="'+xp(gi)+'" cy="'+yp(d.demand[key][gi].peak)+'" r="7.5" fill="none" stroke="'+SC_COLORS[key]+'" stroke-width="1.5" opacity=".6"/>';
+      }
+    }
+
+    // End label
+    var last = d.demand[key][d.demand[key].length-1];
+    svg += '<text x="'+(W-M.right+6)+'" y="'+(yp(last.peak)+4)+'" font-size="9" font-weight="700" fill="'+SC_COLORS[key]+'">'+SC_LABELS[key]+'</text>';
+  });
+
+  // X axis
+  d.years.forEach(function(yr,i){
+    svg += '<line x1="'+xp(i)+'" y1="'+(M.top+ch)+'" x2="'+xp(i)+'" y2="'+(M.top+ch+5)+'" stroke="rgba(242,244,243,.15)" stroke-width="1"/>';
+    svg += '<text x="'+xp(i)+'" y="'+(H-M.bottom+17)+'" text-anchor="middle" font-size="10" fill="rgba(242,244,243,.5)">'+yr+'</text>';
+  });
+
+  // Axes
+  svg += '<line x1="'+M.left+'" y1="'+M.top+'" x2="'+M.left+'" y2="'+(M.top+ch)+'" stroke="rgba(242,244,243,.12)" stroke-width="1"/>';
+  svg += '<line x1="'+M.left+'" y1="'+(M.top+ch)+'" x2="'+(W-M.right)+'" y2="'+(M.top+ch)+'" stroke="rgba(242,244,243,.12)" stroke-width="1"/>';
+
+  svg += '</svg>';
+  return svg;
+}
+
+// ─── TABLE ───────────────────────────────────────────────────────────────────
+function buildTable(d) {
+  var h = '<div class="chart-card"><div class="chart-title" style="margin-bottom:.85rem">Year-by-Year Projection</div>'
+    + '<div class="tbl-wrap"><table class="data-tbl"><thead><tr>'
+    + '<th>Year</th>'
+    + '<th>Supply</th>'
+    + '<th style="color:var(--sc-base)">Base HC</th><th style="color:var(--sc-base)">Base Demand</th><th style="color:var(--sc-base)">Gap</th>'
+    + '<th style="color:var(--sc-mid)">Mid HC</th><th style="color:var(--sc-mid)">Mid Demand</th><th style="color:var(--sc-mid)">Gap</th>'
+    + '<th style="color:var(--sc-high)">High HC</th><th style="color:var(--sc-high)">High Demand</th><th style="color:var(--sc-high)">Gap</th>'
+    + '<th>Vibrant?</th>'
+    + '</tr></thead><tbody>';
+
+  d.years.forEach(function(yr,i){
+    var sup = d.supply[i];
+    var b = d.demand.base[i], m = d.demand.mid[i], hh = d.demand.high[i];
+    var bg = sup-b.peak, mg = sup-m.peak, hg = sup-hh.peak;
+    var vOk = d.vibrancy.base[i].ok;
+    var rowCls = i===0 ? ' class="curr-row"' : '';
+
+    function gapCell(g){ return '<td class="'+(g<0?'neg':'')+'">'+(g>=0?'<span class="surp-badge">+'+g+'</span>':'<span class="gap-badge">'+g+'</span>')+'</td>'; }
+
+    h += '<tr'+rowCls+'>'
+      + '<td style="font-weight:600">'+yr+(i===0?' <span style="font-size:.65rem;color:var(--accent)">current</span>':'')+'</td>'
+      + '<td>'+sup.toLocaleString()+'</td>'
+      + '<td style="color:var(--sc-base)">'+b.hc.toLocaleString()+'</td><td style="color:var(--sc-base)">'+b.peak.toLocaleString()+'</td>'+gapCell(bg)
+      + '<td style="color:var(--sc-mid)">'+m.hc.toLocaleString()+'</td><td style="color:var(--sc-mid)">'+m.peak.toLocaleString()+'</td>'+gapCell(mg)
+      + '<td style="color:var(--sc-high)">'+hh.hc.toLocaleString()+'</td><td style="color:var(--sc-high)">'+hh.peak.toLocaleString()+'</td>'+gapCell(hg)
+      + '<td>'+(vOk?'<span style="color:#17E88F;font-size:1rem">✓</span>':'<span style="color:#D2785A;font-size:.75rem">below</span>')+'</td>'
+      + '</tr>';
+  });
+
+  h += '</tbody></table></div></div>';
+  return h;
+}
+
+// ─── DENSITY ─────────────────────────────────────────────────────────────────
+function buildDensity(d) {
+  var dn = d.density;
+  var h = '<div class="chart-card"><div class="chart-title" style="margin-bottom:.85rem">SF Implications</div>'
+    + '<div class="density-grid">'
+    + '<div class="density-card"><div class="stat-val">'+dn.current.toLocaleString()+'</div><div class="stat-label">Current SF/Person</div><div class="stat-sub">'+dn.totalRSF.toLocaleString()+' total RSF</div></div>'
+    + '<div class="density-card"><div class="stat-val">'+dn.target.toLocaleString()+'</div><div class="stat-label">Target SF/Person</div></div>';
+
+  ['base','mid','high'].forEach(function(key){
+    if (!dn.bySc[key]) return;
+    var last = dn.bySc[key][dn.bySc[key].length-1];
+    var col = SC_COLORS[key];
+    var gapSign = last.sfGap>=0 ? '+' : '';
+    h += '<div class="density-card" style="border-color:'+col+'33;background:'+col+'0d">'
+      + '<div class="stat-val" style="color:'+col+'">'+gapSign+last.sfGap.toLocaleString()+'</div>'
+      + '<div class="stat-label" style="color:'+col+'">'+SC_LABELS[key]+' SF Gap ('+d.years[d.years.length-1]+')</div>'
+      + '<div class="stat-sub">'+last.sfNeeded.toLocaleString()+' SF needed</div>'
+      + '</div>';
+  });
+  h += '</div></div>';
+  return h;
+}
+
+// ─── BUILDING BREAKDOWN ──────────────────────────────────────────────────────
+function buildBuildingBreakdown(d) {
+  if (buildings.length===0) return '';
+  var h = '<div class="chart-card"><div class="chart-title" style="margin-bottom:.85rem">Building Inventory</div>'
+    + '<div class="tbl-wrap"><table class="data-tbl"><thead><tr>'
+    + '<th>Building / Floor</th><th>Seats</th><th>% of Portfolio</th><th>RSF</th>'
+    + '</tr></thead><tbody>';
+
+  buildings.forEach(function(b){
+    var bSeats = b.floors.reduce(function(s,f){return s+(f.seats||0);},0);
+    var pct = d.curSup>0 ? Math.round(bSeats/d.curSup*100) : 0;
+    h += '<tr style="background:rgba(255,255,255,.02)">'
+      + '<td style="font-weight:700">'+esc(b.name)+'</td>'
+      + '<td style="font-weight:700">'+bSeats.toLocaleString()+'</td>'
+      + '<td>'+pct+'%</td>'
+      + '<td>'+(b.rsf>0?b.rsf.toLocaleString()+' SF':'—')+'</td>'
+      + '</tr>';
+    b.floors.forEach(function(f){
+      h += '<tr>'
+        + '<td style="padding-left:1.5rem;color:var(--text-muted)">└ '+esc(f.name)+'</td>'
+        + '<td style="color:var(--text-muted)">'+(f.seats||0).toLocaleString()+'</td>'
+        + '<td style="color:rgba(242,244,243,.3)">'+(d.curSup>0?Math.round((f.seats||0)/d.curSup*100):0)+'%</td>'
+        + '<td>—</td>'
+        + '</tr>';
+    });
+    if (b.expansions && b.expansions.length>0) {
+      b.expansions.forEach(function(e){
+        if ((e.seats||0)>0) {
+          h += '<tr style="opacity:.65">'
+            + '<td style="padding-left:1.5rem;color:var(--accent)">+ '+(e.note||'Expansion')+' ('+e.year+')</td>'
+            + '<td style="color:var(--accent)">+'+e.seats.toLocaleString()+'</td>'
+            + '<td style="color:rgba(242,244,243,.3)">—</td>'
+            + '<td>—</td>'
+            + '</tr>';
+        }
+      });
+    }
+  });
+
+  h += '</tbody></table></div></div>';
+  return h;
+}
+
+// ─── SAMPLE DATA ─────────────────────────────────────────────────────────────
+function loadSample() {
+  state.clientName = 'Cohesity';
+  state.currentHC = 500;
+  state.baseYear = 2025;
+  state.attendanceRate = 60;
+  state.scenarios.base.rate = 5;
+  state.scenarios.mid.rate = 7;
+  state.scenarios.high.rate = 10;
+  state.vibrancyThreshold = 51;
+  state.totalRSF = 66753;
+  state.targetDensity = 165;
+
+  _bid=0; _fid=0; _eid=0;
+  buildings = [{
+    id:++_bid, name:'Santa Clara HQ', showRSF:true, rsf:66753,
+    floors:[
+      {id:++_fid, name:'Floor 4', seats:192},
+      {id:++_fid, name:'Floor 5', seats:190},
+    ],
+    expansions:[{id:++_eid, year:2028, seats:228, note:'Floor 6 expansion'}]
+  }];
+
+  var set = function(id, val){ var el=document.getElementById(id); if(el) el.value=val; };
+  set('clientName',    state.clientName);
+  set('currentHC',     state.currentHC);
+  set('baseYear',      state.baseYear);
+  set('attendanceRate',state.attendanceRate);
+  set('rateBase',      state.scenarios.base.rate);
+  set('rateMid',       state.scenarios.mid.rate);
+  set('rateHigh',      state.scenarios.high.rate);
+  set('vibrancyThreshold', state.vibrancyThreshold);
+  set('totalRSF',      state.totalRSF);
+  set('targetDensity', state.targetDensity);
+
+  renderInputs();
+  updateHCPreview();
+  recompute();
+}
+
+// ─── EXPORT PNG ──────────────────────────────────────────────────────────────
+function exportPNG() {
+  var el = document.getElementById('dashboard');
+  var orig = { bg: el.style.background, pad: el.style.padding };
+  el.style.background = '#001A14';
+  el.style.padding = '20px';
+  html2canvas(el, { backgroundColor:'#001A14', scale:2, useCORS:true, logging:false }).then(function(canvas){
+    el.style.background = orig.bg;
+    el.style.padding = orig.pad;
+    var a = document.createElement('a');
+    a.download = (state.clientName||'Supply_Demand')+'_Analysis.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  }).catch(function(){
+    el.style.background = orig.bg;
+    el.style.padding = orig.pad;
+  });
+}
+
+// ─── EXPORT EXCEL ────────────────────────────────────────────────────────────
+function exportExcel() {
+  if (!buildings.length || !state.currentHC) return;
+  var d = compute();
+  var wb = XLSX.utils.book_new();
+  var cn = state.clientName || 'Analysis';
+
+  // Summary sheet
+  var sumRows = [
+    ['Supply & Demand Analysis', cn],
+    [],
+    ['INPUT ASSUMPTIONS'],
+    ['Current Headcount', state.currentHC],
+    ['Base Year', state.baseYear],
+    ['Attendance Rate', state.attendanceRate/100],
+    ['Current Seat Supply', d.curSup],
+    ['Vibrancy Threshold', state.vibrancyThreshold/100],
+    [],
+    ['SCENARIO GROWTH RATES'],
+    ['Base', state.scenarios.base.rate/100],
+    ['Mid',  state.scenarios.mid.rate/100],
+    ['High', state.scenarios.high.rate/100],
+    [],
+    ['CURRENT STATE'],
+    ['Peak Daily Demand', d.curPeak],
+    ['Utilization', d.curUtil/100],
+    ['Surplus / (Deficit)', d.curSurp],
+    [],
+    ['GAP YEARS (demand exceeds supply)'],
+    ['Base', d.gapYears.base || 'Beyond horizon'],
+    ['Mid',  d.gapYears.mid  || 'Beyond horizon'],
+    ['High', d.gapYears.high || 'Beyond horizon'],
+  ];
+  if (d.density) {
+    sumRows.push([], ['DENSITY'], ['Current SF/Person', d.density.current], ['Target SF/Person', d.density.target||'—']);
+  }
+  var wsSummary = XLSX.utils.aoa_to_sheet(sumRows);
+  wsSummary['A1'] && (wsSummary['A1'].s = {font:{bold:true,sz:14},fill:{fgColor:{rgb:'003F2D'}},font:{color:{rgb:'FFFFFF'}}});
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+  // Year-by-year sheet
+  var projHead = ['Year','Supply','Base HC','Base Peak Demand','Base Gap','Mid HC','Mid Peak Demand','Mid Gap','High HC','High Peak Demand','High Gap','Vibrant (Base)'];
+  if (d.density && d.density.target>0) projHead = projHead.concat(['Base SF Needed','Base SF Gap','Mid SF Needed','Mid SF Gap','High SF Needed','High SF Gap']);
+  var projRows = [projHead];
+  d.years.forEach(function(yr,i){
+    var sup=d.supply[i];
+    var b=d.demand.base[i], m=d.demand.mid[i], hh=d.demand.high[i];
+    var row = [yr, sup, b.hc, b.peak, sup-b.peak, m.hc, m.peak, sup-m.peak, hh.hc, hh.peak, sup-hh.peak, d.vibrancy.base[i].ok ? 'Yes' : 'No'];
+    if (d.density && d.density.target>0) {
+      var db=d.density.bySc.base[i], dm=d.density.bySc.mid[i], dh=d.density.bySc.high[i];
+      row = row.concat([db.sfNeeded, db.sfGap, dm.sfNeeded, dm.sfGap, dh.sfNeeded, dh.sfGap]);
+    }
+    projRows.push(row);
+  });
+  var wsProj = XLSX.utils.aoa_to_sheet(projRows);
+  XLSX.utils.book_append_sheet(wb, wsProj, 'Year-by-Year');
+
+  // Building inventory sheet
+  var invRows = [['Building','Floor','Seats','RSF'],];
+  buildings.forEach(function(b){
+    b.floors.forEach(function(f){
+      invRows.push([b.name, f.name, f.seats||0, b.rsf||0]);
+    });
+    b.expansions.forEach(function(e){
+      invRows.push([b.name, (e.note||'Expansion')+' ('+e.year+')', e.seats||0, '']);
+    });
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(invRows), 'Building Inventory');
+
+  XLSX.writeFile(wb, cn.replace(/[^a-zA-Z0-9 ]/g,'_')+'_Supply_Demand.xlsx');
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+(function(){
+  var byEl = document.getElementById('baseYear');
+  if (byEl) byEl.value = state.baseYear;
+  // All accordions open by default — no change needed
+})();
+</script>
 </body>
 </html>
