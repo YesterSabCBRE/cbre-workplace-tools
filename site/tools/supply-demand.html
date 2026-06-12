@@ -1340,7 +1340,8 @@ function buildRightSizeDashboard(d) {
   var rs = computeRightSize(d);
   var utilColor = utilZoneColor(d.curUtil);
   var utilLabel = utilZoneLabel(d.curUtil);
-  var curSFperSeat = (d.curSup > 0 && d.totalRSF > 0) ? Math.round(d.totalRSF / d.curSup) : 0;
+  // Use actual HC (not assumed seat capacity) so we reflect how they truly operate today
+  var curSFperPerson = (d.totalRSF > 0 && state.currentHC > 0) ? Math.round(d.totalRSF / state.currentHC) : 0;
 
   // Stat row
   var h = '<div class="stat-row">';
@@ -1358,8 +1359,8 @@ function buildRightSizeDashboard(d) {
   h += '</div>';
 
   // Density comparison card
-  if (d.totalRSF > 0 && d.curSup > 0) {
-    h += buildDensityComparisonCard(d, curSFperSeat, rs);
+  if (d.totalRSF > 0 && state.currentHC > 0) {
+    h += buildDensityComparisonCard(d, curSFperPerson, rs);
   }
 
   // Consolidation scenarios
@@ -1374,44 +1375,60 @@ function buildRightSizeDashboard(d) {
 }
 
 // ─── DENSITY COMPARISON CARD (Right-Size) ───────────────────────────────────
-function buildDensityComparisonCard(d, curSFperSeat, rs) {
+function buildDensityComparisonCard(d, curSFperPerson, rs) {
   var targetSFperSeat = state.targetDensity || 0;
   var sectorLabel = state.sector || '';
-  var delta = (targetSFperSeat > 0 && curSFperSeat > 0) ? targetSFperSeat - curSFperSeat : null;
-  var deltaColor = delta === null ? 'rgba(242,244,243,.3)' : delta < 0 ? '#17E88F' : delta > 20 ? '#DBD99A' : '#F2F4F3';
-  var deltaSign = delta !== null && delta >= 0 ? '+' : '';
-  var curValColor = (curSFperSeat > 0 && targetSFperSeat > 0 && curSFperSeat > targetSFperSeat * 1.15) ? '#DBD99A' : '#F2F4F3';
   var shortSector = sectorLabel ? sectorLabel.replace(' & ', '/').split(' ').slice(0,2).join(' ') : '';
+
+  // delta = how far current density is above the target benchmark
+  // positive = currently MORE spacious than target → consolidation opportunity
+  // negative = currently DENSER than target → already tight
+  var delta = (targetSFperSeat > 0 && curSFperPerson > 0) ? curSFperPerson - targetSFperSeat : null;
+  var deltaAbs = delta !== null ? Math.abs(delta) : 0;
+  var deltaColor, deltaMsg;
+  if (delta === null) {
+    deltaColor = 'rgba(242,244,243,.3)'; deltaMsg = 'select sector for benchmark';
+  } else if (delta > 50) {
+    deltaColor = '#DBD99A'; deltaMsg = deltaAbs+' SF/person above target — strong consolidation case';
+  } else if (delta > 0) {
+    deltaColor = '#DBD99A'; deltaMsg = deltaAbs+' SF/person above target';
+  } else if (delta < -20) {
+    deltaColor = '#D2785A'; deltaMsg = deltaAbs+' SF/person below target — already tight';
+  } else {
+    deltaColor = '#17E88F'; deltaMsg = 'At or near benchmark density';
+  }
+  // Current val: amber if meaningfully above target (lots of excess space)
+  var curValColor = (delta !== null && delta > 30) ? '#DBD99A' : '#F2F4F3';
 
   var h = '<div class="chart-card">';
   h += '<div class="chart-card-head"><div class="chart-title">How You Use Space Today vs. Target</div>';
-  if (sectorLabel) h += '<div style="font-size:.72rem;color:var(--text-muted)">Benchmark source: 2026 GWOIR · '+sectorLabel+'</div>';
+  if (sectorLabel) h += '<div style="font-size:.72rem;color:var(--text-muted)">Benchmark: 2026 GWOIR · '+sectorLabel+'</div>';
   h += '</div>';
 
   h += '<div class="density-compare-grid">';
 
-  // Current
+  // Current — uses actual HC, not assumed seat count
   h += '<div class="density-compare-block">';
-  h += '<div class="density-compare-lbl">Current SF / Seat</div>';
-  h += '<div class="density-compare-val" style="color:'+curValColor+'">'+(curSFperSeat > 0 ? curSFperSeat : '—')+'</div>';
-  h += '<div class="density-compare-sub">'+d.totalRSF.toLocaleString()+' SF ÷ '+d.curSup.toLocaleString()+' seats</div>';
+  h += '<div class="density-compare-lbl">Current SF / Person</div>';
+  h += '<div class="density-compare-val" style="color:'+curValColor+'">'+(curSFperPerson > 0 ? curSFperPerson : '—')+'</div>';
+  h += '<div class="density-compare-sub">'+d.totalRSF.toLocaleString()+' SF ÷ '+state.currentHC.toLocaleString()+' people</div>';
   h += '</div>';
 
   // Arrow + delta
   h += '<div class="density-compare-arrow">';
   h += '<div style="font-size:1.5rem;opacity:.3">→</div>';
   if (delta !== null) {
-    h += '<div style="font-size:.88rem;font-weight:700;color:'+deltaColor+'">'+deltaSign+delta+'</div>';
-    h += '<div style="font-size:.63rem;color:rgba(242,244,243,.35);text-align:center;line-height:1.4;max-width:90px">'+(delta < 0 ? 'more efficient' : 'below benchmark')+'</div>';
+    h += '<div style="font-size:.88rem;font-weight:700;color:'+deltaColor+'">'+(delta > 0 ? '+' : '')+delta+'</div>';
+    h += '<div style="font-size:.61rem;color:rgba(242,244,243,.32);text-align:center;line-height:1.4;max-width:95px">'+deltaMsg+'</div>';
   } else {
     h += '<div style="font-size:.65rem;color:rgba(242,244,243,.3);text-align:center">select sector<br>for benchmark</div>';
   }
   h += '</div>';
 
-  // Target
+  // Target — sector benchmark SF/seat
   h += '<div class="density-compare-block target">';
   h += '<div class="density-compare-lbl accent">Target SF / Seat'+(shortSector ? ' · '+shortSector : '')+'</div>';
-  h += '<div class="density-compare-val" style="color:'+(targetSFperSeat > 0 ? '#17E88F' : 'rgba(242,244,243,.3)') +'">'+(targetSFperSeat > 0 ? targetSFperSeat : '—')+'</div>';
+  h += '<div class="density-compare-val" style="color:'+(targetSFperSeat > 0 ? '#17E88F' : 'rgba(242,244,243,.3)')+'">'+(targetSFperSeat > 0 ? targetSFperSeat : '—')+'</div>';
   h += '<div class="density-compare-sub">'+(targetSFperSeat > 0 ? (sectorLabel ? sectorLabel+' sector avg' : 'manual target') : 'set in Model Assumptions')+'</div>';
   h += '</div>';
 
