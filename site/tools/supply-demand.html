@@ -204,6 +204,22 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .gap-label{font-size:.65rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;opacity:.7;margin-bottom:.2rem}
 .gap-sub{font-size:.63rem;opacity:.55;line-height:1.4}
 
+/* SELECT STYLING */
+select.text-input{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(242,244,243,0.35)'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center;padding-right:2rem;cursor:pointer;}
+select.text-input option{background:#001A14;color:#F2F4F3;}
+
+/* DENSITY COMPARISON CARD */
+.density-compare-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:1rem;margin-bottom:1rem;align-items:stretch;}
+@media(max-width:600px){.density-compare-grid{grid-template-columns:1fr;}}
+.density-compare-block{text-align:center;padding:1rem;background:rgba(255,255,255,.03);border:1px solid var(--card-border);border-radius:10px;}
+.density-compare-block.target{background:rgba(23,232,143,.06);border-color:rgba(23,232,143,.2);}
+.density-compare-lbl{font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.4rem;}
+.density-compare-lbl.accent{color:rgba(23,232,143,.7);}
+.density-compare-val{font-family:'DM Serif Display',serif;font-size:2.4rem;line-height:1;margin-bottom:.3rem;}
+.density-compare-sub{font-size:.7rem;color:var(--text-muted);line-height:1.4;}
+.density-compare-arrow{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;padding:.5rem;}
+.shed-callout{display:flex;align-items:flex-start;gap:.85rem;padding:.75rem 1rem;background:rgba(219,217,154,.05);border:1px solid rgba(219,217,154,.18);border-radius:8px;}
+
 /* PRINT */
 @media print{
   body{background:#fff!important;color:#1a1a1a!important}
@@ -414,7 +430,22 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
       <div class="client-card">
         <div class="input-group">
           <label class="input-label">Client / Project Name</label>
-          <input type="text" class="text-input" id="clientName" placeholder="e.g. Cohesity" oninput="state.clientName=this.value"/>
+          <input type="text" class="text-input" id="clientName" placeholder="e.g. Onex" oninput="state.clientName=this.value"/>
+        </div>
+        <div class="input-group" style="margin-top:.65rem">
+          <label class="input-label">Industry Sector <span style="font-weight:400;opacity:.45;text-transform:none;letter-spacing:0">— auto-fills SF/Seat benchmark</span></label>
+          <select class="text-input" id="sectorSelect" onchange="setSector(this.value)">
+            <option value="">— Select to auto-fill target SF/Seat —</option>
+            <option value="All Clients">All Clients (Global Average)</option>
+            <option value="Financial &amp; Professional Services">Financial &amp; Professional Services</option>
+            <option value="Technology, Media &amp; Telecom">Technology, Media &amp; Telecom</option>
+            <option value="Healthcare &amp; Life Sciences">Healthcare &amp; Life Sciences</option>
+            <option value="Consumer Products &amp; Retail">Consumer Products &amp; Retail</option>
+            <option value="Government &amp; Public Sector">Government &amp; Public Sector</option>
+            <option value="Energy &amp; Natural Resources">Energy &amp; Natural Resources</option>
+            <option value="Manufacturing &amp; Industrial">Manufacturing &amp; Industrial</option>
+          </select>
+          <div class="input-hint" id="sector-hint" style="display:none;color:var(--accent)"></div>
         </div>
       </div>
 
@@ -559,9 +590,22 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 
 <script>
 // ─── STATE ──────────────────────────────────────────────────────────────────
+// 2026 GWOIR sector benchmarks — SF/seat (ss) matches space processor tool
+var SECTOR_BM = {
+  'All Clients':                        { ss: 190 },
+  'Financial & Professional Services':  { ss: 195 },
+  'Technology, Media & Telecom':        { ss: 175 },
+  'Healthcare & Life Sciences':         { ss: 200 },
+  'Consumer Products & Retail':         { ss: 185 },
+  'Government & Public Sector':         { ss: 210 },
+  'Energy & Natural Resources':         { ss: 205 },
+  'Manufacturing & Industrial':         { ss: 200 },
+};
+
 var state = {
   mode: null,
   clientName: '',
+  sector: '',
   currentHC: 0,
   baseYear: new Date().getFullYear(),
   attendanceRate: 65,
@@ -666,6 +710,25 @@ function syncAttPreset() {
   document.querySelectorAll('.att-preset').forEach(function(btn){
     btn.classList.toggle('active', parseInt(btn.getAttribute('data-val')) === val);
   });
+}
+
+// ─── SECTOR SELECTION ────────────────────────────────────────────────────────
+function setSector(val) {
+  state.sector = val;
+  var bm = SECTOR_BM[val];
+  var hint = document.getElementById('sector-hint');
+  if (bm) {
+    state.targetDensity = bm.ss;
+    var el = document.getElementById('targetDensity');
+    if (el) el.value = bm.ss;
+    if (hint) {
+      hint.textContent = '2026 GWOIR benchmark: ' + bm.ss + ' SF/seat auto-applied';
+      hint.style.display = '';
+    }
+  } else {
+    if (hint) hint.style.display = 'none';
+  }
+  recompute();
 }
 
 // ─── BUILDINGS CRUD ─────────────────────────────────────────────────────────
@@ -1277,6 +1340,7 @@ function buildRightSizeDashboard(d) {
   var rs = computeRightSize(d);
   var utilColor = utilZoneColor(d.curUtil);
   var utilLabel = utilZoneLabel(d.curUtil);
+  var curSFperSeat = (d.curSup > 0 && d.totalRSF > 0) ? Math.round(d.totalRSF / d.curSup) : 0;
 
   // Stat row
   var h = '<div class="stat-row">';
@@ -1293,34 +1357,160 @@ function buildRightSizeDashboard(d) {
   h += statCard(d.curUtil+'%', 'Utilization Today', utilLabel, utilColor);
   h += '</div>';
 
+  // Density comparison card
+  if (d.totalRSF > 0 && d.curSup > 0) {
+    h += buildDensityComparisonCard(d, curSFperSeat, rs);
+  }
+
   // Consolidation scenarios
   if (rs.scenarios.length > 0) {
-    h += '<div class="chart-card"><div class="chart-card-head"><div class="chart-title">Consolidation Scenarios</div>'
-      + '<div style="font-size:.72rem;color:var(--text-muted)">What happens if each location is exited?</div></div>'
-      + '<div class="rs-cards">';
-    rs.scenarios.forEach(function(sc){
-      var statusColor = sc.viable ? '#17E88F' : '#DBD99A';
-      var statusText  = sc.viable ? '✓ Viable to shed' : '⚠ Caution — gap risk';
-      var gapBase = sc.gapYears.base ? sc.gapYears.base.toString() : '> '+d.years[d.years.length-1];
-      var gapMid  = sc.gapYears.mid  ? sc.gapYears.mid.toString()  : '> '+d.years[d.years.length-1];
-      var gapHigh = sc.gapYears.high ? sc.gapYears.high.toString() : '> '+d.years[d.years.length-1];
-      var borderColor = sc.viable ? 'rgba(23,232,143,.3)' : 'rgba(219,217,154,.3)';
-      h += '<div class="rs-card" style="border-color:'+borderColor+'">'
-        + '<div class="rs-card-name">Exit: '+esc(sc.bldg.name||'(unnamed)')+'</div>'
-        + '<div class="rs-card-status" style="color:'+statusColor+'">'+statusText+'</div>'
-        + '<div class="rs-card-row"><span class="rs-card-key">Remaining seats</span><span class="rs-card-val">'+sc.remainingSeats.toLocaleString()+'</span></div>'
-        + (sc.remainingRSF>0?'<div class="rs-card-row"><span class="rs-card-key">Remaining RSF</span><span class="rs-card-val">'+sc.remainingRSF.toLocaleString()+' SF</span></div>':'')
-        + '<div class="rs-card-row"><span class="rs-card-key">Gap yr · Base</span><span class="rs-card-val">'+gapBase+'</span></div>'
-        + '<div class="rs-card-row"><span class="rs-card-key">Gap yr · Mid</span><span class="rs-card-val">'+gapMid+'</span></div>'
-        + '<div class="rs-card-row"><span class="rs-card-key">Gap yr · High</span><span class="rs-card-val">'+gapHigh+'</span></div>'
-        + '</div>';
-    });
-    h += '</div></div>';
+    h += buildConsolidationScenarios(d, rs);
   }
 
   h += buildChart(d);
   h += buildTable(d);
   h += buildBuildingBreakdown(d);
+  return h;
+}
+
+// ─── DENSITY COMPARISON CARD (Right-Size) ───────────────────────────────────
+function buildDensityComparisonCard(d, curSFperSeat, rs) {
+  var targetSFperSeat = state.targetDensity || 0;
+  var sectorLabel = state.sector || '';
+  var delta = (targetSFperSeat > 0 && curSFperSeat > 0) ? targetSFperSeat - curSFperSeat : null;
+  var deltaColor = delta === null ? 'rgba(242,244,243,.3)' : delta < 0 ? '#17E88F' : delta > 20 ? '#DBD99A' : '#F2F4F3';
+  var deltaSign = delta !== null && delta >= 0 ? '+' : '';
+  var curValColor = (curSFperSeat > 0 && targetSFperSeat > 0 && curSFperSeat > targetSFperSeat * 1.15) ? '#DBD99A' : '#F2F4F3';
+  var shortSector = sectorLabel ? sectorLabel.replace(' & ', '/').split(' ').slice(0,2).join(' ') : '';
+
+  var h = '<div class="chart-card">';
+  h += '<div class="chart-card-head"><div class="chart-title">How You Use Space Today vs. Target</div>';
+  if (sectorLabel) h += '<div style="font-size:.72rem;color:var(--text-muted)">Benchmark source: 2026 GWOIR · '+sectorLabel+'</div>';
+  h += '</div>';
+
+  h += '<div class="density-compare-grid">';
+
+  // Current
+  h += '<div class="density-compare-block">';
+  h += '<div class="density-compare-lbl">Current SF / Seat</div>';
+  h += '<div class="density-compare-val" style="color:'+curValColor+'">'+(curSFperSeat > 0 ? curSFperSeat : '—')+'</div>';
+  h += '<div class="density-compare-sub">'+d.totalRSF.toLocaleString()+' SF ÷ '+d.curSup.toLocaleString()+' seats</div>';
+  h += '</div>';
+
+  // Arrow + delta
+  h += '<div class="density-compare-arrow">';
+  h += '<div style="font-size:1.5rem;opacity:.3">→</div>';
+  if (delta !== null) {
+    h += '<div style="font-size:.88rem;font-weight:700;color:'+deltaColor+'">'+deltaSign+delta+'</div>';
+    h += '<div style="font-size:.63rem;color:rgba(242,244,243,.35);text-align:center;line-height:1.4;max-width:90px">'+(delta < 0 ? 'more efficient' : 'below benchmark')+'</div>';
+  } else {
+    h += '<div style="font-size:.65rem;color:rgba(242,244,243,.3);text-align:center">select sector<br>for benchmark</div>';
+  }
+  h += '</div>';
+
+  // Target
+  h += '<div class="density-compare-block target">';
+  h += '<div class="density-compare-lbl accent">Target SF / Seat'+(shortSector ? ' · '+shortSector : '')+'</div>';
+  h += '<div class="density-compare-val" style="color:'+(targetSFperSeat > 0 ? '#17E88F' : 'rgba(242,244,243,.3)') +'">'+(targetSFperSeat > 0 ? targetSFperSeat : '—')+'</div>';
+  h += '<div class="density-compare-sub">'+(targetSFperSeat > 0 ? (sectorLabel ? sectorLabel+' sector avg' : 'manual target') : 'set in Model Assumptions')+'</div>';
+  h += '</div>';
+
+  h += '</div>'; // density-compare-grid
+
+  // Shed callout
+  if (rs.rightSizeRSF > 0 && d.totalRSF > 0) {
+    var shedSF = d.totalRSF - rs.rightSizeRSF;
+    var shedPct = Math.round(shedSF / d.totalRSF * 100);
+    h += '<div class="shed-callout">';
+    h += '<span style="font-size:1.4rem;line-height:1;margin-top:.1rem">✂️</span>';
+    h += '<div>';
+    h += '<div style="font-size:.84rem;font-weight:600;color:#DBD99A;margin-bottom:.2rem">Right-sized target: '+rs.rightSizeRSF.toLocaleString()+' SF</div>';
+    h += '<div style="font-size:.73rem;color:var(--text-muted);line-height:1.6">';
+    h += d.curPeak.toLocaleString()+' peak seats × '+state.targetDensity+' SF/seat = <strong style="color:#DBD99A">'+rs.rightSizeRSF.toLocaleString()+' SF needed.</strong> ';
+    if (shedSF > 0) {
+      h += 'Your current portfolio is <strong style="color:#DBD99A">'+shedSF.toLocaleString()+' SF ('+shedPct+'%) larger</strong> than needed at today\'s headcount and attendance rate.';
+    } else {
+      h += 'Portfolio is at or below the right-sized target — no excess to shed.';
+    }
+    h += '</div>';
+    h += '</div>';
+    h += '</div>';
+  }
+
+  h += '</div>'; // chart-card
+  return h;
+}
+
+// ─── CONSOLIDATION SCENARIOS (Right-Size) ───────────────────────────────────
+function buildConsolidationScenarios(d, rs) {
+  var h = '<div class="chart-card">'
+    + '<div class="chart-card-head"><div class="chart-title">Consolidation Scenarios</div>'
+    + '<div style="font-size:.72rem;color:var(--text-muted)">Exit each location — can remaining space cover your peak demand?</div></div>'
+    + '<div class="rs-cards">';
+
+  rs.scenarios.forEach(function(sc) {
+    var bldg = sc.bldg;
+    var shedRSF   = bldg.rsf || 0;
+    var shedSeats = resolveSeats(bldg);
+    var shedPctRSF = (d.totalRSF > 0 && shedRSF > 0) ? Math.round(shedRSF / d.totalRSF * 100) : 0;
+    var remainUtil = sc.remainingSeats > 0 ? Math.round(d.curPeak / sc.remainingSeats * 100) : 999;
+    var remainZone = remainUtil < state.vibrancyThreshold ? 'under' : remainUtil > state.oversubscribedThreshold ? 'over' : 'vibrant';
+    var remainColor = remainZone === 'vibrant' ? '#17E88F' : remainZone === 'over' ? '#D2785A' : '#80BBAD';
+
+    var viable = sc.viable;
+    var statusColor  = viable ? '#17E88F' : '#DBD99A';
+    var statusText   = viable ? '✓ Viable to shed' : '⚠ Gap risk — review';
+    var borderColor  = viable ? 'rgba(23,232,143,.22)' : 'rgba(219,217,154,.22)';
+    var bgColor      = viable ? 'rgba(23,232,143,.02)' : 'rgba(219,217,154,.02)';
+
+    var gapBase = sc.gapYears.base ? sc.gapYears.base.toString() : '> '+d.years[d.years.length-1];
+    var gapHigh = sc.gapYears.high ? sc.gapYears.high.toString() : '> '+d.years[d.years.length-1];
+
+    h += '<div class="rs-card" style="border-color:'+borderColor+';background:'+bgColor+'">';
+
+    // Header row
+    h += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.4rem;margin-bottom:.5rem">';
+    h += '<div class="rs-card-name" style="margin-bottom:0;line-height:1.3">Exit:<br><span style="color:var(--text)">'+esc(bldg.name||'(unnamed)')+'</span></div>';
+    h += '<div style="font-size:.68rem;font-weight:700;color:'+statusColor+';white-space:nowrap;text-align:right;padding-top:.1rem">'+statusText+'</div>';
+    h += '</div>';
+
+    // Shed pills
+    if (shedRSF > 0 || shedSeats > 0) {
+      h += '<div style="display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.65rem">';
+      if (shedRSF > 0)     h += '<span style="font-size:.67rem;background:rgba(219,217,154,.1);border:1px solid rgba(219,217,154,.22);color:#DBD99A;padding:.18rem .5rem;border-radius:100px">–'+shedRSF.toLocaleString()+' SF</span>';
+      if (shedPctRSF > 0)  h += '<span style="font-size:.67rem;background:rgba(219,217,154,.1);border:1px solid rgba(219,217,154,.22);color:#DBD99A;padding:.18rem .5rem;border-radius:100px">–'+shedPctRSF+'% footprint</span>';
+      if (shedSeats > 0)   h += '<span style="font-size:.67rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--text-muted);padding:.18rem .5rem;border-radius:100px">'+shedSeats.toLocaleString()+' seats removed</span>';
+      h += '</div>';
+    }
+
+    // Remaining utilization bar
+    h += '<div style="margin-bottom:.6rem">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem">';
+    h += '<span style="font-size:.65rem;color:var(--text-muted)">Remaining utilization</span>';
+    h += '<span style="font-size:.73rem;font-weight:700;color:'+remainColor+'">'+(remainUtil < 999 ? remainUtil+'%' : '∞')+'</span>';
+    h += '</div>';
+    h += '<div style="height:6px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden">';
+    h += '<div style="height:100%;width:'+Math.min(Math.max(remainUtil, 0), 100)+'%;background:'+remainColor+';border-radius:3px"></div>';
+    h += '</div>';
+    h += '<div style="font-size:.61rem;color:rgba(242,244,243,.28);margin-top:.22rem">'+d.curPeak.toLocaleString()+' peak ÷ '+sc.remainingSeats.toLocaleString()+' remaining seats'+(sc.remainingRSF>0?' · '+sc.remainingRSF.toLocaleString()+' SF':'')+'</div>';
+    h += '</div>';
+
+    // Gap year mini-grid
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem">';
+    h += '<div style="background:rgba(255,255,255,.03);border-radius:5px;padding:.35rem .55rem">';
+    h += '<div style="font-size:.58rem;color:rgba(242,244,243,.3);margin-bottom:.1rem;text-transform:uppercase;letter-spacing:.05em">Gap yr · Base</div>';
+    h += '<div style="font-size:.8rem;font-weight:700;color:'+SC_COLORS.base+'">'+gapBase+'</div>';
+    h += '</div>';
+    h += '<div style="background:rgba(255,255,255,.03);border-radius:5px;padding:.35rem .55rem">';
+    h += '<div style="font-size:.58rem;color:rgba(242,244,243,.3);margin-bottom:.1rem;text-transform:uppercase;letter-spacing:.05em">Gap yr · High</div>';
+    h += '<div style="font-size:.8rem;font-weight:700;color:'+SC_COLORS.high+'">'+gapHigh+'</div>';
+    h += '</div>';
+    h += '</div>';
+
+    h += '</div>'; // rs-card
+  });
+
+  h += '</div></div>';
   return h;
 }
 
@@ -1419,6 +1609,7 @@ function buildRelocateDashboard(relData) {
 function loadSample() {
   if (!state.mode) selectMode('grow');
   state.clientName = 'Sample Client';
+  state.sector = 'Technology, Media & Telecom';
   state.currentHC = 500;
   state.baseYear = 2025;
   state.attendanceRate = 60;
@@ -1427,8 +1618,7 @@ function loadSample() {
   state.scenarios.high.rate = 10;
   state.vibrancyThreshold = 67;
   state.oversubscribedThreshold = 80;
-
-  state.targetDensity = 165;
+  state.targetDensity = 175; // 2026 GWOIR TMT benchmark
 
   _bid=0; _fid=0; _eid=0;
   buildings = [{
@@ -1438,6 +1628,7 @@ function loadSample() {
 
   var set = function(id, val){ var el=document.getElementById(id); if(el) el.value=val; };
   set('clientName',    state.clientName);
+  set('sectorSelect',  state.sector);
   set('currentHC',     state.currentHC);
   set('baseYear',      state.baseYear);
   set('attendanceRate',state.attendanceRate);
@@ -1447,6 +1638,9 @@ function loadSample() {
   set('vibrancyThreshold', state.vibrancyThreshold);
   set('oversubscribedThreshold', state.oversubscribedThreshold);
   set('targetDensity', state.targetDensity);
+
+  var hint = document.getElementById('sector-hint');
+  if (hint) { hint.textContent = '2026 GWOIR benchmark: 175 SF/seat auto-applied'; hint.style.display=''; }
 
   renderInputs();
   updateHCPreview();
