@@ -6,6 +6,8 @@
 <title>Supply & Demand Analysis · CBRE</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
 <style>
@@ -15,7 +17,7 @@
   --text:#F2F4F3;--text-muted:rgba(242,244,243,0.55);
   --card-bg:rgba(255,255,255,0.04);--card-border:rgba(255,255,255,0.08);
   --radius:12px;
-  --sc-base:#17E88F;--sc-mid:#80BBAD;--sc-high:#D2785A;
+  --sc-base:#17E88F;--sc-mid:#80BBAD;--sc-high:#538184;
   --input-bg:rgba(255,255,255,0.06);--input-border:rgba(255,255,255,0.12);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -87,7 +89,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .bldg-name-input::placeholder{color:var(--text-muted)}
 .bldg-seats-badge{font-size:.65rem;color:var(--accent);background:rgba(23,232,143,.1);padding:.15rem .5rem;border-radius:100px;white-space:nowrap;flex-shrink:0}
 .btn-remove-bldg{background:none;border:none;color:rgba(242,244,243,.3);font-size:.9rem;cursor:pointer;padding:0 .2rem;line-height:1;transition:color .2s;flex-shrink:0}
-.btn-remove-bldg:hover{color:#D2785A}
+.btn-remove-bldg:hover{color:rgba(242,244,243,.7)}
 .floors-list{padding:.5rem .75rem;display:flex;flex-direction:column;gap:.35rem}
 .floor-row{display:flex;align-items:center;gap:.4rem}
 .floor-seats-input{width:80px;padding:.35rem .4rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:5px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;text-align:center;outline:none;transition:border-color .2s;-moz-appearance:textfield}
@@ -113,7 +115,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .exp-note{flex:1;min-width:0}
 .exp-note::placeholder{color:rgba(242,244,243,.2)}
 .btn-remove-exp{background:none;border:none;color:rgba(242,244,243,.25);font-size:.8rem;cursor:pointer;padding:0;line-height:1;transition:color .2s;flex-shrink:0}
-.btn-remove-exp:hover{color:#D2785A}
+.btn-remove-exp:hover{color:rgba(242,244,243,.7)}
 .btn-add-building{width:100%;padding:.6rem;background:none;border:1px dashed rgba(23,232,143,.25);border-radius:8px;color:rgba(23,232,143,.6);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s;margin-top:.25rem}
 .btn-add-building:hover{background:rgba(23,232,143,.05);border-color:rgba(23,232,143,.5);color:var(--accent)}
 
@@ -168,9 +170,9 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .data-tbl tbody tr{border-bottom:1px solid rgba(255,255,255,.04)}
 .data-tbl tbody tr:hover{background:rgba(255,255,255,.02)}
 .data-tbl tbody td{padding:.5rem .65rem;white-space:nowrap;vertical-align:middle}
-.data-tbl .neg{color:#D2785A!important}
+.data-tbl .neg{color:#538184!important}
 .data-tbl .curr-row td{background:rgba(23,232,143,.04)}
-.gap-badge{display:inline-block;background:rgba(210,120,90,.15);border:1px solid rgba(210,120,90,.3);color:#D2785A;border-radius:4px;padding:0 .35rem;font-size:.68rem;font-weight:700;margin-left:.25rem}
+.gap-badge{display:inline-block;background:rgba(83,129,132,.15);border:1px solid rgba(83,129,132,.3);color:#538184;border-radius:4px;padding:0 .35rem;font-size:.68rem;font-weight:700;margin-left:.25rem}
 .surp-badge{display:inline-block;background:rgba(23,232,143,.1);border:1px solid rgba(23,232,143,.2);color:#17E88F;border-radius:4px;padding:0 .35rem;font-size:.68rem;font-weight:700;margin-left:.25rem}
 
 /* DENSITY GRID */
@@ -406,8 +408,10 @@ select.text-input option{background:#001A14;color:#F2F4F3;}
 <nav>
   <a class="nav-logo" href="/cbre-workplace-tools/"><span>CBRE</span> Workplace Tools</a>
   <div class="nav-actions">
-    <button class="btn-export" id="btn-png" style="display:none" onclick="exportPNG()">↓ Export PNG</button>
-    <button class="btn-export" id="btn-excel" style="display:none" onclick="exportExcel()">↓ Export Excel</button>
+    <button class="btn-export" id="btn-pptx" style="display:none" onclick="exportPPTX()">↓ PPT</button>
+    <button class="btn-export" id="btn-pdf" style="display:none" onclick="exportPDF()">↓ PDF</button>
+    <button class="btn-export" id="btn-excel" style="display:none" onclick="exportExcel()">↓ Excel</button>
+    <button class="btn-export" id="btn-png" style="display:none" onclick="exportPNG()">↓ PNG</button>
     <button class="mode-badge" id="mode-badge" onclick="showPicker()" style="display:none"></button>
     <a class="nav-back" href="/cbre-workplace-tools/">← Back to tools</a>
   </div>
@@ -627,7 +631,7 @@ var MODE_META = {
 };
 var buildings = [];
 var _bid = 0, _fid = 0, _eid = 0;
-var SC_COLORS = { base: '#17E88F', mid: '#80BBAD', high: '#D2785A' };
+var SC_COLORS = { base: '#17E88F', mid: '#80BBAD', high: '#538184' };
 var SC_LABELS = { base: 'Base', mid: 'Mid', high: 'High' };
 
 // ─── MODE SELECTION ──────────────────────────────────────────────────────────
@@ -667,7 +671,7 @@ function showPicker() {
 
 // ─── HELPER FUNCTIONS ────────────────────────────────────────────────────────
 function utilZoneColor(pct) {
-  return pct < state.vibrancyThreshold ? '#D2785A' : pct > state.oversubscribedThreshold ? '#DBD99A' : '#17E88F';
+  return pct < state.vibrancyThreshold ? '#80BBAD' : pct > state.oversubscribedThreshold ? '#DBD99A' : '#17E88F';
 }
 function utilZoneLabel(pct) {
   return pct < state.vibrancyThreshold ? '⚠ Under-vibrant (<'+state.vibrancyThreshold+'%)'
@@ -967,22 +971,25 @@ function compute() {
 function recompute() {
   if (!state.mode) return;
 
-  var bPng = document.getElementById('btn-png');
-  var bXls = document.getElementById('btn-excel');
-  var dash = document.getElementById('dashboard');
+  var bPng  = document.getElementById('btn-png');
+  var bXls  = document.getElementById('btn-excel');
+  var bPdf  = document.getElementById('btn-pdf');
+  var bPptx = document.getElementById('btn-pptx');
+  var dash  = document.getElementById('dashboard');
+  function showExports(on) {
+    [bPng,bXls,bPdf,bPptx].forEach(function(b){ if(b) b.style.display = on ? '' : 'none'; });
+  }
 
   // ── Relocate path ──
   if (state.mode === 'relocate') {
     if (!state.currentHC || state.currentHC <= 0) {
       if (dash) dash.innerHTML = emptyForMode('Enter your current headcount in Headcount & Growth to begin your space calculation.');
-      if(bPng) bPng.style.display='none';
-      if(bXls) bXls.style.display='none';
+      showExports(false);
       return;
     }
     var relData = computeRelocate();
     if (dash) dash.innerHTML = buildRelocateDashboard(relData);
-    if(bPng) bPng.style.display='';
-    if(bXls) bXls.style.display='none';
+    showExports(true);
     return;
   }
 
@@ -1011,8 +1018,7 @@ function recompute() {
       + '</div>'
       + '<button class="btn-sample" onclick="loadSample()">Load Sample Demo</button>'
       + '</div>';
-    if(bPng) bPng.style.display='none';
-    if(bXls) bXls.style.display='none';
+    showExports(false);
     return;
   }
 
@@ -1022,8 +1028,7 @@ function recompute() {
   } else {
     if (dash) dash.innerHTML = buildGrowDashboard(data);
   }
-  if(bPng) bPng.style.display='';
-  if(bXls) bXls.style.display='';
+  showExports(true);
 }
 
 // ─── BUILD GROW DASHBOARD HTML ───────────────────────────────────────────────
@@ -1041,9 +1046,9 @@ function buildGrowDashboard(d) {
 function buildStatCards(d) {
   var utilColor = utilZoneColor(d.curUtil);
   var utilLabel = utilZoneLabel(d.curUtil);
-  var surpColor = d.curSurp >= 0 ? '#17E88F' : '#D2785A';
+  var surpColor = d.curSurp >= 0 ? '#17E88F' : '#538184';
   var gapBase = d.gapYears.base ? d.gapYears.base.toString() : '> '+d.years[d.years.length-1];
-  var gapColor = d.gapYears.base ? (d.gapYears.base <= state.baseYear+2 ? '#D2785A' : '#80BBAD') : '#17E88F';
+  var gapColor = d.gapYears.base ? (d.gapYears.base <= state.baseYear+2 ? '#538184' : '#80BBAD') : '#17E88F';
 
   return '<div class="stat-row">'
     + statCard(d.curSup.toLocaleString(), 'Seat Supply', buildings.length+' bldg'+(buildings.length!==1?'s':''), '')
@@ -1221,7 +1226,7 @@ function buildTable(d) {
       + '<td style="color:var(--sc-base)">'+b.hc.toLocaleString()+'</td><td style="color:var(--sc-base)">'+b.peak.toLocaleString()+'</td>'+gapCell(bg)
       + '<td style="color:var(--sc-mid)">'+m.hc.toLocaleString()+'</td><td style="color:var(--sc-mid)">'+m.peak.toLocaleString()+'</td>'+gapCell(mg)
       + '<td style="color:var(--sc-high)">'+hh.hc.toLocaleString()+'</td><td style="color:var(--sc-high)">'+hh.peak.toLocaleString()+'</td>'+gapCell(hg)
-      + '<td>'+(vZone==='vibrant'?'<span style="color:#17E88F;font-size:.72rem;font-weight:700">✓ Vibrant</span>':vZone==='over'?'<span style="color:#DBD99A;font-size:.72rem;font-weight:700">⚠ Over</span>':'<span style="color:#D2785A;font-size:.72rem;font-weight:700">⚠ Under</span>')+'</td>'
+      + '<td>'+(vZone==='vibrant'?'<span style="color:#17E88F;font-size:.72rem;font-weight:700">✓ Vibrant</span>':vZone==='over'?'<span style="color:#DBD99A;font-size:.72rem;font-weight:700">⚠ Over</span>':'<span style="color:#538184;font-size:.72rem;font-weight:700">⚠ Under</span>')+'</td>'
       + '</tr>';
   });
 
@@ -1350,7 +1355,7 @@ function buildRightSizeDashboard(d) {
   h += statCard(d.curPeak.toLocaleString(), 'Peak Attendance', state.attendanceRate+'% of HC', '');
   if (rs.rightSizeRSF > 0) {
     h += statCard(rs.rightSizeRSF.toLocaleString()+' SF', 'Right-Sized Target', 'peak × '+state.targetDensity+' SF/seat', '#17E88F');
-    h += statCard((rs.surplusRSF>=0?'+':'')+rs.surplusRSF.toLocaleString()+' SF', rs.surplusRSF>=0?'Excess SF':'SF Deficit', 'vs. right-sized target', rs.surplusRSF>=0?'#DBD99A':'#D2785A');
+    h += statCard((rs.surplusRSF>=0?'+':'')+rs.surplusRSF.toLocaleString()+' SF', rs.surplusRSF>=0?'Excess SF':'SF Deficit', 'vs. right-sized target', rs.surplusRSF>=0?'#DBD99A':'#538184');
   } else {
     h += statCard('—', 'Right-Sized Target', 'set Target SF/Seat to calculate', 'rgba(242,244,243,.3)');
     h += statCard('—', 'Excess SF', 'set Target SF/Seat to calculate', 'rgba(242,244,243,.3)');
@@ -1532,7 +1537,7 @@ function buildDensityComparisonCard(d, curSFperPerson, rs) {
   } else if (delta > 0) {
     deltaColor = '#DBD99A'; deltaMsg = deltaAbs+' SF/person above target';
   } else if (delta < -20) {
-    deltaColor = '#D2785A'; deltaMsg = deltaAbs+' SF/person below target — already tight';
+    deltaColor = '#538184'; deltaMsg = deltaAbs+' SF/person below target — already tight';
   } else {
     deltaColor = '#17E88F'; deltaMsg = 'At or near benchmark density';
   }
@@ -1611,7 +1616,7 @@ function buildConsolidationScenarios(d, rs) {
     var shedPctRSF = (d.totalRSF > 0 && shedRSF > 0) ? Math.round(shedRSF / d.totalRSF * 100) : 0;
     var remainUtil = sc.remainingSeats > 0 ? Math.round(d.curPeak / sc.remainingSeats * 100) : 999;
     var remainZone = remainUtil < state.vibrancyThreshold ? 'under' : remainUtil > state.oversubscribedThreshold ? 'over' : 'vibrant';
-    var remainColor = remainZone === 'vibrant' ? '#17E88F' : remainZone === 'over' ? '#D2785A' : '#80BBAD';
+    var remainColor = remainZone === 'vibrant' ? '#17E88F' : remainZone === 'over' ? '#DBD99A' : '#80BBAD';
 
     var viable = sc.viable;
     var statusColor  = viable ? '#17E88F' : '#DBD99A';
@@ -1821,6 +1826,128 @@ function exportPNG() {
     el.style.background = orig.bg;
     el.style.padding = orig.pad;
   });
+}
+
+// ─── EXPORT PDF ──────────────────────────────────────────────────────────────
+function exportPDF() {
+  var el = document.getElementById('dashboard');
+  var orig = { bg: el.style.background, pad: el.style.padding };
+  el.style.background = '#001A14';
+  el.style.padding = '24px';
+  html2canvas(el, { backgroundColor:'#001A14', scale:2, useCORS:true, logging:false }).then(function(canvas){
+    el.style.background = orig.bg;
+    el.style.padding = orig.pad;
+    var jsPDF = window.jspdf.jsPDF;
+    var imgW = canvas.width / 2;
+    var imgH = canvas.height / 2;
+    var hdr  = 44;
+    var pdf  = new jsPDF({ orientation:'p', unit:'pt', format:[imgW, imgH + hdr] });
+    pdf.setFillColor(0, 63, 45);
+    pdf.rect(0, 0, imgW, hdr, 'F');
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(13); pdf.setTextColor(23,232,143);
+    pdf.text('CBRE', 14, 29);
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(11); pdf.setTextColor(242,244,243);
+    var title = 'Supply & Demand'+(state.clientName?' · '+state.clientName:'');
+    pdf.text(title, 56, 29);
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, hdr, imgW, imgH);
+    pdf.save((state.clientName||'Supply_Demand').replace(/[^a-zA-Z0-9 ]/g,'_')+'_Analysis.pdf');
+  }).catch(function(){ el.style.background=orig.bg; el.style.padding=orig.pad; });
+}
+
+// ─── EXPORT PPTX ─────────────────────────────────────────────────────────────
+function exportPPTX() {
+  var el = document.getElementById('dashboard');
+  var orig = { bg: el.style.background, pad: el.style.padding };
+  el.style.background = '#001A14';
+  el.style.padding = '20px';
+  html2canvas(el, { backgroundColor:'#001A14', scale:1.5, useCORS:true, logging:false }).then(function(canvas){
+    el.style.background = orig.bg;
+    el.style.padding = orig.pad;
+
+    var imgData = canvas.toDataURL('image/png');
+    var client  = state.clientName || 'Analysis';
+    var meta    = MODE_META[state.mode] || { icon:'⚖️', label:'Analysis' };
+    var pptx    = new PptxGenJS();
+    pptx.layout = 'LAYOUT_WIDE'; // 13.33 × 7.5 in
+
+    function addHeader(slide, right) {
+      slide.addShape(pptx.ShapeType.rect, { x:0, y:0, w:13.33, h:0.6, fill:{ color:'003F2D' }, line:{type:'none'} });
+      slide.addText('CBRE', { x:0.28, y:0.09, w:1.2, h:0.42, fontSize:16, fontFace:'Calibri', bold:true, color:'17E88F' });
+      slide.addText(right||'', { x:1.35, y:0.1, w:11.6, h:0.38, fontSize:11, fontFace:'Calibri', color:'F2F4F3' });
+    }
+
+    // ── Slide 1: Title + KPIs ─────────────────────────────────────────────
+    var s1 = pptx.addSlide();
+    s1.background = { color:'001A14' };
+    addHeader(s1, 'Workplace Intelligence · '+new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'}));
+
+    s1.addText(client, { x:0.5, y:0.82, w:12.33, h:1.15, fontSize:40, fontFace:'Calibri', bold:true, color:'F2F4F3' });
+    s1.addText(meta.icon+' '+meta.label+' Analysis', { x:0.5, y:1.92, w:10, h:0.52, fontSize:17, fontFace:'Calibri', color:'17E88F' });
+
+    // KPI tiles
+    var kpis = getModeKPIs();
+    var kW = 2.3, kH = 1.45, kGap = 0.18;
+    var totalW = kpis.length*kW + (kpis.length-1)*kGap;
+    var kStartX = (13.33-totalW)/2;
+    kpis.forEach(function(k, i){
+      var x = kStartX + i*(kW+kGap);
+      s1.addShape(pptx.ShapeType.rect, { x:x, y:2.65, w:kW, h:kH, fill:{ color:'061C16' }, line:{ color:'17E88F', width:0.75, transparency:60 } });
+      s1.addText(k.val, { x:x+0.1, y:2.72, w:kW-0.2, h:0.75, fontSize:19, fontFace:'Calibri', bold:true, color:'F2F4F3', align:'center' });
+      s1.addText(k.label, { x:x+0.1, y:3.38, w:kW-0.2, h:0.6, fontSize:10, fontFace:'Calibri', color:'80BBAD', align:'center' });
+    });
+
+    s1.addShape(pptx.ShapeType.line, { x:0.5, y:6.82, w:12.33, h:0, line:{ color:'003F2D', width:1 } });
+    s1.addText('Confidential · CBRE Workplace Intelligence', { x:0.5, y:6.9, w:12.33, h:0.4, fontSize:9, fontFace:'Calibri', color:'538184', align:'center' });
+
+    // ── Slide 2: Dashboard image ───────────────────────────────────────────
+    var s2 = pptx.addSlide();
+    s2.background = { color:'001A14' };
+    addHeader(s2, client+' · '+meta.label);
+    var aspect = canvas.width / canvas.height;
+    var maxH = 6.75, maxW = 12.9;
+    var drawH = Math.min(maxH, maxW/aspect);
+    var drawW = drawH * aspect;
+    s2.addImage({ data:imgData, x:(13.33-drawW)/2, y:0.65, w:drawW, h:drawH });
+
+    pptx.writeFile({ fileName: client.replace(/[^a-zA-Z0-9 ]/g,'_')+'_Analysis.pptx' });
+  }).catch(function(){ el.style.background=orig.bg; el.style.padding=orig.pad; });
+}
+
+// ─── MODE KPIs (for PPTX title slide) ────────────────────────────────────────
+function getModeKPIs() {
+  if (state.mode === 'relocate') {
+    var rel = computeRelocate();
+    var cp  = Math.round(state.currentHC * state.attendanceRate / 100);
+    var sft = state.targetDensity > 0 ? Math.round(cp * state.targetDensity) : null;
+    var mid = rel.demand.mid[rel.demand.mid.length-1];
+    return [
+      { label:'Headcount',       val:state.currentHC.toLocaleString() },
+      { label:'Peak Attendance', val:cp.toLocaleString() },
+      { label:'SF Needed Today', val:sft ? sft.toLocaleString()+' SF' : '—' },
+      { label:'Recommended SF',  val:mid.sfNeeded>0 ? mid.sfNeeded.toLocaleString()+' SF' : '—' },
+      { label:'Target SF / Seat',val:state.targetDensity ? state.targetDensity+' SF/seat' : '—' },
+    ];
+  }
+  var d = compute();
+  if (state.mode === 'rightsize') {
+    var rs = computeRightSize(d);
+    return [
+      { label:'Current Footprint', val:d.totalRSF>0 ? d.totalRSF.toLocaleString()+' SF' : d.curSup.toLocaleString()+' seats' },
+      { label:'Headcount',         val:state.currentHC.toLocaleString() },
+      { label:'Peak Attendance',   val:d.curPeak.toLocaleString() },
+      { label:'Right-Sized Target',val:rs.rightSizeRSF>0 ? rs.rightSizeRSF.toLocaleString()+' SF' : '—' },
+      { label:'Excess SF',         val:rs.surplusRSF>0 ? '+'+rs.surplusRSF.toLocaleString()+' SF' : '—' },
+    ];
+  }
+  // Grow
+  var gy = d.gapYears.base ? d.gapYears.base.toString() : '> '+d.years[d.years.length-1];
+  return [
+    { label:'Seat Supply',     val:d.curSup.toLocaleString() },
+    { label:'Headcount',       val:state.currentHC.toLocaleString() },
+    { label:'Peak Attendance', val:d.curPeak.toLocaleString() },
+    { label:'Utilization',     val:d.curUtil+'%' },
+    { label:'Gap Year (Base)', val:gy },
+  ];
 }
 
 // ─── EXPORT EXCEL ────────────────────────────────────────────────────────────
