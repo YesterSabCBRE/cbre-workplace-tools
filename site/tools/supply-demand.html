@@ -7,7 +7,6 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
 <style>
@@ -361,23 +360,25 @@ select.text-input option{background:#001A14;color:#F2F4F3;}
     <h2 class="mode-picker-title">What are you trying to solve?</h2>
     <p class="mode-picker-sub">Choose a scenario to get started. Each mode tailors the tool to your specific question.</p>
     <div class="mode-picker-grid">
-      <div class="mode-card" onclick="selectMode('grow')">
-        <div class="mode-card-icon">🌱</div>
-        <div class="mode-card-name">Growing</div>
-        <div class="mode-card-q">"When do we run out of space?"</div>
-        <div class="mode-card-desc">Track headcount growth against seat supply. Find the gap year and plan for expansion.</div>
-      </div>
       <div class="mode-card" onclick="selectMode('rightsize')">
         <div class="mode-card-icon">✂️</div>
         <div class="mode-card-name">Right-Sizing</div>
         <div class="mode-card-q">"We have too much space. What can we shed?"</div>
         <div class="mode-card-desc">Calculate your minimum viable footprint, test exiting each location, find the optimal consolidation path.</div>
       </div>
-      <div class="mode-card" onclick="selectMode('relocate')">
+      <div class="mode-card mode-card-soon">
+        <div class="mode-card-icon">🌱</div>
+        <div class="mode-card-name">Growing</div>
+        <div class="mode-card-q">"When do we run out of space?"</div>
+        <div class="mode-card-desc">Track headcount growth against seat supply. Find the gap year and plan for expansion.</div>
+        <div class="mode-card-soon-badge">Coming Soon</div>
+      </div>
+      <div class="mode-card mode-card-soon">
         <div class="mode-card-icon">📍</div>
         <div class="mode-card-name">Relocating</div>
         <div class="mode-card-q">"We're moving. How big should our next office be?"</div>
         <div class="mode-card-desc">Enter headcount and density targets to get a recommended RSF range for your new space.</div>
+        <div class="mode-card-soon-badge">Coming Soon</div>
       </div>
       <div class="mode-card mode-card-soon">
         <div class="mode-card-icon">🔄</div>
@@ -408,7 +409,6 @@ select.text-input option{background:#001A14;color:#F2F4F3;}
 <nav>
   <a class="nav-logo" href="/cbre-workplace-tools/"><span>CBRE</span> Workplace Tools</a>
   <div class="nav-actions">
-    <button class="btn-export" id="btn-pptx" style="display:none" onclick="exportPPTX()">↓ PPT</button>
     <button class="btn-export" id="btn-pdf" style="display:none" onclick="exportPDF()">↓ PDF</button>
     <button class="btn-export" id="btn-excel" style="display:none" onclick="exportExcel()">↓ Excel</button>
     <button class="btn-export" id="btn-png" style="display:none" onclick="exportPNG()">↓ PNG</button>
@@ -971,13 +971,12 @@ function compute() {
 function recompute() {
   if (!state.mode) return;
 
-  var bPng  = document.getElementById('btn-png');
-  var bXls  = document.getElementById('btn-excel');
-  var bPdf  = document.getElementById('btn-pdf');
-  var bPptx = document.getElementById('btn-pptx');
-  var dash  = document.getElementById('dashboard');
+  var bPng = document.getElementById('btn-png');
+  var bXls = document.getElementById('btn-excel');
+  var bPdf = document.getElementById('btn-pdf');
+  var dash = document.getElementById('dashboard');
   function showExports(on) {
-    [bPng,bXls,bPdf,bPptx].forEach(function(b){ if(b) b.style.display = on ? '' : 'none'; });
+    [bPng,bXls,bPdf].forEach(function(b){ if(b) b.style.display = on ? '' : 'none'; });
   }
 
   // ── Relocate path ──
@@ -1852,102 +1851,6 @@ function exportPDF() {
     pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, hdr, imgW, imgH);
     pdf.save((state.clientName||'Supply_Demand').replace(/[^a-zA-Z0-9 ]/g,'_')+'_Analysis.pdf');
   }).catch(function(){ el.style.background=orig.bg; el.style.padding=orig.pad; });
-}
-
-// ─── EXPORT PPTX ─────────────────────────────────────────────────────────────
-function exportPPTX() {
-  var el = document.getElementById('dashboard');
-  var orig = { bg: el.style.background, pad: el.style.padding };
-  el.style.background = '#001A14';
-  el.style.padding = '20px';
-  html2canvas(el, { backgroundColor:'#001A14', scale:1.5, useCORS:true, logging:false }).then(function(canvas){
-    el.style.background = orig.bg;
-    el.style.padding = orig.pad;
-
-    var imgData = canvas.toDataURL('image/png');
-    var client  = state.clientName || 'Analysis';
-    var meta    = MODE_META[state.mode] || { icon:'⚖️', label:'Analysis' };
-    var pptx    = new PptxGenJS();
-    pptx.layout = 'LAYOUT_WIDE'; // 13.33 × 7.5 in
-
-    function addHeader(slide, right) {
-      slide.addShape(pptx.ShapeType.rect, { x:0, y:0, w:13.33, h:0.6, fill:{ color:'003F2D' }, line:{type:'none'} });
-      slide.addText('CBRE', { x:0.28, y:0.09, w:1.2, h:0.42, fontSize:16, fontFace:'Calibri', bold:true, color:'17E88F' });
-      slide.addText(right||'', { x:1.35, y:0.1, w:11.6, h:0.38, fontSize:11, fontFace:'Calibri', color:'F2F4F3' });
-    }
-
-    // ── Slide 1: Title + KPIs ─────────────────────────────────────────────
-    var s1 = pptx.addSlide();
-    s1.background = { color:'001A14' };
-    addHeader(s1, 'Workplace Intelligence · '+new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'}));
-
-    s1.addText(client, { x:0.5, y:0.82, w:12.33, h:1.15, fontSize:40, fontFace:'Calibri', bold:true, color:'F2F4F3' });
-    s1.addText(meta.icon+' '+meta.label+' Analysis', { x:0.5, y:1.92, w:10, h:0.52, fontSize:17, fontFace:'Calibri', color:'17E88F' });
-
-    // KPI tiles
-    var kpis = getModeKPIs();
-    var kW = 2.3, kH = 1.45, kGap = 0.18;
-    var totalW = kpis.length*kW + (kpis.length-1)*kGap;
-    var kStartX = (13.33-totalW)/2;
-    kpis.forEach(function(k, i){
-      var x = kStartX + i*(kW+kGap);
-      s1.addShape(pptx.ShapeType.rect, { x:x, y:2.65, w:kW, h:kH, fill:{ color:'061C16' }, line:{ color:'17E88F', width:0.75, transparency:60 } });
-      s1.addText(k.val, { x:x+0.1, y:2.72, w:kW-0.2, h:0.75, fontSize:19, fontFace:'Calibri', bold:true, color:'F2F4F3', align:'center' });
-      s1.addText(k.label, { x:x+0.1, y:3.38, w:kW-0.2, h:0.6, fontSize:10, fontFace:'Calibri', color:'80BBAD', align:'center' });
-    });
-
-    s1.addShape(pptx.ShapeType.line, { x:0.5, y:6.82, w:12.33, h:0, line:{ color:'003F2D', width:1 } });
-    s1.addText('Confidential · CBRE Workplace Intelligence', { x:0.5, y:6.9, w:12.33, h:0.4, fontSize:9, fontFace:'Calibri', color:'538184', align:'center' });
-
-    // ── Slide 2: Dashboard image ───────────────────────────────────────────
-    var s2 = pptx.addSlide();
-    s2.background = { color:'001A14' };
-    addHeader(s2, client+' · '+meta.label);
-    var aspect = canvas.width / canvas.height;
-    var maxH = 6.75, maxW = 12.9;
-    var drawH = Math.min(maxH, maxW/aspect);
-    var drawW = drawH * aspect;
-    s2.addImage({ data:imgData, x:(13.33-drawW)/2, y:0.65, w:drawW, h:drawH });
-
-    pptx.writeFile({ fileName: client.replace(/[^a-zA-Z0-9 ]/g,'_')+'_Analysis.pptx' });
-  }).catch(function(){ el.style.background=orig.bg; el.style.padding=orig.pad; });
-}
-
-// ─── MODE KPIs (for PPTX title slide) ────────────────────────────────────────
-function getModeKPIs() {
-  if (state.mode === 'relocate') {
-    var rel = computeRelocate();
-    var cp  = Math.round(state.currentHC * state.attendanceRate / 100);
-    var sft = state.targetDensity > 0 ? Math.round(cp * state.targetDensity) : null;
-    var mid = rel.demand.mid[rel.demand.mid.length-1];
-    return [
-      { label:'Headcount',       val:state.currentHC.toLocaleString() },
-      { label:'Peak Attendance', val:cp.toLocaleString() },
-      { label:'SF Needed Today', val:sft ? sft.toLocaleString()+' SF' : '—' },
-      { label:'Recommended SF',  val:mid.sfNeeded>0 ? mid.sfNeeded.toLocaleString()+' SF' : '—' },
-      { label:'Target SF / Seat',val:state.targetDensity ? state.targetDensity+' SF/seat' : '—' },
-    ];
-  }
-  var d = compute();
-  if (state.mode === 'rightsize') {
-    var rs = computeRightSize(d);
-    return [
-      { label:'Current Footprint', val:d.totalRSF>0 ? d.totalRSF.toLocaleString()+' SF' : d.curSup.toLocaleString()+' seats' },
-      { label:'Headcount',         val:state.currentHC.toLocaleString() },
-      { label:'Peak Attendance',   val:d.curPeak.toLocaleString() },
-      { label:'Right-Sized Target',val:rs.rightSizeRSF>0 ? rs.rightSizeRSF.toLocaleString()+' SF' : '—' },
-      { label:'Excess SF',         val:rs.surplusRSF>0 ? '+'+rs.surplusRSF.toLocaleString()+' SF' : '—' },
-    ];
-  }
-  // Grow
-  var gy = d.gapYears.base ? d.gapYears.base.toString() : '> '+d.years[d.years.length-1];
-  return [
-    { label:'Seat Supply',     val:d.curSup.toLocaleString() },
-    { label:'Headcount',       val:state.currentHC.toLocaleString() },
-    { label:'Peak Attendance', val:d.curPeak.toLocaleString() },
-    { label:'Utilization',     val:d.curUtil+'%' },
-    { label:'Gap Year (Base)', val:gy },
-  ];
 }
 
 // ─── EXPORT EXCEL ────────────────────────────────────────────────────────────
