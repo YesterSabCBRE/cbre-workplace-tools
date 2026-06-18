@@ -366,12 +366,11 @@ select.text-input option{background:#001A14;color:#F2F4F3;}
         <div class="mode-card-q">"We have too much space. What can we shed?"</div>
         <div class="mode-card-desc">Calculate your minimum viable footprint, test exiting each location, find the optimal consolidation path.</div>
       </div>
-      <div class="mode-card mode-card-soon">
+      <div class="mode-card" onclick="selectMode('grow')">
         <div class="mode-card-icon">🌱</div>
         <div class="mode-card-name">Growing</div>
         <div class="mode-card-q">"When do we run out of space?"</div>
         <div class="mode-card-desc">Track headcount growth against seat supply. Find the gap year and plan for expansion.</div>
-        <div class="mode-card-soon-badge">Coming Soon</div>
       </div>
       <div class="mode-card mode-card-soon">
         <div class="mode-card-icon">📍</div>
@@ -1006,7 +1005,7 @@ function recompute() {
         + '<span style="font-size:1.1rem">'+(done?'✅':'⬜')+'</span>'
         + '<span style="'+(done?'':'opacity:.7')+'">'+text+'</span></div>';
     }
-    var icon = state.mode === 'rightsize' ? '✂️' : '⚖️';
+    var icon = state.mode === 'rightsize' ? '✂️' : state.mode === 'grow' ? '🌱' : '⚖️';
     if (dash) dash.innerHTML = '<div class="empty-state">'
       + '<div class="empty-icon">'+icon+'</div>'
       + '<div class="empty-title">Three steps to your analysis</div>'
@@ -1033,13 +1032,58 @@ function recompute() {
 // ─── BUILD GROW DASHBOARD HTML ───────────────────────────────────────────────
 function buildGrowDashboard(d) {
   var h = '';
-  h += buildStatCards(d);
   h += buildGapCallout(d);
+  h += buildPlanningRec(d);
+  h += buildStatCards(d);
   h += buildChart(d);
-  h += buildTable(d);
+  h += buildGrowTable(d);
   if (d.density && d.density.target>0) h += buildDensity(d);
   h += buildBuildingBreakdown(d);
   return h;
+}
+
+function buildPlanningRec(d) {
+  var endYr = d.years[d.years.length-1];
+  var baseGap = d.gapYears.base;
+  var highGap = d.gapYears.high;
+
+  // Compute runway (years until base gap, or full range if no gap)
+  var runway = baseGap ? (baseGap - state.baseYear) : null;
+  var searchBy = baseGap ? (baseGap - 2) : null; // 2 years lead time
+  var urgency = baseGap ? (baseGap <= state.baseYear + 2 ? '#538184' : baseGap <= state.baseYear + 4 ? '#80BBAD' : '#17E88F') : '#17E88F';
+
+  var h = '<div class="chart-card" style="background:'+urgency+'0d;border-color:'+urgency+'33;margin-bottom:0">'
+    + '<div style="display:flex;align-items:flex-start;gap:1.25rem;flex-wrap:wrap">';
+
+  if (baseGap) {
+    h += '<div style="flex:1;min-width:200px">'
+      + '<div style="font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:'+urgency+';margin-bottom:.35rem">Planning Recommendation</div>'
+      + '<div style="font-size:1.35rem;font-weight:700;color:'+urgency+';margin-bottom:.25rem">Begin space search by '+(searchBy)+'</div>'
+      + '<div style="font-size:.8rem;color:rgba(242,244,243,.6);line-height:1.6">Base scenario gap year is <strong style="color:'+urgency+'">'+baseGap+'</strong> — allow 18–24 months for market search, negotiation, and fit-out lead time.</div>'
+      + '</div>';
+    h += '<div style="display:flex;gap:1rem;flex-wrap:wrap">'
+      + planRecPill('Runway', runway+' years', urgency)
+      + planRecPill('Search By', searchBy, urgency)
+      + (highGap ? planRecPill('High Risk Gap', highGap, '#538184') : '')
+      + '</div>';
+  } else {
+    h += '<div style="flex:1;min-width:200px">'
+      + '<div style="font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#17E88F;margin-bottom:.35rem">Planning Recommendation</div>'
+      + '<div style="font-size:1.35rem;font-weight:700;color:#17E88F;margin-bottom:.25rem">No capacity constraint through '+endYr+'</div>'
+      + '<div style="font-size:.8rem;color:rgba(242,244,243,.6);line-height:1.6">All three growth scenarios remain within seat supply through the end of the projection period. Revisit if headcount growth accelerates.</div>'
+      + '</div>'
+      + '<div>'+ planRecPill('Runway', '> '+(endYr-state.baseYear)+' years', '#17E88F') + '</div>';
+  }
+
+  h += '</div></div>';
+  return h;
+}
+
+function planRecPill(label, val, col) {
+  return '<div style="background:'+col+'14;border:1px solid '+col+'33;border-radius:10px;padding:.5rem .9rem;text-align:center;min-width:90px">'
+    + '<div style="font-size:1.1rem;font-weight:700;color:'+col+'">'+val+'</div>'
+    + '<div style="font-size:.65rem;color:rgba(242,244,243,.5);margin-top:.15rem">'+label+'</div>'
+    + '</div>';
 }
 
 function buildStatCards(d) {
@@ -1198,33 +1242,44 @@ function buildSVG(d) {
   return svg;
 }
 
-// ─── TABLE ───────────────────────────────────────────────────────────────────
-function buildTable(d) {
+// ─── GROW TABLE (7 columns) ──────────────────────────────────────────────────
+function buildGrowTable(d) {
   var h = '<div class="chart-card"><div class="chart-title" style="margin-bottom:.85rem">Year-by-Year Projection</div>'
     + '<div class="tbl-wrap"><table class="data-tbl"><thead><tr>'
     + '<th>Year</th>'
-    + '<th>Supply</th>'
-    + '<th style="color:var(--sc-base)">Base HC</th><th style="color:var(--sc-base)">Base Demand</th><th style="color:var(--sc-base)">Gap</th>'
-    + '<th style="color:var(--sc-mid)">Mid HC</th><th style="color:var(--sc-mid)">Mid Demand</th><th style="color:var(--sc-mid)">Gap</th>'
-    + '<th style="color:var(--sc-high)">High HC</th><th style="color:var(--sc-high)">High Demand</th><th style="color:var(--sc-high)">Gap</th>'
-    + '<th>Zone</th>'
+    + '<th>Seat Supply</th>'
+    + '<th style="color:var(--sc-base)">Base Peak</th>'
+    + '<th style="color:var(--sc-base)">Base Surplus / Gap</th>'
+    + '<th style="color:var(--sc-high)">High Peak</th>'
+    + '<th style="color:var(--sc-high)">High Surplus / Gap</th>'
+    + '<th>Vibrancy</th>'
     + '</tr></thead><tbody>';
 
-  d.years.forEach(function(yr,i){
+  function gapCell(g, col) {
+    if (g >= 0) return '<td><span class="surp-badge" style="color:'+col+';background:'+col+'14;border-color:'+col+'33">+'+g.toLocaleString()+'</span></td>';
+    return '<td><span class="gap-badge">'+g.toLocaleString()+'</span></td>';
+  }
+
+  d.years.forEach(function(yr, i) {
     var sup = d.supply[i];
-    var b = d.demand.base[i], m = d.demand.mid[i], hh = d.demand.high[i];
-    var bg = sup-b.peak, mg = sup-m.peak, hg = sup-hh.peak;
+    var b = d.demand.base[i], hh = d.demand.high[i];
+    var bg = sup - b.peak, hg = sup - hh.peak;
     var vZone = d.vibrancy.base[i].zone;
-    var rowCls = i===0 ? ' class="curr-row"' : '';
+    var isCurr = i === 0;
+    var isGapBase = d.gapYears.base && d.gapYears.base === yr;
+    var isGapHigh = d.gapYears.high && d.gapYears.high === yr;
+    var rowStyle = isGapBase ? ' style="background:rgba(23,232,143,.04)"' : '';
 
-    function gapCell(g){ return '<td class="'+(g<0?'neg':'')+'">'+(g>=0?'<span class="surp-badge">+'+g+'</span>':'<span class="gap-badge">'+g+'</span>')+'</td>'; }
-
-    h += '<tr'+rowCls+'>'
-      + '<td style="font-weight:600">'+yr+(i===0?' <span style="font-size:.65rem;color:var(--accent)">current</span>':'')+'</td>'
+    h += '<tr'+(isCurr?' class="curr-row"':'')+rowStyle+'>'
+      + '<td style="font-weight:600">'+yr
+        + (isCurr?' <span style="font-size:.65rem;color:var(--accent)">current</span>':'')
+        + (isGapBase?' <span style="font-size:.65rem;color:var(--sc-base)">gap</span>':'')
+        + '</td>'
       + '<td>'+sup.toLocaleString()+'</td>'
-      + '<td style="color:var(--sc-base)">'+b.hc.toLocaleString()+'</td><td style="color:var(--sc-base)">'+b.peak.toLocaleString()+'</td>'+gapCell(bg)
-      + '<td style="color:var(--sc-mid)">'+m.hc.toLocaleString()+'</td><td style="color:var(--sc-mid)">'+m.peak.toLocaleString()+'</td>'+gapCell(mg)
-      + '<td style="color:var(--sc-high)">'+hh.hc.toLocaleString()+'</td><td style="color:var(--sc-high)">'+hh.peak.toLocaleString()+'</td>'+gapCell(hg)
+      + '<td style="color:var(--sc-base)">'+b.peak.toLocaleString()+'</td>'
+      + gapCell(bg, '#17E88F')
+      + '<td style="color:var(--sc-high)">'+hh.peak.toLocaleString()+'</td>'
+      + gapCell(hg, '#80BBAD')
       + '<td>'+(vZone==='vibrant'?'<span style="color:#17E88F;font-size:.72rem;font-weight:700">✓ Vibrant</span>':vZone==='over'?'<span style="color:#DBD99A;font-size:.72rem;font-weight:700">⚠ Over</span>':'<span style="color:#538184;font-size:.72rem;font-weight:700">⚠ Under</span>')+'</td>'
       + '</tr>';
   });
