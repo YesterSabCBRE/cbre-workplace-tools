@@ -911,7 +911,15 @@ function updateExpansionOption(id, field, val) {
     : (function(){ for(var i=0;i<expansionOptions.length;i++) if(expansionOptions[i].id===id) return expansionOptions[i]; return null; })();
   if (!opt) return;
   opt[field] = field === 'sf' ? (parseInt(val)||0) : val;
-  renderExpansionOptions();
+  // Update only the derived hint — do NOT call renderExpansionOptions() here
+  // because that would destroy/recreate the inputs and steal focus mid-typing
+  var hint = document.getElementById('xo-hint-'+id);
+  if (hint) {
+    var addSeats = (state.targetDensity>0 && opt.sf>0) ? Math.round(opt.sf/state.targetDensity) : 0;
+    hint.textContent = addSeats>0 ? '≈ +'+addSeats.toLocaleString()+' seats at '+state.targetDensity+' SF/seat' : '';
+    hint.style.display = addSeats>0 ? '' : 'none';
+  }
+  updateExpansionBadge();
   recompute();
 }
 
@@ -940,7 +948,7 @@ function renderExpansionOptions() {
       + '<input type="number" class="num-input" style="padding:.4rem .6rem" value="'+(opt.sf||'')+'" placeholder="9500" min="0" oninput="updateExpansionOption('+opt.id+',\'sf\',this.value)"/>'
       + '</div>'
       + '</div>'
-      + (addSeats>0 ? '<div style="font-size:.65rem;color:'+colSolid+';margin-top:.35rem">≈ +'+addSeats.toLocaleString()+' seats at '+state.targetDensity+' SF/seat</div>' : '')
+      + '<div id="xo-hint-'+opt.id+'" style="font-size:.65rem;color:'+colSolid+';margin-top:.35rem'+(addSeats>0?'':';display:none')+'">'+(addSeats>0?'≈ +'+addSeats.toLocaleString()+' seats at '+state.targetDensity+' SF/seat':'')+'</div>'
       + '</div>';
   });
   container.innerHTML = h;
