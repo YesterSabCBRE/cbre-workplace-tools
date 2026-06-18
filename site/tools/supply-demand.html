@@ -124,6 +124,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .att-preset:hover{border-color:rgba(23,232,143,.4);color:var(--accent);background:rgba(23,232,143,.06)}
 .att-preset.active{border-color:var(--accent);color:var(--accent);background:rgba(23,232,143,.1)}
 
+/* POLICY TOGGLE */
+.policy-toggle{display:flex;border-radius:7px;border:1px solid var(--input-border);overflow:hidden;margin-top:.3rem}
+.policy-btn{flex:1;padding:.42rem .6rem;font-family:'DM Sans',sans-serif;font-size:.73rem;font-weight:600;background:transparent;color:var(--text-muted);cursor:pointer;border:none;border-right:1px solid var(--input-border);outline:none;transition:all .18s}
+.policy-btn:last-child{border-right:none}
+.policy-btn.active{background:rgba(23,232,143,.12);color:var(--accent)}
+.policy-btn:not(.active):hover{background:rgba(255,255,255,.05);color:var(--text)}
+.dimmed{opacity:.35;pointer-events:none;user-select:none}
+
 /* EXPANSION OPTIONAL HINT */
 .exp-optional-hint{font-size:.62rem;color:rgba(242,244,243,.3);margin-bottom:.4rem;line-height:1.45;font-style:italic}
 .inv-summary-text{font-size:.72rem;color:var(--text-muted);text-align:center;padding:.35rem 0}
@@ -499,6 +507,15 @@ select.text-input option{background:#001A14;color:#F2F4F3;}
           </div>
 
           <div class="input-group">
+            <label class="input-label">Seat Assignment Policy</label>
+            <div class="policy-toggle">
+              <button class="policy-btn active" id="policy-shared" onclick="setAssignmentPolicy(false)">Hoteling / Shared</button>
+              <button class="policy-btn" id="policy-assigned" onclick="setAssignmentPolicy(true)">Assigned 1:1</button>
+            </div>
+            <div class="input-hint" id="policy-hint">Peak demand = HC × attendance rate. Each seat serves multiple people.</div>
+          </div>
+
+          <div class="input-group" id="att-rate-section">
             <label class="input-label">Attendance Rate</label>
             <div class="input-with-unit">
               <input type="number" class="num-input-sm" id="attendanceRate" min="1" max="100" value="65" oninput="state.attendanceRate=parseInt(this.value)||65;syncAttPreset();recompute()"/>
@@ -562,19 +579,30 @@ select.text-input option{background:#001A14;color:#F2F4F3;}
         </div>
         <div class="accordion-body" id="body-assumptions">
           <div class="input-group">
-            <label class="input-label">Vibrancy Zone</label>
-            <div class="input-row" style="align-items:center;gap:.5rem;flex-wrap:wrap">
-              <div class="input-with-unit">
-                <input type="number" class="num-input-sm" id="vibrancyThreshold" min="1" max="100" value="67" oninput="state.vibrancyThreshold=parseInt(this.value)||67;recompute()"/>
-                <span class="unit">% floor</span>
-              </div>
-              <span style="font-size:.7rem;color:var(--text-muted)">→</span>
-              <div class="input-with-unit">
-                <input type="number" class="num-input-sm" id="oversubscribedThreshold" min="1" max="100" value="80" oninput="state.oversubscribedThreshold=parseInt(this.value)||80;recompute()"/>
-                <span class="unit">% ceiling</span>
-              </div>
+            <label class="input-label">Vibrancy Analysis</label>
+            <div class="policy-toggle">
+              <button class="policy-btn active" id="vibrancy-on" onclick="setShowVibrancy(true)">On</button>
+              <button class="policy-btn" id="vibrancy-off" onclick="setShowVibrancy(false)">Off</button>
             </div>
-            <div class="input-hint">Sweet spot: <span style="color:#17E88F">67–80% occupancy feels vibrant</span>. Below 67% feels empty; above 80% feels oversubscribed and too full.</div>
+            <div class="input-hint">Turn off to remove vibrancy zones from chart and table — useful when the client is focused on headcount capacity only.</div>
+          </div>
+
+          <div id="vibrancy-inputs">
+            <div class="input-group">
+              <label class="input-label">Vibrancy Zone Thresholds</label>
+              <div class="input-row" style="align-items:center;gap:.5rem;flex-wrap:wrap">
+                <div class="input-with-unit">
+                  <input type="number" class="num-input-sm" id="vibrancyThreshold" min="1" max="100" value="67" oninput="state.vibrancyThreshold=parseInt(this.value)||67;recompute()"/>
+                  <span class="unit">% floor</span>
+                </div>
+                <span style="font-size:.7rem;color:var(--text-muted)">→</span>
+                <div class="input-with-unit">
+                  <input type="number" class="num-input-sm" id="oversubscribedThreshold" min="1" max="100" value="80" oninput="state.oversubscribedThreshold=parseInt(this.value)||80;recompute()"/>
+                  <span class="unit">% ceiling</span>
+                </div>
+              </div>
+              <div class="input-hint">Sweet spot: <span style="color:#17E88F">67–80% occupancy feels vibrant</span>. Below 67% feels empty; above 80% feels oversubscribed.</div>
+            </div>
           </div>
 
           <div class="input-group">
@@ -635,6 +663,8 @@ var state = {
   oversubscribedThreshold: 80,
   totalRSF: 0,
   targetDensity: 0,
+  assignedSeating: false,
+  showVibrancy: true,
 };
 
 var MODE_META = {
@@ -927,6 +957,33 @@ function updateExpansionBadge() {
   badge.textContent = active.length > 0 ? active.length+' option'+(active.length!==1?'s':'') : 'none';
 }
 
+// ─── ASSIGNMENT POLICY & VIBRANCY TOGGLES ────────────────────────────────────
+function setAssignmentPolicy(assigned) {
+  state.assignedSeating = assigned;
+  var btnShared   = document.getElementById('policy-shared');
+  var btnAssigned = document.getElementById('policy-assigned');
+  var attSection  = document.getElementById('att-rate-section');
+  var hint        = document.getElementById('policy-hint');
+  if (btnShared)   btnShared.classList.toggle('active', !assigned);
+  if (btnAssigned) btnAssigned.classList.toggle('active',  assigned);
+  if (attSection)  attSection.classList.toggle('dimmed', assigned);
+  if (hint) hint.textContent = assigned
+    ? 'Each person needs a dedicated seat. Seat demand = headcount regardless of attendance.'
+    : 'Peak demand = HC × attendance rate. Each seat serves multiple people.';
+  recompute();
+}
+
+function setShowVibrancy(on) {
+  state.showVibrancy = on;
+  var btnOn  = document.getElementById('vibrancy-on');
+  var btnOff = document.getElementById('vibrancy-off');
+  var inputs = document.getElementById('vibrancy-inputs');
+  if (btnOn)  btnOn.classList.toggle('active',  on);
+  if (btnOff) btnOff.classList.toggle('active', !on);
+  if (inputs) inputs.style.display = on ? '' : 'none';
+  recompute();
+}
+
 function updateInventorySummary() {
   var totalSeats = buildings.reduce(function(s,b){return s+resolveSeats(b);},0);
   var totalExp = buildings.reduce(function(s,b){return s+b.expansions.reduce(function(ss,e){return ss+(e.seats||0);},0);},0);
@@ -1001,7 +1058,7 @@ function compute() {
     var rate = (state.scenarios[key].rate||0)/100;
     demand[key] = years.map(function(yr,i){
       var hc = Math.round(state.currentHC*Math.pow(1+rate,i));
-      var peak = Math.round(hc*state.attendanceRate/100);
+      var peak = state.assignedSeating ? hc : Math.round(hc*state.attendanceRate/100);
       return {yr:yr, hc:hc, peak:peak};
     });
   });
@@ -1272,18 +1329,20 @@ function planRecPill(label, val, col) {
 }
 
 function buildStatCards(d) {
-  var utilColor = utilZoneColor(d.curUtil);
-  var utilLabel = utilZoneLabel(d.curUtil);
+  var utilColor = state.showVibrancy ? utilZoneColor(d.curUtil) : '';
+  var utilLabel = state.showVibrancy ? utilZoneLabel(d.curUtil) : d.curUtil+'% seat utilization';
   var surpColor = d.curSurp >= 0 ? '#17E88F' : '#538184';
   var gapBase = d.gapYears.base ? d.gapYears.base.toString() : '> '+d.years[d.years.length-1];
   var gapColor = d.gapYears.base ? (d.gapYears.base <= state.baseYear+2 ? '#538184' : '#80BBAD') : '#17E88F';
+  var peakLabel = state.assignedSeating ? 'Seats Required' : 'Peak Daily Demand';
+  var peakSub   = state.assignedSeating ? '1:1 assigned seating' : state.attendanceRate+'% attendance rate';
 
   return '<div class="stat-row">'
     + statCard(d.curSup.toLocaleString(), 'Seat Supply', buildings.length+' bldg'+(buildings.length!==1?'s':''), '')
     + statCard(state.currentHC.toLocaleString(), 'Current Headcount', state.baseYear+' base', '')
-    + statCard(d.curPeak.toLocaleString(), 'Peak Daily Demand', state.attendanceRate+'% attendance rate', '')
+    + statCard(d.curPeak.toLocaleString(), peakLabel, peakSub, '')
     + statCard(d.curUtil+'%', 'Utilization Today', utilLabel, utilColor)
-    + statCard((d.curSurp>=0?'+':'')+d.curSurp.toLocaleString(), d.curSurp>=0?'Seat Surplus':'Seat Deficit', 'seats vs. peak demand today', surpColor)
+    + statCard((d.curSurp>=0?'+':'')+d.curSurp.toLocaleString(), d.curSurp>=0?'Seat Surplus':'Seat Deficit', 'seats vs. demand today', surpColor)
     + statCard(gapBase, 'Gap Year (Base)', 'first year demand exceeds supply', gapColor)
     + '</div>';
 }
@@ -1336,9 +1395,7 @@ function buildChart(d) {
     + '<span style="color:var(--sc-high)">— High</span>'
     + '</div></div>'
     + buildSVG(d)
-    + '<div style="font-size:.65rem;color:rgba(242,244,243,.3);margin-top:.5rem;line-height:1.5">'
-    + 'Green band = vibrancy zone ('+state.vibrancyThreshold+'%–'+state.oversubscribedThreshold+'% occupancy) &nbsp;·&nbsp; Below = under-vibrant · Above = oversubscribed &nbsp;·&nbsp; Shaded area = Base–High demand range'
-    + '</div>'
+    + (state.showVibrancy ? '<div style="font-size:.65rem;color:rgba(242,244,243,.3);margin-top:.5rem;line-height:1.5">Green band = vibrancy zone ('+state.vibrancyThreshold+'%–'+state.oversubscribedThreshold+'% occupancy) &nbsp;·&nbsp; Below = under-vibrant · Above = oversubscribed &nbsp;·&nbsp; Shaded area = Base–High demand range</div>' : '')
     + '</div>';
   return h;
 }
@@ -1412,15 +1469,17 @@ function buildSVG(d) {
     });
   }
 
-  // Vibrancy zone band (67%–80% of current supply)
-  var vtLo = d.supply[0]*state.vibrancyThreshold/100;
-  var vtHi = d.supply[0]*state.oversubscribedThreshold/100;
-  var vtyLo = yp(vtLo), vtyHi = yp(vtHi);
-  svg += '<rect x="'+M.left+'" y="'+vtyHi+'" width="'+(W-M.left-M.right)+'" height="'+(vtyLo-vtyHi)+'" fill="#17E88F" opacity=".06"/>';
-  svg += '<line x1="'+M.left+'" y1="'+vtyLo+'" x2="'+(W-M.right)+'" y2="'+vtyLo+'" stroke="#17E88F" stroke-width="1" stroke-dasharray="3,4" opacity=".45"/>';
-  svg += '<line x1="'+M.left+'" y1="'+vtyHi+'" x2="'+(W-M.right)+'" y2="'+vtyHi+'" stroke="#DBD99A" stroke-width="1" stroke-dasharray="3,4" opacity=".45"/>';
-  svg += '<text x="'+(W-M.right+6)+'" y="'+(vtyLo+4)+'" font-size="8" fill="#17E88F" opacity=".55">'+state.vibrancyThreshold+'%</text>';
-  svg += '<text x="'+(W-M.right+6)+'" y="'+(vtyHi+4)+'" font-size="8" fill="#DBD99A" opacity=".55">'+state.oversubscribedThreshold+'%</text>';
+  // Vibrancy zone band (optional)
+  if (state.showVibrancy) {
+    var vtLo = d.supply[0]*state.vibrancyThreshold/100;
+    var vtHi = d.supply[0]*state.oversubscribedThreshold/100;
+    var vtyLo = yp(vtLo), vtyHi = yp(vtHi);
+    svg += '<rect x="'+M.left+'" y="'+vtyHi+'" width="'+(W-M.left-M.right)+'" height="'+(vtyLo-vtyHi)+'" fill="#17E88F" opacity=".06"/>';
+    svg += '<line x1="'+M.left+'" y1="'+vtyLo+'" x2="'+(W-M.right)+'" y2="'+vtyLo+'" stroke="#17E88F" stroke-width="1" stroke-dasharray="3,4" opacity=".45"/>';
+    svg += '<line x1="'+M.left+'" y1="'+vtyHi+'" x2="'+(W-M.right)+'" y2="'+vtyHi+'" stroke="#DBD99A" stroke-width="1" stroke-dasharray="3,4" opacity=".45"/>';
+    svg += '<text x="'+(W-M.right+6)+'" y="'+(vtyLo+4)+'" font-size="8" fill="#17E88F" opacity=".55">'+state.vibrancyThreshold+'%</text>';
+    svg += '<text x="'+(W-M.right+6)+'" y="'+(vtyHi+4)+'" font-size="8" fill="#DBD99A" opacity=".55">'+state.oversubscribedThreshold+'%</text>';
+  }
 
   // Demand lines
   ['base','mid','high'].forEach(function(key){
@@ -1463,15 +1522,16 @@ function buildSVG(d) {
 
 // ─── GROW TABLE (7 columns) ──────────────────────────────────────────────────
 function buildGrowTable(d) {
+  var peakLabel = state.assignedSeating ? 'Seats Needed' : 'Peak Demand';
   var h = '<div class="chart-card"><div class="chart-title" style="margin-bottom:.85rem">Year-by-Year Projection</div>'
     + '<div class="tbl-wrap"><table class="data-tbl"><thead><tr>'
     + '<th>Year</th>'
     + '<th>Seat Supply</th>'
-    + '<th style="color:var(--sc-base)">Base Peak</th>'
+    + '<th style="color:var(--sc-base)">Base '+peakLabel+'</th>'
     + '<th style="color:var(--sc-base)">Base Surplus / Gap</th>'
-    + '<th style="color:var(--sc-high)">High Peak</th>'
+    + '<th style="color:var(--sc-high)">High '+peakLabel+'</th>'
     + '<th style="color:var(--sc-high)">High Surplus / Gap</th>'
-    + '<th>Vibrancy</th>'
+    + (state.showVibrancy ? '<th>Vibrancy</th>' : '')
     + '</tr></thead><tbody>';
 
   function gapCell(g, col) {
@@ -1499,7 +1559,7 @@ function buildGrowTable(d) {
       + gapCell(bg, '#17E88F')
       + '<td style="color:var(--sc-high)">'+hh.peak.toLocaleString()+'</td>'
       + gapCell(hg, '#80BBAD')
-      + '<td>'+(vZone==='vibrant'?'<span style="color:#17E88F;font-size:.72rem;font-weight:700">✓ Vibrant</span>':vZone==='over'?'<span style="color:#DBD99A;font-size:.72rem;font-weight:700">⚠ Over</span>':'<span style="color:#538184;font-size:.72rem;font-weight:700">⚠ Under</span>')+'</td>'
+      + (state.showVibrancy ? '<td>'+(vZone==='vibrant'?'<span style="color:#17E88F;font-size:.72rem;font-weight:700">✓ Vibrant</span>':vZone==='over'?'<span style="color:#DBD99A;font-size:.72rem;font-weight:700">⚠ Over</span>':'<span style="color:#538184;font-size:.72rem;font-weight:700">⚠ Under</span>')+'</td>' : '')
       + '</tr>';
   });
 
