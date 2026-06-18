@@ -676,7 +676,7 @@ var buildings = [];
 var _bid = 0, _fid = 0, _eid = 0;
 var expansionOptions = [];
 var _xoid = 0;
-var XO_COLORS = ['rgba(128,187,173,.75)', 'rgba(219,217,154,.75)', 'rgba(83,129,132,.8)'];
+var XO_COLORS = ['rgba(128,187,173,.85)', 'rgba(83,129,132,.9)', 'rgba(160,196,200,.85)'];
 var SC_COLORS = { base: '#17E88F', mid: '#80BBAD', high: '#538184' };
 var SC_LABELS = { base: 'Base', mid: 'Mid', high: 'High' };
 
@@ -890,9 +890,6 @@ function buildBuildingCard(b) {
     +   derivedNote
     + '</div>'
     + expsHtml
-    + '<div class="bldg-footer">'
-    + '<button class="btn-sm-ghost" onclick="addExpansion('+b.id+')">+ Expansion</button>'
-    + '</div>'
     + '</div>';
 }
 
@@ -926,7 +923,7 @@ function renderExpansionOptions() {
   expansionOptions.forEach(function(opt, idx) {
     var letter = LETTERS[idx] || (idx+1).toString();
     var col = XO_COLORS[idx] || XO_COLORS[XO_COLORS.length-1];
-    var colSolid = idx===0 ? '#80BBAD' : idx===1 ? '#DBD99A' : '#538184';
+    var colSolid = idx===0 ? '#80BBAD' : idx===1 ? '#538184' : '#A0C4C8';
     var addSeats = (state.targetDensity>0 && opt.sf>0) ? Math.round(opt.sf/state.targetDensity) : 0;
     h += '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:.6rem .75rem;margin-bottom:.5rem">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.45rem">'
@@ -1214,7 +1211,7 @@ function buildGrowDashboard(d) {
 // ─── EXPANSION COMPARISON ────────────────────────────────────────────────────
 function buildExpansionComparison(d) {
   var endYr = d.years[d.years.length-1];
-  var COLORS = ['#80BBAD','#DBD99A','#538184'];
+  var COLORS = ['#80BBAD','#538184','#A0C4C8'];
 
   function scenarioCard(title, totalSF, totalSeats, gapYears, colIdx, isCurrent) {
     var col = isCurrent ? 'rgba(242,244,243,.4)' : COLORS[colIdx] || COLORS[0];
@@ -1377,7 +1374,7 @@ function buildGapCallout(d) {
 // ─── SVG CHART ───────────────────────────────────────────────────────────────
 function buildChart(d) {
   var legendExtras = '';
-  var XCOLS_SOLID = ['#80BBAD','#DBD99A','#538184'];
+  var XCOLS_SOLID = ['#80BBAD','#538184','#A0C4C8'];
   if (d.expansionScenarios && d.expansionScenarios.length>0) {
     d.expansionScenarios.forEach(function(xs, idx) {
       var col = XCOLS_SOLID[idx] || XCOLS_SOLID[0];
@@ -1427,14 +1424,14 @@ function buildSVG(d) {
   // Grid lines
   for (var g=0;g<=5;g++) {
     var gv=(g/5)*yMax, gy=yp(gv);
-    svg += '<line x1="'+M.left+'" y1="'+gy+'" x2="'+(W-M.right)+'" y2="'+gy+'" stroke="rgba(255,255,255,.05)" stroke-width="1"/>';
-    svg += '<text x="'+(M.left-7)+'" y="'+(gy+4)+'" text-anchor="end" font-size="9" fill="rgba(242,244,243,.3)">'+Math.round(gv).toLocaleString()+'</text>';
+    svg += '<line x1="'+M.left+'" y1="'+gy+'" x2="'+(W-M.right)+'" y2="'+gy+'" stroke="rgba(255,255,255,.1)" stroke-width="1"/>';
+    svg += '<text x="'+(M.left-7)+'" y="'+(gy+4)+'" text-anchor="end" font-size="9" fill="rgba(242,244,243,.5)">'+Math.round(gv).toLocaleString()+'</text>';
   }
 
   // Range band (base to high)
   var basePts = d.demand.base.map(function(x,i){return xp(i)+','+yp(x.peak);}).join(' ');
   var highPtsRev = d.demand.high.slice().reverse().map(function(x,i){return xp(d.demand.high.length-1-i)+','+yp(x.peak);}).join(' ');
-  svg += '<polygon points="'+basePts+' '+highPtsRev+'" fill="#17E88F" opacity=".06"/>';
+  svg += '<polygon points="'+basePts+' '+highPtsRev+'" fill="#17E88F" opacity=".12"/>';
 
   // Supply line (step function)
   var spPath = 'M '+xp(0)+','+yp(d.supply[0]);
@@ -1446,11 +1443,11 @@ function buildSVG(d) {
       spPath += ' L '+xp(si)+','+yp(d.supply[si]);
     }
   }
-  svg += '<path d="'+spPath+'" fill="none" stroke="rgba(242,244,243,.3)" stroke-width="2" stroke-dasharray="7,4"/>';
-  svg += '<text x="'+(W-M.right+6)+'" y="'+(yp(d.supply[d.years.length-1])+4)+'" font-size="9" fill="rgba(242,244,243,.4)">Supply</text>';
+  svg += '<path d="'+spPath+'" fill="none" stroke="rgba(242,244,243,.55)" stroke-width="2" stroke-dasharray="7,4"/>';
+  svg += '<text x="'+(W-M.right+6)+'" y="'+(yp(d.supply[d.years.length-1])+4)+'" font-size="9" fill="rgba(242,244,243,.65)">Supply</text>';
 
   // Expansion option supply lines
-  var XCOLS_SVG = ['rgba(128,187,173,.7)','rgba(219,217,154,.7)','rgba(83,129,132,.75)'];
+  var XCOLS_SVG = ['rgba(128,187,173,.8)','rgba(83,129,132,.85)','rgba(160,196,200,.8)'];
   if (d.expansionScenarios) {
     d.expansionScenarios.forEach(function(xs, idx) {
       var xCol = XCOLS_SVG[idx] || XCOLS_SVG[0];
@@ -1484,7 +1481,7 @@ function buildSVG(d) {
   // Demand lines
   ['base','mid','high'].forEach(function(key){
     var pts = d.demand[key].map(function(x,i){return xp(i)+','+yp(x.peak);}).join(' ');
-    svg += '<polyline points="'+pts+'" fill="none" stroke="'+SC_COLORS[key]+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+    svg += '<polyline points="'+pts+'" fill="none" stroke="'+SC_COLORS[key]+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
 
     // Data points
     d.demand[key].forEach(function(x,i){
@@ -1508,13 +1505,13 @@ function buildSVG(d) {
 
   // X axis
   d.years.forEach(function(yr,i){
-    svg += '<line x1="'+xp(i)+'" y1="'+(M.top+ch)+'" x2="'+xp(i)+'" y2="'+(M.top+ch+5)+'" stroke="rgba(242,244,243,.15)" stroke-width="1"/>';
-    svg += '<text x="'+xp(i)+'" y="'+(H-M.bottom+17)+'" text-anchor="middle" font-size="10" fill="rgba(242,244,243,.5)">'+yr+'</text>';
+    svg += '<line x1="'+xp(i)+'" y1="'+(M.top+ch)+'" x2="'+xp(i)+'" y2="'+(M.top+ch+5)+'" stroke="rgba(242,244,243,.25)" stroke-width="1"/>';
+    svg += '<text x="'+xp(i)+'" y="'+(H-M.bottom+17)+'" text-anchor="middle" font-size="10" fill="rgba(242,244,243,.7)">'+yr+'</text>';
   });
 
   // Axes
-  svg += '<line x1="'+M.left+'" y1="'+M.top+'" x2="'+M.left+'" y2="'+(M.top+ch)+'" stroke="rgba(242,244,243,.12)" stroke-width="1"/>';
-  svg += '<line x1="'+M.left+'" y1="'+(M.top+ch)+'" x2="'+(W-M.right)+'" y2="'+(M.top+ch)+'" stroke="rgba(242,244,243,.12)" stroke-width="1"/>';
+  svg += '<line x1="'+M.left+'" y1="'+M.top+'" x2="'+M.left+'" y2="'+(M.top+ch)+'" stroke="rgba(242,244,243,.2)" stroke-width="1"/>';
+  svg += '<line x1="'+M.left+'" y1="'+(M.top+ch)+'" x2="'+(W-M.right)+'" y2="'+(M.top+ch)+'" stroke="rgba(242,244,243,.2)" stroke-width="1"/>';
 
   svg += '</svg>';
   return svg;
@@ -1772,7 +1769,7 @@ function buildRightSizeChart(d) {
   // SF needed lines
   ['high','mid','base'].forEach(function(key) {
     var pts = sfNeeded[key].map(function(v,i){ return xp(i)+','+yp(v); }).join(' ');
-    svg += '<polyline points="'+pts+'" fill="none" stroke="'+SC_COLORS[key]+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+    svg += '<polyline points="'+pts+'" fill="none" stroke="'+SC_COLORS[key]+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
     d.years.forEach(function(yr,i){
       svg += '<circle cx="'+xp(i)+'" cy="'+yp(sfNeeded[key][i])+'" r="3" fill="'+SC_COLORS[key]+'" opacity=".85"/>';
     });
