@@ -678,6 +678,8 @@ var expansionOptions = [];
 var _xoid = 0;
 var XO_COLORS = ['rgba(128,187,173,.85)', 'rgba(83,129,132,.9)', 'rgba(160,196,200,.85)'];
 var SC_COLORS = { base: '#17E88F', mid: '#80BBAD', high: '#538184' };
+// Brighter variants for SVG chart lines — same CBRE teal family, optimised for dark bg
+var CHART_COLORS = { base: '#17E88F', mid: '#9DD5CC', high: '#75B8BD' };
 var SC_LABELS = { base: 'Base', mid: 'Mid', high: 'High' };
 
 // ─── MODE SELECTION ──────────────────────────────────────────────────────────
@@ -1393,11 +1395,11 @@ function buildChart(d) {
     + '<div class="chart-card-head">'
     + '<div class="chart-title">Supply vs. Demand · '+d.years[0]+'–'+d.years[d.years.length-1]+'</div>'
     + '<div class="chart-legend">'
-    + '<span style="color:rgba(242,244,243,.4)">─ ─ Supply</span>'
+    + '<span style="color:rgba(242,244,243,.55)">─ ─ Supply</span>'
     + legendExtras
-    + '<span style="color:var(--sc-base)">— Base</span>'
-    + '<span style="color:var(--sc-mid)">— Mid</span>'
-    + '<span style="color:var(--sc-high)">— High</span>'
+    + '<span style="color:'+CHART_COLORS.base+'">— Base</span>'
+    + '<span style="color:'+CHART_COLORS.mid+'">— Mid</span>'
+    + '<span style="color:'+CHART_COLORS.high+'">— High</span>'
     + '</div></div>'
     + buildSVG(d)
     + (state.showVibrancy ? '<div style="font-size:.65rem;color:rgba(242,244,243,.3);margin-top:.5rem;line-height:1.5">Green band = vibrancy zone ('+state.vibrancyThreshold+'%–'+state.oversubscribedThreshold+'% occupancy) &nbsp;·&nbsp; Below = under-vibrant · Above = oversubscribed &nbsp;·&nbsp; Shaded area = Base–High demand range</div>' : '')
@@ -1435,6 +1437,9 @@ function buildSVG(d) {
     svg += '<line x1="'+M.left+'" y1="'+gy+'" x2="'+(W-M.right)+'" y2="'+gy+'" stroke="rgba(255,255,255,.1)" stroke-width="1"/>';
     svg += '<text x="'+(M.left-7)+'" y="'+(gy+4)+'" text-anchor="end" font-size="9" fill="rgba(242,244,243,.5)">'+Math.round(gv).toLocaleString()+'</text>';
   }
+
+  // Plot area background panel
+  svg += '<rect x="'+M.left+'" y="'+M.top+'" width="'+cw+'" height="'+ch+'" fill="rgba(255,255,255,.035)" rx="2"/>';
 
   // Range band (base to high)
   var basePts = d.demand.base.map(function(x,i){return xp(i)+','+yp(x.peak);}).join(' ');
@@ -1489,11 +1494,11 @@ function buildSVG(d) {
   // Demand lines
   ['base','mid','high'].forEach(function(key){
     var pts = d.demand[key].map(function(x,i){return xp(i)+','+yp(x.peak);}).join(' ');
-    svg += '<polyline points="'+pts+'" fill="none" stroke="'+SC_COLORS[key]+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+    svg += '<polyline points="'+pts+'" fill="none" stroke="'+CHART_COLORS[key]+'" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>';
 
     // Data points
     d.demand[key].forEach(function(x,i){
-      svg += '<circle cx="'+xp(i)+'" cy="'+yp(x.peak)+'" r="3.5" fill="'+SC_COLORS[key]+'" opacity=".85">'
+      svg += '<circle cx="'+xp(i)+'" cy="'+yp(x.peak)+'" r="4" fill="'+CHART_COLORS[key]+'">'
         + '<title>'+d.years[i]+': '+x.peak.toLocaleString()+' peak demand ('+x.hc.toLocaleString()+' HC)</title>'
         + '</circle>';
     });
@@ -1502,13 +1507,13 @@ function buildSVG(d) {
     if (d.gapYears[key]) {
       var gi = d.years.indexOf(d.gapYears[key]);
       if (gi>=0) {
-        svg += '<circle cx="'+xp(gi)+'" cy="'+yp(d.demand[key][gi].peak)+'" r="7.5" fill="none" stroke="'+SC_COLORS[key]+'" stroke-width="1.5" opacity=".6"/>';
+        svg += '<circle cx="'+xp(gi)+'" cy="'+yp(d.demand[key][gi].peak)+'" r="8" fill="none" stroke="'+CHART_COLORS[key]+'" stroke-width="2" opacity=".75"/>';
       }
     }
 
     // End label
     var last = d.demand[key][d.demand[key].length-1];
-    svg += '<text x="'+(W-M.right+6)+'" y="'+(yp(last.peak)+4)+'" font-size="9" font-weight="700" fill="'+SC_COLORS[key]+'">'+SC_LABELS[key]+'</text>';
+    svg += '<text x="'+(W-M.right+6)+'" y="'+(yp(last.peak)+4)+'" font-size="9" font-weight="700" fill="'+CHART_COLORS[key]+'">'+SC_LABELS[key]+'</text>';
   });
 
   // X axis
@@ -1777,13 +1782,13 @@ function buildRightSizeChart(d) {
   // SF needed lines
   ['high','mid','base'].forEach(function(key) {
     var pts = sfNeeded[key].map(function(v,i){ return xp(i)+','+yp(v); }).join(' ');
-    svg += '<polyline points="'+pts+'" fill="none" stroke="'+SC_COLORS[key]+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+    svg += '<polyline points="'+pts+'" fill="none" stroke="'+CHART_COLORS[key]+'" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>';
     d.years.forEach(function(yr,i){
-      svg += '<circle cx="'+xp(i)+'" cy="'+yp(sfNeeded[key][i])+'" r="3" fill="'+SC_COLORS[key]+'" opacity=".85"/>';
+      svg += '<circle cx="'+xp(i)+'" cy="'+yp(sfNeeded[key][i])+'" r="4" fill="'+CHART_COLORS[key]+'"/>';
     });
     var lastY = yp(sfNeeded[key][d.years.length-1]);
     var lbl = Math.round(sfNeeded[key][d.years.length-1]/1000*10)/10;
-    svg += '<text x="'+(W-M.right+6)+'" y="'+(lastY+4)+'" font-size="9" font-weight="700" fill="'+SC_COLORS[key]+'">'+SC_LABELS[key]+'</text>';
+    svg += '<text x="'+(W-M.right+6)+'" y="'+(lastY+4)+'" font-size="9" font-weight="700" fill="'+CHART_COLORS[key]+'">'+SC_LABELS[key]+'</text>';
     svg += '<text x="'+(W-M.right+6)+'" y="'+(lastY+14)+'" font-size="8" fill="rgba(242,244,243,.38)">'+lbl+'k SF</text>';
   });
 
