@@ -639,8 +639,8 @@ select.client-name-input option { background: #0D2B22; color: var(--text); }
         <div class="methodology-grid">
           <div class="methodology-item">
             <div class="methodology-icon">📊</div>
-            <div class="methodology-title">Likert Scale (1–5)</div>
-            <div class="methodology-desc">Most questions use a 5-point agreement scale: <strong>5 = Strongly Agree</strong> down to <strong>1 = Strongly Disagree</strong>. Averages above <strong>3.5</strong> indicate positive sentiment; below <strong>2.5</strong> flags a concern area. Charts display response distributions with the mean score shown on the right side.</div>
+            <div class="methodology-title">Agreement Scale (1–4)</div>
+            <div class="methodology-desc">Most questions use a 4-point agreement scale: <strong>4 = Strongly Agree</strong> down to <strong>1 = Strongly Disagree</strong> (no neutral option). Averages above <strong>3.0</strong> indicate positive sentiment; below <strong>2.5</strong> flags a concern area. Charts display response distributions with the mean score shown on the right side.</div>
           </div>
           <div class="methodology-item">
             <div class="methodology-icon">🏆</div>
@@ -650,7 +650,7 @@ select.client-name-input option { background: #0D2B22; color: var(--text); }
           <div class="methodology-item">
             <div class="methodology-icon">🔺</div>
             <div class="methodology-title">Engagement Pyramid</div>
-            <div class="methodology-desc">Three nested levels of workplace experience: <strong>Physical Environment</strong> — foundational space quality and functionality; <strong>Connections</strong> — team relationships and learning; <strong>Belonging &amp; Values</strong> — culture, WVP, and organizational identity. Each level shows average Likert scores as a % of the 5-point maximum.</div>
+            <div class="methodology-desc">Three nested levels of workplace experience: <strong>Physical Environment</strong> — foundational space quality and functionality; <strong>Connections</strong> — team relationships and learning; <strong>Belonging &amp; Values</strong> — culture, WVP, and organizational identity. Each level shows average Likert scores as a % of the 4-point maximum.</div>
           </div>
           <div class="methodology-item">
             <div class="methodology-icon">🏅</div>
@@ -813,14 +813,14 @@ const C = {
   SSUPPLY_L:['Functional individual workspaces','Private focus/phone spaces','Informal collaboration','Formal meeting rooms','Large multipurpose/training','Wellness/quiet rooms','Social spaces','Food & beverage'],
   SFUNC:['SFUNCTION.ICLEAN','SFUNCTION.ITECH','SFUNCTION.CCLEAN','SFUNCTION.CTECH','SFUNCTION.FURN','SFUNCTION.WIFI','SFUNCTION.TEMP','SFUNCTION.LIGHT','SFUNCTION.NOISE','SFUNCTION.WELLAVAIL','SFUNCTION.RRCLEAN'],
   SFUNC_L:['Individual workspace cleanliness','Individual workspace technology','Meeting room cleanliness','Meeting room technology','Furniture ergonomics','Wi-Fi reliability','Temperature comfort','Lighting quality','Noise levels acceptable','Inclusive support spaces','Restroom quality'],
-  SDES:['SDESIGN.DECOR','SDESIGN.VISPRAC','SDESIGN.MOVE','SDESIGN.MOBLVL','SDESIGN.WELCOME','SDESIGN.RESOURCES','SDESIGN.WELLBEN','SDESIGN.NATURE'],
-  SDES_L:['Decor and finishes','Visual/practical balance','Movement across settings','Mobility accommodation','Visitor experience','Resource access','Well-being support','Connection to nature'],
+  SDES:['SDESIGN.DECOR','SDESIGN.VISPRAC','SDESIGN.MOVE','SDESIGN.MOBLVL','SDESIGN.WELCOME','SDESIGN.RESOURCES','SDESIGN.NATURE'],
+  SDES_L:['Decor and finishes','Visual/practical balance','Movement across settings','Mobility accommodation','Visitor experience','Resource access','Connection to nature'],
   VIBE:['VIBE.DYNAMIC','VIBE.QUIET'],
-  VIBE_L:['Dynamic like coffee shop','Quiet like library'],
-  REL:['RELATION.FRIEND','RELATION.MENTOR','RELATION.TCONNECT','RELATION.NTCONNECT','RELATION.COMMUNITY','RELATION.TRAINING'],
-  REL_L:['Friends at work','Has a mentor','Team connection','Cross-team interaction','Community sense','Training adequacy'],
+  VIBE_L:['Dynamic (coffee-shop energy)','Quiet (library focus)'],
+  REL:['RELATION.FRIEND','RELATION.MENTOR','RELATION.TCONNECT','RELATION.NTCONNECT','RELATION.COMMUNITY','RELATION.TRAINING','RELATION.WELLBEN'],
+  REL_L:['Friends at work','Has a mentor','Team connection','Cross-team interaction','Community sense','Training adequacy','Well-being resources & benefits'],
   LEARN:['LEARNOPP.FEEDBACK','LEARNOPP.MORALE','LEARNOPP.COMPCOLLAB','LEARNOPP.ONBOARD','LEARNOPP.PDEV','LEARNOPP.BOUND','LEARNOPP.TOOLS'],
-  LEARN_L:['Feedback culture','Team morale','Company collaboration','Onboarding','Personal development','Cross-boundary learning','Tools & resources'],
+  LEARN_L:['Mentoring & coaching','Relationship building','Complex collaboration','Onboarding','Professional development','Work/life boundaries','Office-only tools & tech'],
   SOC:['SOCIALOPP.CELEB','SOCIALOPP.LUNCH','SOCIALOPP.HH','SOCIALOPP.EVENT','SOCIALOPP.ERG'],
   SOC_L:['Celebrations','Team lunches','Happy hours','Sponsored events','ERG activities'],
   HOST:['HOST.LTEAM','HOST.VTEAM','HOST.MENTORS','HOST.TALENT','HOST.CLIENT'],
@@ -835,19 +835,25 @@ const C = {
   RBEN_L:['Less commuting','Flexible living','Flexible location','Flexible schedule','Expense savings','Childcare ease','Fewer distractions','More privacy','Custom setup'],
   OBEN:['OPOTBEN.GATHER','OPOTBEN.LEADVIS','OPOTBEN.COMMS','OPOTBEN.BWLB','OPOTBEN.OCONNECT','OPOTBEN.TECH','OPOTBEN.ODISTRACT','OPOTBEN.OPRIVATE','OPOTBEN.OCONFIG'],
   OBEN_L:['Team gatherings','Leadership visibility','Better communication','Work-life separation','Office connections','Better technology','Fewer distractions','Private workspace','Custom setup'],
-  TRADE:['TRADEOFF.RFLEX','TRADEOFF.PRIVACC','TRADEOFF.ENHANCED'],
-  TRADE_L:['Greater remote flexibility','Private enclosed space','Enhanced collaborative spaces'],
-  AMM:['AMMEN.MPRTRAIN','AMMEN.PANTRY','AMMEN.COFFEE','AMMEN.GNGFOOD','AMMEN.LOCKER','AMMEN.RECEP','AMMEN.OUTDOOR','AMMEN.A8','AMMEN.A9'],
-  AMM_L:['Meeting/training rooms','Pantry','Coffee','Grab & go food','Lockers','Reception','Outdoor spaces',"Mother's rooms","Phone booths"],
+  TRADE:['TRADEOFF.RFLEX','TRADEOFF.ENHANCED'],
+  TRADE_L:['Greater remote flexibility','Enhanced collaborative spaces'],
+  AMM:['AMMEN.MPRTRAIN','AMMEN.CCENTER','AMMEN.PANTRY','AMMEN.HFOOD','AMMEN.COFFEE','AMMEN.GNGFOOD','AMMEN.LOCKER','AMMEN.GYM','AMMEN.RECEP','AMMEN.OUTDOOR'],
+  AMM_L:['Meeting/training rooms','Conference/event center','Pantry/kitchen','Prepared food','Coffee','Grab & go food','Lockers/showers','Gym/fitness','Reception','Outdoor spaces'],
+  // New 2025 survey columns
+  WKSCHED:'WKSCHED', TLOCAL:'TLOCAL', MLOCAL:'MLOCAL',
+  Q11:'Q11', Q12:'Q12', COMMUTE:'COMMUTE', Q15:'Q15',
+  Q20:['Q20.A1','Q20.A2','Q20.A3','Q20.A4','Q20.A5'],
+  Q20_L:['Socializing nearby','Calls/meetings nearby','Devices/equipment/HVAC','Outside noise','Other'],
+  LUNFREQ:'LUNFREQ', LUNLOCAL:'LUNLOCAL', TECHNEED:'TECHNEED',
+  Q26:'Q26.A1', Q31:'Q31', Q32:'Q32.A1', Q51:'Q51.A1',
 };
 
 const LIKERT_MAP = {
-  'strongly agree':5,'agree':4,'neither agree nor disagree':3,'disagree':2,'strongly disagree':1,
-  'very important':5,'important':4,'somewhat important':3,'not important':2,'not important at all':1,
-  'always':5,'often':4,'occasionally':3,'rarely':2,'never':1,
+  'strongly agree':4,'agree':3,'disagree':2,'strongly disagree':1,
+  'very important':4,'important':3,'somewhat important':2,'not important':1,'not important at all':1,
 };
-const L5_LABELS = ['Strongly Agree','Agree','Neutral','Disagree','Strongly Disagree'];
-const L5_COLORS = ['#003F2D','#17E88F','#80BBAD','#DBD99A','#D2785A'];
+const L5_LABELS = ['Strongly Agree','Agree','Disagree','Strongly Disagree'];
+const L5_COLORS = ['#003F2D','#17E88F','#D2785A','#8B1A1A'];
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 let allRows = [];
@@ -861,14 +867,16 @@ function parseLikert(val) {
   if (LIKERT_MAP[v] !== undefined) return LIKERT_MAP[v];
   for (const [k,n] of Object.entries(LIKERT_MAP)) { if (v.includes(k)) return n; }
   const n = parseFloat(v);
-  return (!isNaN(n) && n >= 1 && n <= 5) ? n : null;
+  return (!isNaN(n) && n >= 1 && n <= 4) ? n : null;
 }
 
 function parseHostFreq(val) {
   if (!val) return null;
   const v = val.trim().toLowerCase();
-  const m = {'always':5,'often':4,'occasionally':3,'rarely':2,'never':1};
-  for (const [k,n] of Object.entries(m)) { if (v.includes(k)) return n; }
+  if (v.includes('daily') || v.includes('weekly')) return 4;
+  if (v.includes('biweekly') || v.includes('monthly')) return 3;
+  if (v.includes('quarterly') || v.includes('rarely') || v.includes('occasionally')) return 2;
+  if (v.includes('never')) return 1;
   return null;
 }
 
@@ -906,10 +914,10 @@ function cbPct(rows, col) {
 }
 
 function likertDist(rows, col) {
-  const d = {5:0,4:0,3:0,2:0,1:0};
+  const d = {4:0,3:0,2:0,1:0};
   let t = 0;
   rows.forEach(r => { const v = parseLikert(gv(r, col)); if (v !== null) { d[v]++; t++; } });
-  const a = t ? (5*d[5]+4*d[4]+3*d[3]+2*d[2]+1*d[1]) / t : null;
+  const a = t ? (4*d[4]+3*d[3]+2*d[2]+1*d[1]) / t : null;
   return { d, t, avg: a };
 }
 
@@ -932,10 +940,10 @@ function supplyDist(rows, col) {
 function parseCSV(text) {
   const res = Papa.parse(text, { header: false, skipEmptyLines: false });
   const rows = res.data;
-  if (rows.length < 7) { showErr('CSV must have at least 7 rows (5 header + data).'); return false; }
+  if (rows.length < 5) { showErr('CSV must have at least 5 rows (3 header + data).'); return false; }
   colIdx = {};
   rows[0].forEach((name, i) => { if (name && name.trim()) colIdx[name.trim()] = i; });
-  allRows = rows.slice(5).filter(r => r.some(c => c && c.trim() !== ''));
+  allRows = rows.slice(3).filter(r => r.some(c => c && c.trim() !== ''));
   return true;
 }
 
@@ -1068,7 +1076,7 @@ function buildStackedTrack(segData) {
 function stackedBar(label, d, t, a, lblClass) {
   lblClass = lblClass || 'bar-label';
   if (!t) return `<div class="bar-row"><span class="${lblClass}">${label}</span><span style="font-size:0.72rem;color:var(--text-muted)">No data</span></div>`;
-  const segData = [5,4,3,2,1].map((s,i) => ({
+  const segData = [4,3,2,1].map((s,i) => ({
     w: pct(d[s], t), color: L5_COLORS[i], light: i === 0, name: L5_LABELS[i]
   }));
   const track = buildStackedTrack(segData);
@@ -1133,10 +1141,17 @@ function renderDemo() {
 
   const COLS = [
     { col:C.DEPT, label:'Department', order:null },
-    { col:C.ROLE, label:'Role', order:['Leadership','Manager','Employee'] },
-    { col:C.GEN, label:'Generation', order:['Born before 1965','Born 1965-1980','Born 1981-1996','Born 1997 or after'] },
-    { col:C.TENURE, label:'Tenure', order:['0-5 years','6-10 years','11-20 years','21-30 years','30+ years'] },
-    { col:C.FREQOFF, label:'Office Frequency', order:['Every day','4 days per week','2-3 days per week','1 day per week','Less than one day per week','Never'] },
+    { col:C.ROLE, label:'Role', order:['Leader of Leaders','Leader of ICs','Individual Contributor'] },
+    { col:C.GEN, label:'Generation', order:['Born before 1965','Born 1965–1980','Born 1981–1996','Born 1997 or after','Prefer not to say'] },
+    { col:C.TENURE, label:'Tenure', order:['Less than 1 year','1–2 years','3–5 years','6–10 years','10+ years'] },
+    { col:C.FREQOFF, label:'Office Frequency', order:['Every day (5 days/week)','4 days per week','3 days per week','2 days per week','1 day per week','Less than one day per week','Never (fully remote)'] },
+    { col:C.WKSCHED, label:'Weekly Schedule Type', order:null },
+    { col:C.TLOCAL, label:'Same Office as Majority of Team', order:['Yes','No'] },
+    { col:C.MLOCAL, label:'Same Office as Direct Manager', order:['Yes','No'] },
+    { col:C.Q11,    label:'Has Assigned Workspace', order:['Yes','No'] },
+    { col:C.Q12,    label:'Assigned Workspace Type', order:null },
+    { col:C.COMMUTE, label:'One-Way Commute Time', order:['0–15 minutes','15–30 minutes','30–45 minutes','45–60 minutes','60+ minutes'] },
+    { col:C.Q15,    label:'Primary Commute Mode', order:null },
   ];
   const PAL = ['#17E88F','#0FB870','#80BBAD','#538184','#003F2D','#DBD99A','#D2785A','#CAD1D3','#012A2D'];
 
@@ -1179,9 +1194,9 @@ function renderSpace() {
   const lowestFunc  = funcItems.length ? [...funcItems].sort((a,b) => (a.avg||0)-(b.avg||0))[0] : null;
   const highestFunc = funcItems.length ? [...funcItems].sort((a,b) => (b.avg||0)-(a.avg||0))[0] : null;
 
-  // Vibe: quiet vs dynamic lean
-  const quietAvg   = likertDist(rows,'VIBE.QUIET').avg;
-  const dynamicAvg = likertDist(rows,'VIBE.DYNAMIC').avg;
+  // Vibe: numeric % — respondents split 100% between dynamic and quiet preference
+  const quietAvg   = avg(numVals(rows,'VIBE.QUIET'));
+  const dynamicAvg = avg(numVals(rows,'VIBE.DYNAMIC'));
 
   const spaceInsights = [];
 
@@ -1196,14 +1211,14 @@ function renderSpace() {
   if (lowestFunc) {
     const loScore = lowestFunc.avg !== null ? lowestFunc.avg.toFixed(1) : '—';
     const hiScore = highestFunc && highestFunc.avg !== null ? highestFunc.avg.toFixed(1) : '—';
-    spaceInsights.push({ icon:'🔧', text:`<strong>${lowestFunc.label}</strong> is the lowest-rated functionality item (avg ${loScore}/5) and represents the clearest physical improvement opportunity. <strong>${highestFunc?.label}</strong> scores highest at ${hiScore}/5.` });
+    spaceInsights.push({ icon:'🔧', text:`<strong>${lowestFunc.label}</strong> is the lowest-rated functionality item (avg ${loScore}/4) and represents the clearest physical improvement opportunity. <strong>${highestFunc?.label}</strong> scores highest at ${hiScore}/4.` });
   }
 
-  if (quietAvg !== null && dynamicAvg !== null) {
-    const lean = quietAvg > dynamicAvg ? 'quieter, library-like' : 'dynamic, energetic';
-    const leanScore = quietAvg > dynamicAvg ? quietAvg.toFixed(1) : dynamicAvg.toFixed(1);
-    const otherScore = quietAvg > dynamicAvg ? dynamicAvg.toFixed(1) : quietAvg.toFixed(1);
-    spaceInsights.push({ icon:'🎧', text:`Employees lean toward a <strong>${lean} environment</strong> (${leanScore}/5 vs ${otherScore}/5 for the alternative). Design programming should prioritize acoustic comfort and ${quietAvg > dynamicAvg ? 'focus-friendly zones' : 'collaborative, activating spaces'}.` });
+  const vibeD = avg(numVals(rows,'VIBE.DYNAMIC'))||0;
+  const vibeQ = avg(numVals(rows,'VIBE.QUIET'))||0;
+  if (vibeD > 0 || vibeQ > 0) {
+    const lean = vibeQ > vibeD ? 'quieter, library-like' : 'dynamic, energetic';
+    spaceInsights.push({ icon:'🎧', text:`Employees prefer to spend <strong>${Math.round(vibeQ > vibeD ? vibeQ : vibeD)}% of their time in a ${lean} environment</strong>. Design programming should prioritize ${vibeQ > vibeD ? 'acoustic comfort and focus-friendly zones' : 'collaborative, activating spaces'}.` });
   }
 
   if (spaceInsights.length) {
@@ -1226,21 +1241,96 @@ function renderSpace() {
 
   // Functionality
   const fd = C.SFUNC.map((col,i) => ({label:C.SFUNC_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
-  html += `<div class="chart-card"><div class="chart-card-title">Functionality Ratings <span>avg out of 5</span></div><div class="stacked-chart">`;
+  html += `<div class="chart-card"><div class="chart-card-title">Functionality Ratings <span>avg out of 4</span></div><div class="stacked-chart">`;
   fd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
   html += `</div>${likertLegend()}</div>`;
 
   // Design
   const dd = C.SDES.map((col,i) => ({label:C.SDES_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
-  html += `<div class="chart-card"><div class="chart-card-title">Design Ratings <span>avg out of 5</span></div><div class="stacked-chart">`;
+  html += `<div class="chart-card"><div class="chart-card-title">Design Ratings <span>avg out of 4</span></div><div class="stacked-chart">`;
   dd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
   html += `</div>${likertLegend()}</div>`;
 
-  // Vibe
-  const vd = C.VIBE.map((col,i) => ({label:C.VIBE_L[i],...likertDist(rows,col)}));
-  html += `<div class="chart-card"><div class="chart-card-title">Office Vibe Preference</div><div class="stacked-chart">`;
-  vd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
-  html += `</div>${likertLegend()}</div>`;
+  // Vibe (numeric % split — respondents entered how to divide 100% between two env types)
+  const vibeDyn = Math.round(avg(numVals(rows,'VIBE.DYNAMIC'))||0);
+  const vibeQui = Math.round(avg(numVals(rows,'VIBE.QUIET'))||0);
+  if (vibeDyn > 0 || vibeQui > 0) {
+    html += `<div class="chart-card"><div class="chart-card-title">Ideal Environment Mix <span>avg % of time</span></div>
+      <div class="h-bar-chart">
+        ${hBar('Dynamic (coffee-shop energy)', vibeDyn, '#17E88F')}
+        ${hBar('Quiet (library focus)', vibeQui, '#80BBAD')}
+      </div>
+      <p style="font-size:0.74rem;color:var(--text-muted);margin-top:0.75rem;line-height:1.6">Respondents split 100% between their preferred dynamic vs. quiet work environments.</p>
+    </div>`;
+  }
+
+  // Noise Distraction Sources (Q20 — multi-select checkboxes)
+  const noiseData = C.Q20.map((col,i) => ({ label:C.Q20_L[i], p:cbPct(rows,col) })).filter(d=>d.p>0).sort((a,b)=>b.p-a.p);
+  if (noiseData.length) {
+    html += `<div class="chart-card"><div class="chart-card-title">Noise Distraction Sources <span>% who selected each</span></div><div class="h-bar-chart">`;
+    noiseData.forEach(({label,p}) => { html += hBar(label,p,'#D2785A'); });
+    html += `</div></div>`;
+  }
+
+  // Lunch Behavior
+  const lunFreqCounts = countBy(rows, C.LUNFREQ);
+  const lunLocCounts  = countBy(rows, C.LUNLOCAL);
+  if (Object.keys(lunFreqCounts).length || Object.keys(lunLocCounts).length) {
+    const PAL = ['#17E88F','#80BBAD','#538184','#D2785A','#DBD99A','#003F2D','#8B1A1A'];
+    const barSet = (counts) => {
+      const ents = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+      const tot = ents.reduce((s,[,n])=>s+n,0);
+      return ents.map(([v,n],i)=>{
+        const w=pct(n,tot);
+        return `<div class="h-bar-row" style="margin-bottom:0.3rem">
+          <span style="font-size:0.74rem;color:var(--text);min-width:160px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${v}</span>
+          <div style="flex:1;height:18px;background:var(--card-border);border-radius:4px;overflow:hidden;">
+            <div style="height:100%;width:${w}%;background:${PAL[i%PAL.length]};border-radius:4px;"></div>
+          </div>
+          <span style="font-size:0.72rem;color:var(--text-muted);min-width:60px;text-align:right">${n} (${w}%)</span>
+        </div>`;
+      }).join('');
+    };
+    html += `<div class="two-col">`;
+    if (Object.keys(lunFreqCounts).length) html += `<div class="chart-card"><div class="chart-card-title">Lunch Frequency</div>${barSet(lunFreqCounts)}</div>`;
+    if (Object.keys(lunLocCounts).length) html += `<div class="chart-card"><div class="chart-card-title">Where Employees Eat</div>${barSet(lunLocCounts)}</div>`;
+    html += `</div>`;
+  }
+
+  // Tech & Space Needs
+  const techCounts = countBy(rows, C.TECHNEED);
+  if (Object.keys(techCounts).length) {
+    const techEnts = Object.entries(techCounts).sort((a,b)=>b[1]-a[1]);
+    const techTot = techEnts.reduce((s,[,n])=>s+n,0);
+    const PAL = ['#17E88F','#80BBAD','#538184'];
+    html += `<div class="chart-card"><div class="chart-card-title">Technology & Space Needs</div>`;
+    techEnts.forEach(([v,n],i)=>{
+      const w=pct(n,techTot);
+      html += `<div class="h-bar-row" style="margin-bottom:0.35rem">
+        <span style="font-size:0.74rem;color:var(--text);min-width:140px;flex-shrink:0">${v}</span>
+        <div style="flex:1;height:20px;background:var(--card-border);border-radius:4px;overflow:hidden;">
+          <div style="height:100%;width:${w}%;background:${PAL[i%PAL.length]};border-radius:4px;"></div>
+        </div>
+        <span style="font-size:0.72rem;color:var(--text-muted);min-width:60px;text-align:right">${n} (${w}%)</span>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Specialty Space Verbatims (Q26)
+  const specData = rows.map(r => gv(r, C.Q26)).filter(v => v && v.length > 5);
+  if (specData.length) {
+    const VLIMIT = 20;
+    let vh = `<div class="verbatim-list">`;
+    specData.slice(0,VLIMIT).forEach(v => { vh += `<div class="verbatim-item">"${esc(v)}"</div>`; });
+    if (specData.length > VLIMIT) {
+      vh += `<div class="verbatim-overflow" style="display:none">`;
+      specData.slice(VLIMIT).forEach(v => { vh += `<div class="verbatim-item">"${esc(v)}"</div>`; });
+      vh += `</div><button class="verbatim-more-btn" onclick="this.previousElementSibling.style.display='block';this.style.display='none'">Show ${specData.length-VLIMIT} more ▼</button>`;
+    }
+    vh += `</div>`;
+    html += `<div class="chart-card"><div class="chart-card-title">Specialty Space Requirements <span>${specData.length} responses</span></div>${vh}</div>`;
+  }
 
   document.getElementById('spaceContent').innerHTML = html;
 }
@@ -1279,11 +1369,11 @@ function renderRel() {
   }
 
   if (lowestRel && highestRel) {
-    relInsights.push({ icon:'👥', text:`<strong>${lowestRel.label}</strong> is the lowest-rated relationship dimension (avg ${lowestRel.avg?.toFixed(1)||'—'}/5) and the highest-priority connection to strengthen. <strong>${highestRel.label}</strong> scores strongest at ${highestRel.avg?.toFixed(1)||'—'}/5.` });
+    relInsights.push({ icon:'👥', text:`<strong>${lowestRel.label}</strong> is the lowest-rated relationship dimension (avg ${lowestRel.avg?.toFixed(1)||'—'}/4) and the highest-priority connection to strengthen. <strong>${highestRel.label}</strong> scores strongest at ${highestRel.avg?.toFixed(1)||'—'}/4.` });
   }
 
   if (topLearn && topSocial) {
-    relInsights.push({ icon:'📚', text:`The most valued learning opportunity is <strong>${topLearn.label}</strong> (${topLearn.avg?.toFixed(1)||'—'}/5). For social programming, <strong>${topSocial.label.toLowerCase()}</strong> rank highest while <strong>${lowSocial?.label.toLowerCase()}</strong> show the most room to grow.` });
+    relInsights.push({ icon:'📚', text:`The most important in-office activity is <strong>${topLearn.label}</strong> (${topLearn.avg?.toFixed(1)||'—'}/4). For social programming, <strong>${topSocial.label.toLowerCase()}</strong> rank highest while <strong>${lowSocial?.label.toLowerCase()}</strong> show the most room to grow.` });
   }
 
   if (relInsights.length) {
@@ -1296,13 +1386,13 @@ function renderRel() {
 
   // Relationships
   const rd = C.REL.map((col,i) => ({label:C.REL_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
-  html += `<div class="chart-card"><div class="chart-card-title">Workplace Relationships <span>avg 1–5</span></div><div class="stacked-chart">`;
+  html += `<div class="chart-card"><div class="chart-card-title">Workplace Relationships <span>avg 1–4</span></div><div class="stacked-chart">`;
   rd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
   html += `</div>${likertLegend()}</div>`;
 
   // Learning
   const ld = C.LEARN.map((col,i) => ({label:C.LEARN_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
-  html += `<div class="chart-card"><div class="chart-card-title">Learning Opportunity Importance</div><div class="stacked-chart">`;
+  html += `<div class="chart-card"><div class="chart-card-title">In-Office Activity Importance <span>how important is being in-person for each</span></div><div class="stacked-chart">`;
   ld.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
   html += `</div>${likertLegend()}</div>`;
 
@@ -1313,16 +1403,16 @@ function renderRel() {
   html += `</div>${likertLegend()}</div>`;
 
   // Hosting
-  const hostColors = ['#003F2D','#17E88F','#80BBAD','#DBD99A','#D2785A'];
+  const hostColors = ['#003F2D','#17E88F','#D2785A','#8B1A1A'];
   const hd = C.HOST.map((col,i) => {
-    const d2={5:0,4:0,3:0,2:0,1:0}; let t=0;
+    const d2={4:0,3:0,2:0,1:0}; let t=0;
     rows.forEach(r => { const v=parseHostFreq(gv(r,col)); if(v!==null){d2[v]++;t++;} });
-    const a = t ? (5*d2[5]+4*d2[4]+3*d2[3]+2*d2[2]+1*d2[1])/t : null;
+    const a = t ? (4*d2[4]+3*d2[3]+2*d2[2]+1*d2[1])/t : null;
     return {label:C.HOST_L[i], d:d2, t, avg:a};
   }).sort((a,b)=>(b.avg||0)-(a.avg||0));
-  html += `<div class="chart-card"><div class="chart-card-title">Hosting Frequency at Office</div><div class="stacked-chart">`;
+  html += `<div class="chart-card"><div class="chart-card-title">Hosting Frequency at Office <span>Daily/Weekly · Biweekly/Monthly · Rarely · Never</span></div><div class="stacked-chart">`;
   hd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
-  html += `</div><div class="chart-legend">${['Always','Often','Occasionally','Rarely','Never'].map((l,i)=>`<div class="legend-item"><div class="legend-dot" style="background:${hostColors[i]}"></div>${l}</div>`).join('')}</div></div>`;
+  html += `</div><div class="chart-legend">${['Daily/Weekly','Biweekly/Monthly','Quarterly/Rarely','Never'].map((l,i)=>`<div class="legend-item"><div class="legend-dot" style="background:${hostColors[i]}"></div>${l}</div>`).join('')}</div></div>`;
 
   // Time splits
   const ti = avg(numVals(rows,C.TIME_I))||0;
@@ -1343,6 +1433,45 @@ function renderRel() {
     <div class="h-bar-chart">${hBar('Small (2–5 people)',ms)}${hBar('Medium (6–10 people)',mm)}${hBar('Large (11–16 people)',ml)}</div>
   </div>`;
 
+  // 1:1 Meeting Frequency with Manager (Q31)
+  const q31Counts = countBy(rows, C.Q31);
+  if (Object.keys(q31Counts).length) {
+    const q31Order = ['Daily','Weekly','Biweekly','Monthly','Quarterly','Rarely','Never'];
+    const q31Ents = Object.entries(q31Counts).sort((a,b) => {
+      const ai = q31Order.findIndex(o => a[0].toLowerCase().includes(o.toLowerCase()));
+      const bi = q31Order.findIndex(o => b[0].toLowerCase().includes(o.toLowerCase()));
+      return (ai<0?99:ai)-(bi<0?99:bi);
+    });
+    const q31Tot = q31Ents.reduce((s,[,n])=>s+n,0);
+    const PAL = ['#17E88F','#0FB870','#80BBAD','#538184','#DBD99A','#D2785A','#8B1A1A'];
+    const q31Bars = q31Ents.map(([v,n],i)=>{
+      const w=pct(n,q31Tot);
+      return `<div class="h-bar-row" style="margin-bottom:0.35rem">
+        <span style="font-size:0.74rem;color:var(--text);min-width:110px;flex-shrink:0">${v}</span>
+        <div style="flex:1;height:20px;background:var(--card-border);border-radius:4px;overflow:hidden;">
+          <div style="height:100%;width:${w}%;background:${PAL[i%PAL.length]};border-radius:4px;"></div>
+        </div>
+        <span style="font-size:0.72rem;color:var(--text-muted);min-width:65px;text-align:right">${n} (${w}%)</span>
+      </div>`;
+    }).join('');
+    html += `<div class="chart-card"><div class="chart-card-title">1:1 Meeting Frequency with Manager <span>N=${q31Tot}</span></div>${q31Bars}</div>`;
+  }
+
+  // Collaboration free text (Q32)
+  const q32Data = rows.map(r => gv(r, C.Q32)).filter(v => v && v.length > 10);
+  if (q32Data.length) {
+    const VLIMIT = 20;
+    let vh = `<div class="verbatim-list">`;
+    q32Data.slice(0,VLIMIT).forEach(v => { vh += `<div class="verbatim-item">"${esc(v)}"</div>`; });
+    if (q32Data.length > VLIMIT) {
+      vh += `<div class="verbatim-overflow" style="display:none">`;
+      q32Data.slice(VLIMIT).forEach(v => { vh += `<div class="verbatim-item">"${esc(v)}"</div>`; });
+      vh += `</div><button class="verbatim-more-btn" onclick="this.previousElementSibling.style.display='block';this.style.display='none'">Show ${q32Data.length-VLIMIT} more ▼</button>`;
+    }
+    vh += `</div>`;
+    html += `<div class="chart-card"><div class="chart-card-title">What Promotes or Inhibits Collaboration <span>${q32Data.length} responses</span></div>${vh}</div>`;
+  }
+
   document.getElementById('relContent').innerHTML = html;
 }
 
@@ -1351,15 +1480,15 @@ function renderWVP() {
   const rows = filteredRows;
   const wvpD = C.WVP.map((col,i) => ({label:C.WVP_L[i],...likertDist(rows,col)}));
   const avgs = wvpD.map(d => d.avg).filter(v => v !== null);
-  const comp = avgs.length ? (avg(avgs)*20).toFixed(0) : '—';
+  const comp = avgs.length ? (avg(avgs)*25).toFixed(0) : '—';
   const sorted = [...wvpD].sort((a,b)=>(b.avg||0)-(a.avg||0));
 
   // ── Key Takeaways ─────────────────────────────────────────────────────
   const compNum = parseFloat(comp);
-  const aboveThreshold = avgs.filter(v => v >= 3.5).length;
+  const aboveThreshold = avgs.filter(v => v >= 3.0).length;
   const topItem    = sorted[0];
   const bottomItem = sorted[sorted.length - 1];
-  const midItems   = sorted.filter(d => d.avg !== null && d.avg >= 3.0 && d.avg < 3.5);
+  const midItems   = sorted.filter(d => d.avg !== null && d.avg >= 2.5 && d.avg < 3.0);
 
   const wvpInsights = [];
 
@@ -1374,17 +1503,17 @@ function renderWVP() {
   }
 
   if (topItem?.avg !== null && bottomItem?.avg !== null) {
-    wvpInsights.push({ icon:'⭐', text:`<strong>${topItem.label}</strong> is the highest-scoring WVP dimension (${topItem.avg?.toFixed(1)}/5), representing a cultural asset to protect and communicate. <strong>${bottomItem.label}</strong> scores lowest (${bottomItem.avg?.toFixed(1)}/5) and is the highest-leverage area for improvement.` });
+    wvpInsights.push({ icon:'⭐', text:`<strong>${topItem.label}</strong> is the highest-scoring WVP dimension (${topItem.avg?.toFixed(1)}/4), representing a cultural asset to protect and communicate. <strong>${bottomItem.label}</strong> scores lowest (${bottomItem.avg?.toFixed(1)}/4) and is the highest-leverage area for improvement.` });
   }
 
   if (avgs.length > 0) {
-    const belowThreshold = avgs.filter(v => v < 3.0).length;
+    const belowThreshold = avgs.filter(v => v < 2.5).length;
     if (belowThreshold > 0) {
-      wvpInsights.push({ icon:'⚠️', text:`<strong>${belowThreshold} of ${avgs.length} WVP dimensions score below 3.0/5</strong>, meaning meaningful proportions of employees disagree with these statements. These represent systemic culture risks rather than isolated concerns.` });
+      wvpInsights.push({ icon:'⚠️', text:`<strong>${belowThreshold} of ${avgs.length} WVP dimensions score below 2.5/4</strong>, meaning meaningful proportions of employees disagree with these statements. These represent systemic culture risks rather than isolated concerns.` });
     } else if (aboveThreshold === avgs.length) {
-      wvpInsights.push({ icon:'✅', text:`<strong>All ${avgs.length} WVP dimensions score above 3.5/5</strong>, reflecting broad alignment with the organization's value proposition. The focus should shift from fixing gaps to deepening the strongest dimensions.` });
+      wvpInsights.push({ icon:'✅', text:`<strong>All ${avgs.length} WVP dimensions score above 3.0/4</strong>, reflecting broad alignment with the organization's value proposition. The focus should shift from fixing gaps to deepening the strongest dimensions.` });
     } else {
-      wvpInsights.push({ icon:'📊', text:`<strong>${aboveThreshold} of ${avgs.length} dimensions score above 3.5/5</strong>. ${midItems.length > 0 ? `${midItems.length} dimension${midItems.length>1?'s':''} (${midItems.map(d=>d.label).join(', ')}) sit in the 3.0–3.5 range — these are improvement opportunities with relatively low activation effort.` : ''}` });
+      wvpInsights.push({ icon:'📊', text:`<strong>${aboveThreshold} of ${avgs.length} dimensions score above 3.0/4</strong>. ${midItems.length > 0 ? `${midItems.length} dimension${midItems.length>1?'s':''} (${midItems.map(d=>d.label).join(', ')}) sit in the 2.5–3.0 range — these are improvement opportunities with relatively low activation effort.` : ''}` });
     }
   }
 
@@ -1409,7 +1538,7 @@ function renderWVP() {
       <div style="font-size:0.78rem;font-weight:600;color:var(--text);margin-bottom:0.3rem">About the WVP Composite Score</div>
       <div style="font-size:0.78rem;color:var(--text-muted);line-height:1.65">
         The <strong style="color:var(--text)">Workplace Value Proposition (WVP)</strong> measures how well employees feel the organization delivers on its cultural promises across nine dimensions — Belonging, Inclusivity &amp; Respect, Supported &amp; Valued, Leadership Openness, Brand Reflection, Office Pride, Investment in People, Work-Life Balance, and Recognition.
-        Each dimension is scored on a 1–5 Likert scale, averaged, then converted to a <strong style="color:var(--text)">0–100 composite</strong>.
+        Each dimension is scored on a 1–4 scale (Strongly Disagree → Strongly Agree), averaged, then converted to a <strong style="color:var(--text)">0–100 composite</strong>.
         <span style="display:inline-flex;gap:0.75rem;margin-top:0.45rem;flex-wrap:wrap">
           <span style="color:#17E88F">● ≥ 70 — Strong attachment</span>
           <span style="color:#80BBAD">● 50–69 — Moderate attachment</span>
@@ -1425,11 +1554,11 @@ function renderWVP() {
       <div class="stat-card-label">WVP Composite Score</div>
       <div class="stat-card-sub">${wvpBand || 'Out of 100'}</div>
     </div>
-    <div class="stat-card"><div class="stat-card-value">${sorted[0]?.avg?.toFixed(2)||'—'}</div><div class="stat-card-label">Highest — ${sorted[0]?.label||'—'}</div><div class="stat-card-sub">Avg score out of 5</div></div>
+    <div class="stat-card"><div class="stat-card-value">${sorted[0]?.avg?.toFixed(2)||'—'}</div><div class="stat-card-label">Highest — ${sorted[0]?.label||'—'}</div><div class="stat-card-sub">Avg score out of 4</div></div>
     <div class="stat-card"><div class="stat-card-value">${sorted[sorted.length-1]?.avg?.toFixed(2)||'—'}</div><div class="stat-card-label">Lowest — ${sorted[sorted.length-1]?.label||'—'}</div><div class="stat-card-sub">Priority opportunity</div></div>
   </div>`;
 
-  html += `<div class="chart-card"><div class="chart-card-title">WVP Dimensions — all items <span>avg 1–5</span></div><div class="stacked-chart">`;
+  html += `<div class="chart-card"><div class="chart-card-title">WVP Dimensions — all items <span>avg 1–4</span></div><div class="stacked-chart">`;
   sorted.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
   html += `</div>${likertLegend()}</div>`;
 
@@ -1606,8 +1735,8 @@ function renderFuture() {
       <button class="export-btn" onclick="exportTradeoffPNG()">↓ Export PNG</button>
     </div>
     <p class="tradeoff-note">
-      Respondents rated each trade-off on a <strong>1–5 Likert scale</strong>
-      (1 = Strongly Disagree · 5 = Strongly Agree).
+      Respondents rated each trade-off on a <strong>1–4 scale</strong>
+      (1 = Strongly Disagree · 4 = Strongly Agree).
       The center of each chart shows the combined
       <span style="color:var(--accent);font-weight:600">% who Agree or Strongly Agree</span>.
     </p>
@@ -1616,7 +1745,7 @@ function renderFuture() {
   td.forEach(d => {
     const agreeN   = (d.d[5]||0) + (d.d[4]||0);
     const agreePct = d.t ? pct(agreeN, d.t) : 0;
-    const segs     = [5,4,3,2,1].map((s,i) => ({value:d.d[s]||0, color:L5_COLORS[i]}));
+    const segs     = [4,3,2,1].map((s,i) => ({value:d.d[s]||0, color:L5_COLORS[i]}));
     html += `<div class="tradeoff-pie-card">
       <div class="tradeoff-pie-title">${d.label}</div>
       <div class="donut-svg-wrap" style="width:140px;height:140px;margin:0 auto 0.9rem">
@@ -1627,7 +1756,7 @@ function renderFuture() {
         </div>
       </div>
       <div class="tradeoff-breakdown">
-        ${[5,4,3,2,1].map((s,i) => {
+        ${[4,3,2,1].map((s,i) => {
           const p2 = d.t ? pct(d.d[s]||0, d.t) : 0;
           if (!p2) return '';
           return `<div class="tradeoff-row">
@@ -1889,16 +2018,15 @@ function renderWorkStyles() {
   // SU: % of collaborative time that is unscheduled (COLLAB.UCOLLAB avg)
   const su = Math.round(avg(numVals(rows, C.COL_U)) || 0);
 
-  // DQ: quiet env preference normalized — avg Likert(VIBE.QUIET) / 5 × 100
-  const vibeQVals = rows.map(r => parseLikert(gv(r, 'VIBE.QUIET'))).filter(v => v !== null);
-  const dq = Math.round(vibeQVals.length ? (avg(vibeQVals) / 5 * 100) : 0);
+  // DQ: quiet env preference — avg % time in quiet environment (VIBE.QUIET is numeric 0–100)
+  const dq = Math.round(avg(numVals(rows, 'VIBE.QUIET')) || 0);
 
   // NP: large-meeting proportion (Q30.A3 avg) as specialized-needs proxy
   const np = Math.round(avg(numVals(rows, C.MTG_L)) || 0);
 
-  // LM: cross-team interaction score normalized — avg Likert(RELATION.NTCONNECT) / 5 × 100
+  // LM: cross-team interaction score normalized — avg Likert(RELATION.NTCONNECT) / 4 × 100
   const ntVals = rows.map(r => parseLikert(gv(r, 'RELATION.NTCONNECT'))).filter(v => v !== null);
-  const lm = Math.round(ntVals.length ? (avg(ntVals) / 5 * 100) : 0);
+  const lm = Math.round(ntVals.length ? (avg(ntVals) / 4 * 100) : 0);
 
   const n = rows.length;
 
@@ -2033,7 +2161,7 @@ function exportTradeoffPNG() {
   const cardW = Math.floor((W - pad * 2) / td.length);
   let g = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="DM Sans,Arial,sans-serif">`;
   g += `<text x="${W/2}" y="18" text-anchor="middle" font-size="12" font-weight="700" fill="#F2F4F3">Trade-off Preferences</text>`;
-  g += `<text x="${W/2}" y="33" text-anchor="middle" font-size="8.5" fill="#80BBAD">Rated on a 1–5 Likert scale · Center = % who Agree or Strongly Agree</text>`;
+  g += `<text x="${W/2}" y="33" text-anchor="middle" font-size="8.5" fill="#80BBAD">Rated on a 1–4 scale · Center = % who Agree or Strongly Agree</text>`;
   td.forEach((d, idx) => {
     const agreeN = (d.d[5]||0) + (d.d[4]||0);
     const agreePct = d.t ? Math.round((agreeN / d.t) * 100) : 0;
@@ -2046,7 +2174,7 @@ function exportTradeoffPNG() {
     g += `<text x="${cx}" y="${pieY - 10}" text-anchor="middle" font-size="9.5" font-weight="600" fill="#F2F4F3">${esc(l1)}</text>`;
     if (l2) g += `<text x="${cx}" y="${pieY - 0}" text-anchor="middle" font-size="9.5" font-weight="600" fill="#F2F4F3">${esc(l2)}</text>`;
     // Pie
-    const segs = [5,4,3,2,1].map((s, i) => ({ value: d.d[s]||0, color: L5_COLORS[i] })).filter(s => s.value > 0);
+    const segs = [4,3,2,1].map((s, i) => ({ value: d.d[s]||0, color: L5_COLORS[i] })).filter(s => s.value > 0);
     const total = segs.reduce((s, x) => s + x.value, 0);
     if (total > 0) {
       let ang = -Math.PI / 2;
@@ -2063,7 +2191,7 @@ function exportTradeoffPNG() {
     g += `<text x="${cx}" y="${cy + 11}" text-anchor="middle" font-size="8" fill="#80BBAD">agree</text>`;
     // Legend
     const legX = pad + idx * cardW, legY0 = pieY + pieSize + 8;
-    [5,4,3,2,1].forEach((s, i) => {
+    [4,3,2,1].forEach((s, i) => {
       const p = d.t ? Math.round((d.d[s]||0) / d.t * 100) : 0;
       if (!p) return;
       const ly = legY0 + i * 16;
@@ -2266,12 +2394,22 @@ function renderSentiment() {
   const dP = nT ? pct(det, nT) : 0;
   const pasWarn = paP > 40;
 
-  // ── 5 Stat cards ─────────────────────────────────────────────────────
+  // ── Satisfaction score ────────────────────────────────────────────────
+  const satVals2 = rows.map(r => parseScore(gv(r, C.SAT))).filter(v => v !== null);
+  const satAvg = satVals2.length ? (satVals2.reduce((s,v)=>s+v,0)/satVals2.length).toFixed(1) : null;
+  const satCol = satAvg === null ? 'var(--text-muted)' : parseFloat(satAvg) >= 7 ? '#17E88F' : parseFloat(satAvg) >= 5 ? '#80BBAD' : '#D2785A';
+
+  // ── Stat cards ────────────────────────────────────────────────────────
   html += `<div class="sent-stat-row">
     <div class="sent-stat-card">
       <div class="sent-stat-value">${n}</div>
       <div class="sent-stat-code">RESPONDENTS</div>
       <div class="sent-stat-sub">${nT} with NPS score</div>
+    </div>
+    <div class="sent-stat-card" style="border-color:${satCol}33;background:${satCol}0d">
+      <div class="sent-stat-value" style="color:${satCol}">${satAvg !== null ? satAvg : '—'}</div>
+      <div class="sent-stat-code">SATISFACTION</div>
+      <div class="sent-stat-sub">Avg score out of 10</div>
     </div>
     <div class="sent-stat-card" style="border-color:${nps!==null?npsCol+'33':'var(--card-border)'};background:${nps!==null?npsCol+'0d':'var(--card-bg)'}">
       <div class="sent-stat-value" style="color:${npsCol}">${nps !== null ? nps : '—'}</div>
@@ -2344,7 +2482,7 @@ function renderSentiment() {
 
   // ── Pyramid levels definition ─────────────────────────────────────────
   const pyramid = [
-    { name:'Physical Environment', short:'Physical', cols:[...C.SFUNC,...C.SDES,...C.VIBE], color:'#003F2D' },
+    { name:'Physical Environment', short:'Physical', cols:[...C.SFUNC,...C.SDES], color:'#003F2D' },
     { name:'Connections',          short:'Connect.',  cols:[...C.REL,...C.LEARN,...C.SOC],   color:'#538184' },
     { name:'Belonging & Values',   short:'Belonging', cols:[...C.WVP],                       color:'#80BBAD' },
   ];
@@ -2358,7 +2496,7 @@ function renderSentiment() {
 
   function levelAvg(rArr, cols) {
     const vals = rArr.flatMap(r => cols.map(c => parseLikert(gv(r, c))).filter(v => v !== null));
-    return vals.length ? (vals.reduce((s, v) => s + v, 0) / vals.length / 5 * 100) : null;
+    return vals.length ? (vals.reduce((s, v) => s + v, 0) / vals.length / 4 * 100) : null;
   }
 
   const pyrData = pyramid.map(lvl => ({
@@ -2462,6 +2600,24 @@ function renderSentiment() {
     html += `<div class="field-notice">No verbatim responses found. Columns Q42.A1 and Q43.A1 may be empty in this dataset.</div>`;
   }
 
+  // ── Final Comments (Q51) ──────────────────────────────────────────────
+  const q51Data = rows.map(r => ({ text: gv(r, C.Q51), dept: gv(r, C.DEPT) })).filter(v => v.text && v.text.length > 5);
+  if (q51Data.length) {
+    const VLIMIT = 25;
+    let vh = `<div class="verbatim-list">`;
+    q51Data.slice(0,VLIMIT).forEach(v => { vh += `<div class="verbatim-item">"${esc(v.text)}"${v.dept?`<span class="verbatim-dept">${esc(v.dept)}</span>`:''}</div>`; });
+    if (q51Data.length > VLIMIT) {
+      vh += `<div class="verbatim-overflow" style="display:none">`;
+      q51Data.slice(VLIMIT).forEach(v => { vh += `<div class="verbatim-item">"${esc(v.text)}"${v.dept?`<span class="verbatim-dept">${esc(v.dept)}</span>`:''}</div>`; });
+      vh += `</div><button class="verbatim-more-btn" onclick="this.previousElementSibling.style.display='block';this.style.display='none'">Show ${q51Data.length-VLIMIT} more ▼</button>`;
+    }
+    vh += `</div>`;
+    html += `<div class="chart-card"><div class="chart-card-title">Final Comments <span>${q51Data.length} responses</span></div>
+      <input type="text" class="verbatim-search" placeholder="🔍 Search comments..." oninput="filterVerbatims(this.value)">
+      ${vh}
+    </div>`;
+  }
+
   document.getElementById('sentimentContent').innerHTML = html;
 }
 
@@ -2504,7 +2660,7 @@ function exportPDFReport() {
   ];
   const tierR={pro:[],pas:[],det:[]};
   rows.forEach(r=>{const v=parseScore(gv(r,C.ENPS));if(v===null)return;(v>=9?tierR.pro:v>=7?tierR.pas:tierR.det).push(r);});
-  function lvlAvg(rArr,cols){const vals=rArr.flatMap(r=>cols.map(c=>parseLikert(gv(r,c))).filter(v=>v!==null));return vals.length?(vals.reduce((s,v)=>s+v,0)/vals.length/5*100):null;}
+  function lvlAvg(rArr,cols){const vals=rArr.flatMap(r=>cols.map(c=>parseLikert(gv(r,c))).filter(v=>v!==null));return vals.length?(vals.reduce((s,v)=>s+v,0)/vals.length/4*100):null;}
   const pyrD=pyrLevels.map(l=>({...l,overall:lvlAvg(rows,l.cols),proAvg:lvlAvg(tierR.pro,l.cols),pasAvg:lvlAvg(tierR.pas,l.cols),detAvg:lvlAvg(tierR.det,l.cols)}));
 
   // Attendance
@@ -2520,11 +2676,10 @@ function exportPDFReport() {
   // Work Styles
   const ic=Math.round(avg(numVals(rows,C.TIME_O))||0);
   const su=Math.round(avg(numVals(rows,C.COL_U))||0);
-  const vibeQVals=rows.map(r=>parseLikert(gv(r,'VIBE.QUIET'))).filter(v=>v!==null);
-  const dq=Math.round(vibeQVals.length?(avg(vibeQVals)/5*100):0);
+  const dq=Math.round(avg(numVals(rows,'VIBE.QUIET'))||0);
   const np=Math.round(avg(numVals(rows,C.MTG_L))||0);
   const ntVals=rows.map(r=>parseLikert(gv(r,'RELATION.NTCONNECT'))).filter(v=>v!==null);
-  const lm=Math.round(ntVals.length?(avg(ntVals)/5*100):0);
+  const lm=Math.round(ntVals.length?(avg(ntVals)/4*100):0);
   const scalesData=[
     {code:'IC',pct:ic,low:'Individual',high:'Collaborative',desc:'Time spent collaborating vs. working independently'},
     {code:'SU',pct:su,low:'Scheduled', high:'Unscheduled',  desc:'Structured routines vs. spontaneous interaction patterns'},
@@ -2545,7 +2700,7 @@ function exportPDFReport() {
 
   // WVP
   const wvpItems=C.WVP.map((col,i)=>({label:C.WVP_L[i],...likertDist(rows,col)})).filter(d=>d.avg!==null);
-  const wvpComposite=wvpItems.length?Math.round(wvpItems.reduce((s,d)=>s+(d.avg||0),0)/wvpItems.length/5*100):null;
+  const wvpComposite=wvpItems.length?Math.round(wvpItems.reduce((s,d)=>s+(d.avg||0),0)/wvpItems.length/4*100):null;
   const lowestWVP=wvpItems.length?[...wvpItems].sort((a,b)=>(a.avg||0)-(b.avg||0))[0]:null;
   const highestWVP=wvpItems.length?[...wvpItems].sort((a,b)=>(b.avg||0)-(a.avg||0))[0]:null;
 
@@ -2590,8 +2745,8 @@ function exportPDFReport() {
   // Full-width Likert bar — readable at print scale
   function lBar(label,d,t,a){
     if(!t)return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px"><span style="font-size:11px;color:#7A9590;min-width:195px;flex-shrink:0">${esc(label)}</span><span style="font-size:10px;color:#aaa">No data</span></div>`;
-    const colors=['#003F2D','#17E88F','#80BBAD','#DBD99A','#C0533A'];
-    const segs=[5,4,3,2,1].map((s,i)=>{const w=t?pct(d[s]||0,t):0;if(!w)return'';const lbl=w>=6?`<span style="font-size:9px;font-weight:700;color:${i===0||i===4?'rgba(255,255,255,0.9)':'rgba(0,0,0,0.72)'}">${w}%</span>`:'';return`<div style="width:${w}%;background:${colors[i]};height:100%;display:flex;align-items:center;justify-content:center;flex-shrink:0">${lbl}</div>`;}).join('');
+    const colors=['#003F2D','#17E88F','#D2785A','#8B1A1A'];
+    const segs=[4,3,2,1].map((s,i)=>{const w=t?pct(d[s]||0,t):0;if(!w)return'';const lbl=w>=6?`<span style="font-size:9px;font-weight:700;color:${i===0||i===3?'rgba(255,255,255,0.9)':'rgba(0,0,0,0.72)'}">${w}%</span>`:'';return`<div style="width:${w}%;background:${colors[i]};height:100%;display:flex;align-items:center;justify-content:center;flex-shrink:0">${lbl}</div>`;}).join('');
     return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px">
       <span style="font-size:11px;color:#2A4A3A;min-width:195px;max-width:195px;flex-shrink:0;line-height:1.35">${esc(label)}</span>
       <div style="flex:1;height:18px;display:flex;border-radius:3px;overflow:hidden;background:#E8F0ED">${segs}</div>
@@ -2779,8 +2934,8 @@ body{font-family:'DM Sans',Arial,sans-serif;background:#fff;color:#1A2E24;font-s
       <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
         ${[['≥ 70','Strong attachment','#003F2D'],['50–69','Moderate attachment','#538184'],['< 50','Low attachment','#C0533A']].map(([range,label,color])=>`<div style="background:#F2F6F4;border-radius:6px;padding:8px 12px;border-left:3px solid ${color}"><div style="font-size:14px;font-weight:700;color:${color}">${range}</div><div style="font-size:9px;color:#7A9590">${label}</div></div>`).join('')}
       </div>
-      ${highestWVP?callout(`<strong>Highest:</strong> ${highestWVP.label} (${highestWVP.avg!==null?highestWVP.avg.toFixed(1):'—'}/5) — cultural asset to protect and amplify`,'good'):''}
-      ${lowestWVP?callout(`<strong>Lowest:</strong> ${lowestWVP.label} (${lowestWVP.avg!==null?lowestWVP.avg.toFixed(1):'—'}/5) — highest-leverage area for cultural investment`,'warn'):''}
+      ${highestWVP?callout(`<strong>Highest:</strong> ${highestWVP.label} (${highestWVP.avg!==null?highestWVP.avg.toFixed(1):'—'}/4) — cultural asset to protect and amplify`,'good'):''}
+      ${lowestWVP?callout(`<strong>Lowest:</strong> ${lowestWVP.label} (${lowestWVP.avg!==null?lowestWVP.avg.toFixed(1):'—'}/4) — highest-leverage area for cultural investment`,'warn'):''}
     </div>
   </div>
 
