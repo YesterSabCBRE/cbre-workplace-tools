@@ -548,9 +548,9 @@ select.client-name-input option { background: #0D2B22; color: var(--text); }
 <body>
 
 <nav>
+  <a class="nav-back" href="/cbre-workplace-tools/" style="margin-right:auto">← Back to tools</a>
   <a class="nav-logo" href="/cbre-workplace-tools/"><span>CBRE</span> Workplace Tools</a>
   <span id="clientNameBadge" style="display:none;font-size:0.78rem;font-weight:500;color:var(--text-muted);background:rgba(255,255,255,0.06);border:1px solid var(--card-border);border-radius:20px;padding:0.25rem 0.85rem;"></span>
-  <a class="nav-back" href="/cbre-workplace-tools/">← Back to tools</a>
 </nav>
 
 <div class="page">
@@ -682,6 +682,7 @@ select.client-name-input option { background: #0D2B22; color: var(--text); }
 
     <!-- SIDEBAR NAV -->
     <div class="sidebar">
+      <button onclick="resetApp()" style="width:100%;text-align:left;background:rgba(255,255,255,0.05);border:1px solid var(--card-border);border-radius:6px;padding:0.5rem 0.75rem;font-size:0.74rem;color:var(--text-muted);cursor:pointer;margin-bottom:1rem;font-family:inherit">← New file / Reset</button>
       <span class="tab-group-label">Standard Reporting</span>
       <button class="tab-btn active" data-tab="demographics">Demographics</button>
       <button class="tab-btn" data-tab="space">Space, Design &amp; Function</button>
@@ -845,15 +846,15 @@ const C = {
   Q20:['Q20.A1','Q20.A2','Q20.A3','Q20.A4','Q20.A5'],
   Q20_L:['Socializing nearby','Calls/meetings nearby','Devices/equipment/HVAC','Outside noise','Other'],
   LUNFREQ:'LUNFREQ', LUNLOCAL:'LUNLOCAL', TECHNEED:'TECHNEED',
-  Q26:'Q26.A1', Q31:'Q31', Q32:'Q32.A1', Q51:'Q51.A1',
+  Q26:'Q26.A1', Q31:'Q31', Q32:'Q32.A1', Q34:'Q34.A1', Q51:'Q51.A1',
 };
 
 const LIKERT_MAP = {
   'strongly agree':4,'agree':3,'disagree':2,'strongly disagree':1,
   'very important':4,'important':3,'somewhat important':2,'not important':1,'not important at all':1,
 };
-const L5_LABELS = ['Strongly Agree','Agree','Disagree','Strongly Disagree'];
-const L5_COLORS = ['#003F2D','#17E88F','#D2785A','#8B1A1A'];
+const L5_LABELS = ['Strongly Disagree','Disagree','Agree','Strongly Agree'];
+const L5_COLORS = ['#8B1A1A','#D2785A','#17E88F','#003F2D'];
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 let allRows = [];
@@ -977,14 +978,40 @@ function initApp() {
   applyFilters();
 }
 
+function resetApp() {
+  allRows = [];
+  filteredRows = [];
+  colIdx = {};
+  document.getElementById('appLayout').classList.remove('active');
+  document.getElementById('uploadScreen').style.display = '';
+  document.getElementById('uploadError').style.display = 'none';
+  document.getElementById('clientName').value = '';
+  document.getElementById('sectorInput').value = '';
+  document.getElementById('headcountInput').value = '';
+  document.getElementById('clientNameBadge').style.display = 'none';
+}
+
 // ─── FILTERS ──────────────────────────────────────────────────────────────────
 function buildFilters() {
+  const FILTER_ORDERS = {
+    [C.ROLE]:   ['Leader of Leaders','Leader of ICs','Individual Contributor'],
+    [C.GEN]:    ['Born before 1965','Born 1965–1980','Born 1981–1996','Born 1997 or after','Prefer not to say'],
+    [C.TENURE]: ['Less than 1 year','1–2 years','3–5 years','6–10 years','10+ years'],
+    [C.FREQOFF]:['Never (fully remote)','Less than one day per week','1 day per week','2–3 days per week','4 days per week','Every day (5 days per week)'],
+  };
   [['fDept',C.DEPT],['fRole',C.ROLE],['fGen',C.GEN],['fTenure',C.TENURE],['fFreq',C.FREQOFF]].forEach(([id,col]) => {
     const sel = document.getElementById(id);
     const first = sel.options[0];
     sel.innerHTML = '';
     sel.appendChild(first);
-    [...new Set(allRows.map(r => gv(r, col)).filter(v => v))].sort().forEach(v => {
+    const order = FILTER_ORDERS[col];
+    const vals = [...new Set(allRows.map(r => gv(r, col)).filter(v => v))];
+    if (order) {
+      vals.sort((a,b) => { const ai=order.indexOf(a), bi=order.indexOf(b); return (ai<0?99:ai)-(bi<0?99:bi); });
+    } else {
+      vals.sort();
+    }
+    vals.forEach(v => {
       const o = document.createElement('option');
       o.value = v; o.textContent = v; sel.appendChild(o);
     });
@@ -1013,7 +1040,14 @@ function applyFilters() {
     (!tenure || gv(r,C.TENURE) === tenure) &&
     (!freq || gv(r,C.FREQOFF) === freq)
   );
-  const nBadge = document.getElementById('nBadge'); if (nBadge) nBadge.textContent = `N = ${filteredRows.length} respondents`;
+  const nBadge = document.getElementById('nBadge');
+  if (nBadge) {
+    const isFiltered = filteredRows.length < allRows.length;
+    nBadge.textContent = isFiltered
+      ? `N = ${filteredRows.length} of ${allRows.length} respondents (filtered)`
+      : `N = ${filteredRows.length} respondents`;
+    nBadge.style.color = isFiltered ? 'var(--accent)' : '';
+  }
   renderActive();
 }
 
@@ -1040,6 +1074,11 @@ function renderActive() {
   const tab = getActiveTab();
   document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
+  const isDemoTab = tab === 'demographics';
+  ['sectorInput','headcountInput'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.closest('.client-name-wrap').style.display = isDemoTab ? '' : 'none';
+  });
   const fns = { demographics: renderDemo, space: renderSpace, relationships: renderRel, wvp: renderWVP, future: renderFuture, attendance: renderAttendance, workstyles: renderWorkStyles, sentiment: renderSentiment };
   if (fns[tab]) fns[tab]();
 }
@@ -1076,8 +1115,8 @@ function buildStackedTrack(segData) {
 function stackedBar(label, d, t, a, lblClass) {
   lblClass = lblClass || 'bar-label';
   if (!t) return `<div class="bar-row"><span class="${lblClass}">${label}</span><span style="font-size:0.72rem;color:var(--text-muted)">No data</span></div>`;
-  const segData = [4,3,2,1].map((s,i) => ({
-    w: pct(d[s], t), color: L5_COLORS[i], light: i === 0, name: L5_LABELS[i]
+  const segData = [1,2,3,4].map((s,i) => ({
+    w: pct(d[s], t), color: L5_COLORS[i], light: i === 1 || i === 2, name: L5_LABELS[i]
   }));
   const track = buildStackedTrack(segData);
   return `<div class="bar-row"><span class="${lblClass}" title="${label}">${label}</span>${track}<span class="bar-avg">${a !== null ? a.toFixed(1) : '—'}</span></div>`;
@@ -1086,10 +1125,10 @@ function stackedBar(label, d, t, a, lblClass) {
 function supplyBar(label, c) {
   if (!c.t) return `<div class="bar-row"><span class="bar-label">${label}</span><span style="font-size:0.72rem;color:var(--text-muted)">No data</span></div>`;
   const segData = [
-    {w:pct(c.r,c.t), color:'#17E88F', name:'Right amount', textColor:'rgba(0,0,0,0.7)'},
-    {w:pct(c.l,c.t), color:'#D2785A', name:'Too little',   textColor:'rgba(0,0,0,0.7)'},
-    {w:pct(c.m,c.t), color:'#DBD99A', name:'Too much',     textColor:'rgba(0,0,0,0.7)'},
     {w:pct(c.n,c.t), color:'#CAD1D3', name:'None',         textColor:'rgba(0,0,0,0.7)'},
+    {w:pct(c.l,c.t), color:'#D2785A', name:'Too little',   textColor:'rgba(0,0,0,0.7)'},
+    {w:pct(c.r,c.t), color:'#17E88F', name:'Right amount', textColor:'rgba(0,0,0,0.7)'},
+    {w:pct(c.m,c.t), color:'#DBD99A', name:'Too much',     textColor:'rgba(0,0,0,0.7)'},
   ];
   const track = buildStackedTrack(segData);
   return `<div class="bar-row"><span class="bar-label" title="${label}">${label}</span>${track}</div>`;
@@ -1233,10 +1272,10 @@ function renderSpace() {
   html += `<div class="chart-card"><div class="chart-card-title">Space Supply Adequacy</div><div class="stacked-chart">`;
   C.SSUPPLY.forEach((col,i) => html += supplyBar(C.SSUPPLY_L[i], supplyDist(rows,col)));
   html += `</div><div class="chart-legend">
-    <div class="legend-item"><div class="legend-dot" style="background:#17E88F"></div>Right amount</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#D2785A"></div>Too little</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#DBD99A"></div>Too much</div>
     <div class="legend-item"><div class="legend-dot" style="background:#CAD1D3"></div>None</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#D2785A"></div>Too little</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#17E88F"></div>Right amount</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#DBD99A"></div>Too much</div>
   </div></div>`;
 
   // Functionality
@@ -1455,6 +1494,30 @@ function renderRel() {
       </div>`;
     }).join('');
     html += `<div class="chart-card"><div class="chart-card-title">1:1 Meeting Frequency with Manager <span>N=${q31Tot}</span></div>${q31Bars}</div>`;
+  }
+
+  // Hallway Recognition (Q34)
+  const q34Dist = likertDist(rows, C.Q34);
+  if (q34Dist.t > 0) {
+    const q34Labels = { 4:'Always', 3:'Often', 2:'Occasionally', 1:'Rarely' };
+    const q34Counts = countBy(rows, C.Q34);
+    const q34Order = ['Always','Often','Occasionally','Rarely'];
+    const q34Ents = Object.entries(q34Counts).sort((a,b) => {
+      return q34Order.indexOf(a[0]) - q34Order.indexOf(b[0]);
+    });
+    const q34Tot = q34Ents.reduce((s,[,n]) => s+n, 0);
+    const PAL = ['#17E88F','#80BBAD','#DBD99A','#D2785A'];
+    const q34Bars = q34Ents.map(([v,n], i) => {
+      const w = pct(n, q34Tot);
+      return `<div class="h-bar-row" style="margin-bottom:0.35rem">
+        <span style="font-size:0.74rem;color:var(--text);min-width:110px;flex-shrink:0">${v}</span>
+        <div style="flex:1;height:20px;background:var(--card-border);border-radius:4px;overflow:hidden;">
+          <div style="height:100%;width:${w}%;background:${PAL[i%PAL.length]};border-radius:4px;"></div>
+        </div>
+        <span style="font-size:0.72rem;color:var(--text-muted);min-width:65px;text-align:right">${n} (${w}%)</span>
+      </div>`;
+    }).join('');
+    html += `<div class="chart-card"><div class="chart-card-title">Colleague Name Recognition <span>How often do you recognize by name someone you pass in the hallway? · N=${q34Tot}</span></div>${q34Bars}</div>`;
   }
 
   // Collaboration free text (Q32)
@@ -1735,8 +1798,8 @@ function renderFuture() {
       <button class="export-btn" onclick="exportTradeoffPNG()">↓ Export PNG</button>
     </div>
     <p class="tradeoff-note">
-      Respondents rated each trade-off on a <strong>1–4 scale</strong>
-      (1 = Strongly Disagree · 4 = Strongly Agree).
+      Survey question: <em>"I would be willing to give up my assigned workspace for…"</em>
+      Rated on a <strong>1–4 scale</strong> (1 = Strongly Disagree · 4 = Strongly Agree).
       The center of each chart shows the combined
       <span style="color:var(--accent);font-weight:600">% who Agree or Strongly Agree</span>.
     </p>
@@ -1968,10 +2031,14 @@ function renderAttendance() {
   const rows = filteredRows;
   const gp = col => cbPct(rows,col);
   const dims = [
-    { icon:'⚙️', name:'Functionality', score: avg([gp('OPOTBEN.TECH'),gp('OPOTBEN.OCONFIG')])||0, items:['Better technology','Custom workspace setup'] },
-    { icon:'🤝', name:'Teamwork', score: avg([gp('OPOTBEN.COMMS'),gp('OPOTBEN.OCONNECT')])||0, items:['Better communication','Office connections'] },
-    { icon:'👁️', name:'Exposure', score: avg([gp('OPOTBEN.LEADVIS'),gp('OPOTBEN.GATHER')])||0, items:['Leadership visibility','Team gatherings'] },
-    { icon:'✨', name:'Experience', score: avg([gp('OPOTBEN.BWLB'),gp('OPOTBEN.OPRIVATE'),gp('OPOTBEN.ODISTRACT')])||0, items:['Work-life separation','Private workspace','Fewer distractions'] },
+    { icon:'⚙️', name:'Functionality', score: avg([gp('OPOTBEN.TECH'),gp('OPOTBEN.OCONFIG')])||0,
+      items:[{l:'Better technology',pct:gp('OPOTBEN.TECH')},{l:'Custom workspace setup',pct:gp('OPOTBEN.OCONFIG')}] },
+    { icon:'🤝', name:'Teamwork', score: avg([gp('OPOTBEN.COMMS'),gp('OPOTBEN.OCONNECT')])||0,
+      items:[{l:'Better communication',pct:gp('OPOTBEN.COMMS')},{l:'Office connections',pct:gp('OPOTBEN.OCONNECT')}] },
+    { icon:'👁️', name:'Exposure', score: avg([gp('OPOTBEN.LEADVIS'),gp('OPOTBEN.GATHER')])||0,
+      items:[{l:'Leadership visibility',pct:gp('OPOTBEN.LEADVIS')},{l:'Team gatherings',pct:gp('OPOTBEN.GATHER')}] },
+    { icon:'✨', name:'Experience', score: avg([gp('OPOTBEN.BWLB'),gp('OPOTBEN.OPRIVATE'),gp('OPOTBEN.ODISTRACT')])||0,
+      items:[{l:'Work-life separation',pct:gp('OPOTBEN.BWLB')},{l:'Private workspace',pct:gp('OPOTBEN.OPRIVATE')},{l:'Fewer distractions',pct:gp('OPOTBEN.ODISTRACT')}] },
   ];
   const top = [...dims].sort((a,b)=>b.score-a.score)[0];
 
@@ -1985,7 +2052,7 @@ function renderAttendance() {
     html += `<div class="driver-card"><div class="driver-icon">${icon}</div><div class="driver-name">${name}</div>
       <div class="driver-score">${w}%</div>
       <div class="driver-bar"><div class="driver-bar-fill" style="width:${w}%;background:${bc}"></div></div>
-      <div class="driver-items">${items.map(l=>`<div class="driver-item">${l}</div>`).join('')}</div></div>`;
+      <div class="driver-items">${items.map(({l,pct:p})=>`<div class="driver-item" style="display:flex;justify-content:space-between;gap:0.5rem"><span>${l}</span><span style="font-size:0.72rem;font-weight:700;color:var(--text-muted)">${Math.round(p||0)}%</span></div>`).join('')}</div></div>`;
   });
 
   html += `</div>`;
@@ -2046,14 +2113,18 @@ function renderWorkStyles() {
       desc:'Team distribution. Lower = team and manager colocated in same office; higher = distributed team or remote manager. Derived from Q9–Q10.' },
   ];
 
-  // ── Stat cards ──────────────────────────────────────────────────────
+  // ── Personality Scales chart ────────────────────────────────────────
+  // Reference shows rows top-to-bottom: LM, NP, DQ, SU, IC
+  const chartOrder = [...scales].reverse();
+
+  // ── Stat cards — same order as chart (LM→IC) ────────────────────────
   let html = `<div class="ws-stat-row">
     <div class="ws-stat-card">
       <div class="ws-stat-code">RESPONDENTS</div>
       <div class="ws-stat-value">${n}</div>
       <div class="ws-stat-sub">of ${n} total</div>
     </div>`;
-  scales.forEach(s => {
+  chartOrder.forEach(s => {
     html += `<div class="ws-stat-card">
       <div class="ws-stat-code">${s.code}</div>
       <div class="ws-stat-value">${s.pct}%</div>
@@ -2061,10 +2132,6 @@ function renderWorkStyles() {
     </div>`;
   });
   html += `</div>`;
-
-  // ── Personality Scales chart ────────────────────────────────────────
-  // Reference shows rows top-to-bottom: LM, NP, DQ, SU, IC
-  const chartOrder = [...scales].reverse();
 
   html += `<div class="chart-card">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:0.4rem">
@@ -2239,7 +2306,7 @@ function pyramidSVG(pyrData) {
   // Labels outside the pyramid to the right, with connector ticks
   // (avoids cramped-top text problem entirely)
   const LX = W + 8; // label x start (outside SVG, in a wider viewBox)
-  const VW = W + 110; // viewBox wider to fit labels
+  const VW = W + 145; // viewBox wider to fit "Physical Environment" label
 
   let svg = `<svg viewBox="0 0 ${VW} ${H}" width="${VW}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
 
@@ -2380,6 +2447,7 @@ function exportEngagementPNG() {
 function renderSentiment() {
   const rows = filteredRows;
   const n = rows.length;
+  const isFiltered = filteredRows.length < allRows.length;
   let html = '';
 
   // ── NPS calc ─────────────────────────────────────────────────────────
@@ -2397,27 +2465,46 @@ function renderSentiment() {
   const dP = nT ? pct(det, nT) : 0;
   const pasWarn = paP > 40;
 
+  // ── Org-wide NPS (for comparison when filter active) ──────────────────
+  let oPro=0, oPas=0, oDet=0, oNT=0;
+  if (isFiltered) {
+    allRows.forEach(r => {
+      const v = parseScore(gv(r, C.ENPS));
+      if (v === null) return;
+      oNT++;
+      if (v >= 9) oPro++; else if (v >= 7) oPas++; else oDet++;
+    });
+  }
+  const oNps = oNT ? Math.round((oPro/oNT - oDet/oNT) * 100) : null;
+  const oNpsSub = isFiltered && oNps !== null ? `<div style="font-size:0.65rem;color:var(--text-muted);margin-top:3px">Org-wide: ${oNps >= 0 ? '+' : ''}${oNps}</div>` : '';
+
   // ── Satisfaction score ────────────────────────────────────────────────
   const satVals2 = rows.map(r => parseScore(gv(r, C.SAT))).filter(v => v !== null);
   const satAvg = satVals2.length ? (satVals2.reduce((s,v)=>s+v,0)/satVals2.length).toFixed(1) : null;
   const satCol = satAvg === null ? 'var(--text-muted)' : parseFloat(satAvg) >= 7 ? '#17E88F' : parseFloat(satAvg) >= 5 ? '#80BBAD' : '#D2785A';
+  let oSatSub = '';
+  if (isFiltered) {
+    const oSatVals = allRows.map(r => parseScore(gv(r, C.SAT))).filter(v => v !== null);
+    const oSatAvg = oSatVals.length ? (oSatVals.reduce((s,v)=>s+v,0)/oSatVals.length).toFixed(1) : null;
+    if (oSatAvg !== null) oSatSub = `<div style="font-size:0.65rem;color:var(--text-muted);margin-top:3px">Org-wide: ${oSatAvg}/10</div>`;
+  }
 
   // ── Stat cards ────────────────────────────────────────────────────────
   html += `<div class="sent-stat-row">
     <div class="sent-stat-card">
       <div class="sent-stat-value">${n}</div>
       <div class="sent-stat-code">RESPONDENTS</div>
-      <div class="sent-stat-sub">${nT} with NPS score</div>
+      <div class="sent-stat-sub">${nT} with NPS score${isFiltered ? `<br><span style="font-size:0.65rem;color:var(--text-muted)">Org-wide: ${allRows.length}</span>` : ''}</div>
     </div>
     <div class="sent-stat-card" style="border-color:${satCol}33;background:${satCol}0d">
       <div class="sent-stat-value" style="color:${satCol}">${satAvg !== null ? satAvg : '—'}</div>
       <div class="sent-stat-code">SATISFACTION</div>
-      <div class="sent-stat-sub">Avg score out of 10</div>
+      <div class="sent-stat-sub">Avg score out of 10${oSatSub}</div>
     </div>
     <div class="sent-stat-card" style="border-color:${nps!==null?npsCol+'33':'var(--card-border)'};background:${nps!==null?npsCol+'0d':'var(--card-bg)'}">
       <div class="sent-stat-value" style="color:${npsCol}">${nps !== null ? nps : '—'}</div>
       <div class="sent-stat-code">NPS SCORE</div>
-      <div class="sent-stat-sub">Promoters − Detractors</div>
+      <div class="sent-stat-sub">Promoters − Detractors${oNpsSub}</div>
     </div>
     <div class="sent-stat-card" style="border-color:rgba(23,232,143,0.25);background:rgba(23,232,143,0.06)">
       <div class="sent-stat-value" style="color:#17E88F">${pP}%</div>
@@ -2564,20 +2651,21 @@ function renderSentiment() {
   </div></div></div>`;
 
   // ── Verbatims ─────────────────────────────────────────────────────────
-  const posData = rows.map(r => ({ text: gv(r, C.Q42), dept: gv(r, C.DEPT) })).filter(v => v.text && v.text.length > 10);
-  const negData = rows.map(r => ({ text: gv(r, C.Q43), dept: gv(r, C.DEPT) })).filter(v => v.text && v.text.length > 10);
+  const posData = rows.map(r => ({ text: gv(r, C.Q42), dept: gv(r, C.DEPT), qtag: 'Q42' })).filter(v => v.text && v.text.length > 10);
+  const negData = rows.map(r => ({ text: gv(r, C.Q43), dept: gv(r, C.DEPT), qtag: 'Q43' })).filter(v => v.text && v.text.length > 10);
+  const specVData = rows.map(r => ({ text: gv(r, C.Q26), dept: gv(r, C.DEPT), qtag: 'Q26' })).filter(v => v.text && v.text.length > 5);
 
-  if (posData.length || negData.length) {
+  if (posData.length || negData.length || specVData.length) {
     const VLIMIT = 25;
     function verbatimBlock(items, cls) {
       let h = `<div class="verbatim-list" style="margin-bottom:0.5rem">`;
       items.slice(0, VLIMIT).forEach(v => {
-        h += `<div class="${cls}">"${esc(v.text)}"${v.dept ? `<span class="verbatim-dept">${esc(v.dept)}</span>` : ''}</div>`;
+        h += `<div class="${cls}">"${esc(v.text)}"${v.qtag ? `<span class="verbatim-dept" style="color:var(--accent);border-color:rgba(23,232,143,0.3)">${v.qtag}</span>` : ''}${v.dept ? `<span class="verbatim-dept">${esc(v.dept)}</span>` : ''}</div>`;
       });
       if (items.length > VLIMIT) {
         h += `<div class="verbatim-overflow" style="display:none">`;
         items.slice(VLIMIT).forEach(v => {
-          h += `<div class="${cls}">"${esc(v.text)}"${v.dept ? `<span class="verbatim-dept">${esc(v.dept)}</span>` : ''}</div>`;
+          h += `<div class="${cls}">"${esc(v.text)}"${v.qtag ? `<span class="verbatim-dept" style="color:var(--accent);border-color:rgba(23,232,143,0.3)">${v.qtag}</span>` : ''}${v.dept ? `<span class="verbatim-dept">${esc(v.dept)}</span>` : ''}</div>`;
         });
         h += `</div>`;
         h += `<button class="verbatim-more-btn" onclick="this.previousElementSibling.style.display='block';this.style.display='none'">Show ${items.length - VLIMIT} more responses ▼</button>`;
@@ -2585,18 +2673,23 @@ function renderSentiment() {
       h += `</div>`;
       return h;
     }
+    const totalV = posData.length + negData.length + specVData.length;
     html += `<div class="chart-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem">
-        <div class="chart-card-title" style="margin-bottom:0">Verbatim Responses <span>${posData.length + negData.length} total</span></div>
+        <div class="chart-card-title" style="margin-bottom:0">Verbatim Responses <span>${totalV} total</span></div>
       </div>
       <input type="text" class="verbatim-search" placeholder="🔍 Search verbatims..." oninput="filterVerbatims(this.value)">`;
     if (posData.length) {
-      html += `<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#17E88F;margin-bottom:0.5rem;margin-top:0.25rem">What Employees Look Forward To (${posData.length})</div>`;
+      html += `<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#17E88F;margin-bottom:0.5rem;margin-top:0.25rem">Q42 · What Employees Look Forward To (${posData.length})</div>`;
       html += verbatimBlock(posData, 'verbatim-item');
     }
     if (negData.length) {
-      html += `<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#D2785A;margin-bottom:0.5rem;margin-top:${posData.length ? '1.1rem' : '0.25rem'}">What Employees Don't Look Forward To (${negData.length})</div>`;
+      html += `<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#D2785A;margin-bottom:0.5rem;margin-top:${posData.length ? '1.1rem' : '0.25rem'}">Q43 · What Employees Don't Look Forward To (${negData.length})</div>`;
       html += verbatimBlock(negData, 'verbatim-item neg');
+    }
+    if (specVData.length) {
+      html += `<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#80BBAD;margin-bottom:0.5rem;margin-top:${(posData.length || negData.length) ? '1.1rem' : '0.25rem'}">Q26 · Specialty Space Requirements (${specVData.length})</div>`;
+      html += verbatimBlock(specVData, 'verbatim-item');
     }
     html += `</div>`;
   } else {
@@ -2734,7 +2827,7 @@ function exportPDFReport() {
   const vibeItems = C.VIBE.map((col,i)=>({label:C.VIBE_L[i],...likertDist(rows,col)})).filter(d=>d.avg!==null);
   const socItems  = C.SOC.map((col,i)=>({label:C.SOC_L[i],...likertDist(rows,col)})).filter(d=>d.avg!==null).sort((a,b)=>(b.avg||0)-(a.avg||0));
   const hostItems = C.HOST.map((col,i)=>({label:C.HOST_L[i],...likertDist(rows,col)})).filter(d=>d.avg!==null).sort((a,b)=>(b.avg||0)-(a.avg||0));
-  const supplyFull= C.SSUPPLY.map((col,i)=>{const d=supplyDist(rows,col);return{label:C.SSUPPLY_L[i],right:d.t?pct(d.r,d.t):0,little:d.t?pct(d.l,d.t):0,much:d.t?pct(d.m,d.t):0,t:d.t};}).filter(d=>d.t>0).sort((a,b)=>b.little-a.little);
+  const supplyFull= C.SSUPPLY.map((col,i)=>{const d=supplyDist(rows,col);return{label:C.SSUPPLY_L[i],right:d.t?pct(d.r,d.t):0,little:d.t?pct(d.l,d.t):0,much:d.t?pct(d.m,d.t):0,none:d.t?pct(d.n,d.t):0,t:d.t};}).filter(d=>d.t>0).sort((a,b)=>b.little-a.little);
   const ammPDF = C.AMM.map((col,i)=>{
     let off=0,bld=0,nbr=0,not=0,tot=0;
     rows.forEach(r=>{const v=gv(r,col).toLowerCase();if(!v)return;if(v.includes('office space')||v.includes('within the office'))off++;else if(v.includes('within the building')||v.includes('within the site'))bld++;else if(v.includes('neighborhood')||v.includes('surrounding'))nbr++;else if(v.includes('not important'))not++;else return;tot++;});
@@ -2750,12 +2843,12 @@ function exportPDFReport() {
   // Full-width Likert bar — readable at print scale
   function lBar(label,d,t,a){
     if(!t)return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px"><span style="font-size:11px;color:#7A9590;min-width:195px;flex-shrink:0">${esc(label)}</span><span style="font-size:10px;color:#aaa">No data</span></div>`;
-    const colors=['#003F2D','#17E88F','#D2785A','#8B1A1A'];
-    const segs=[4,3,2,1].map((s,i)=>{const w=t?pct(d[s]||0,t):0;if(!w)return'';const lbl=w>=6?`<span style="font-size:9px;font-weight:700;color:${i===0||i===3?'rgba(255,255,255,0.9)':'rgba(0,0,0,0.72)'}">${w}%</span>`:'';return`<div style="width:${w}%;background:${colors[i]};height:100%;display:flex;align-items:center;justify-content:center;flex-shrink:0">${lbl}</div>`;}).join('');
+    const colors=['#8B1A1A','#D2785A','#17E88F','#003F2D'];
+    const segs=[1,2,3,4].map((s,i)=>{const w=t?pct(d[s]||0,t):0;if(!w)return'';const lbl=w>=6?`<span style="font-size:9px;font-weight:700;color:${i===0||i===3?'rgba(255,255,255,0.9)':'rgba(0,0,0,0.72)'}">${w}%</span>`:'';return`<div style="width:${w}%;background:${colors[i]};height:100%;display:flex;align-items:center;justify-content:center;flex-shrink:0">${lbl}</div>`;}).join('');
     return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px">
       <span style="font-size:11px;color:#2A4A3A;min-width:195px;max-width:195px;flex-shrink:0;line-height:1.35">${esc(label)}</span>
       <div style="flex:1;height:18px;display:flex;border-radius:3px;overflow:hidden;background:#E8F0ED">${segs}</div>
-      <span style="font-size:11px;font-weight:700;color:#1A2E24;min-width:32px;text-align:right">${a!==null?a.toFixed(1):'—'}</span>
+      <span style="font-size:11px;font-weight:700;color:#1A2E24;min-width:36px;text-align:right">${a!==null?a.toFixed(1)+'/4':'—'}</span>
     </div>`;
   }
   // Simple single-color bar
@@ -2770,7 +2863,7 @@ function exportPDFReport() {
   // Supply stacked bar
   function supBar(label,d){
     if(!d.t)return'';
-    const segs=[[d.right,'#17E88F'],[d.little,'#C0533A'],[d.much,'#DBD99A']].map(([v,c])=>v>0?`<div style="width:${v}%;background:${c};height:100%;display:flex;align-items:center;justify-content:center">${v>=7?`<span style="font-size:9px;font-weight:700;color:rgba(0,0,0,0.72)">${v}%</span>`:''}</div>`:'').join('');
+    const segs=[[d.none,'#CAD1D3'],[d.little,'#C0533A'],[d.right,'#17E88F'],[d.much,'#DBD99A']].map(([v,c])=>v>0?`<div style="width:${v}%;background:${c};height:100%;display:flex;align-items:center;justify-content:center">${v>=7?`<span style="font-size:9px;font-weight:700;color:rgba(0,0,0,0.72)">${v}%</span>`:''}</div>`:'').join('');
     return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px">
       <span style="font-size:11px;color:#2A4A3A;min-width:195px;max-width:195px;flex-shrink:0;line-height:1.35">${esc(label)}</span>
       <div style="flex:1;height:18px;display:flex;border-radius:3px;overflow:hidden;background:#E8F0ED">${segs}</div>
@@ -2778,17 +2871,17 @@ function exportPDFReport() {
   }
   function sHead(title,sub){
     return `<div style="background:#003F2D;padding:13px 32px;margin-bottom:22px">
-      <div style="font-size:8.5px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:3px">CBRE Workplace Intelligence</div>
+      <div style="font-size:8.5px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:3px">CBRE Workplace Survey Analysis</div>
       <div style="font-size:17px;font-weight:600;color:#fff;line-height:1.2">${title}</div>
       ${sub?`<div style="font-size:10.5px;color:rgba(255,255,255,0.6);margin-top:3px">${sub}</div>`:''}
     </div>`;
   }
   function secLabel(txt,mt){return`<div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#7A9590;margin-bottom:9px${mt?';margin-top:'+mt:''}">${txt}</div>`;}
   function callout(txt,type){const bg=type==='warn'?'#FFF8EF':type==='good'?'#F0FBF5':'#F2F6F4';const bc=type==='warn'?'#B59B3E':type==='good'?'#17E88F':'#538184';const tc=type==='warn'?'#6B4420':type==='good'?'#1A4A2E':'#1A3440';return`<div style="background:${bg};border-left:3px solid ${bc};border-radius:0 6px 6px 0;padding:9px 13px;margin-bottom:10px;font-size:10.5px;color:${tc};line-height:1.5">${txt}</div>`;}
-  function mCard(val,label,sub,color){return`<div style="background:#F2F6F4;border-radius:8px;padding:14px 16px;border-top:3px solid ${color||'#003F2D'}"><div style="font-size:28px;font-weight:700;color:${color||'#003F2D'};line-height:1;margin-bottom:4px">${val}</div><div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#7A9590;margin-bottom:2px">${label}</div>${sub?`<div style="font-size:10px;color:#9AB0AA">${sub}</div>`:''}</div>`;}
+  function mCard(val,label,sub,color,valSize){return`<div style="background:#F2F6F4;border-radius:8px;padding:14px 16px;border-top:3px solid ${color||'#003F2D'}"><div style="font-size:${valSize||28}px;font-weight:700;color:${color||'#003F2D'};line-height:1;margin-bottom:4px">${val}</div><div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#7A9590;margin-bottom:2px">${label}</div>${sub?`<div style="font-size:10px;color:#9AB0AA">${sub}</div>`:''}</div>`;}
   function darkBox(content,title){return`<div style="background:#001A14;border-radius:8px;padding:16px;margin-bottom:14px">${title?`<div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#538184;margin-bottom:12px">${title}</div>`:''} ${content}</div>`;}
   function vItem(v,pos){return`<div style="border-left:3px solid ${pos?'#17E88F':'#C0533A'};background:#F5FAF7;border-radius:0 5px 5px 0;padding:9px 13px;margin-bottom:8px;font-size:10.5px;color:#1A2E24;line-height:1.6;font-style:italic">"${esc(v.text)}"${v.dept?`<span style="display:inline-block;font-size:8px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#7A9590;background:#E2EEE9;border-radius:100px;padding:1px 6px;margin-left:6px;font-style:normal">${esc(v.dept)}</span>`:''}</div>`;}
-  const likertLegendPrint = `<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px">${[['#003F2D','Strongly Agree'],['#17E88F','Agree'],['#80BBAD','Neither'],['#DBD99A','Disagree'],['#C0533A','Strongly Disagree']].map(([c,l])=>`<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;background:${c};border-radius:2px;flex-shrink:0"></div><span style="font-size:9px;color:#7A9590">${l}</span></div>`).join('')}</div>`;
+  const likertLegendPrint = `<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px">${[['#8B1A1A','Strongly Disagree'],['#D2785A','Disagree'],['#17E88F','Agree'],['#003F2D','Strongly Agree']].map(([c,l])=>`<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;background:${c};border-radius:2px;flex-shrink:0"></div><span style="font-size:9px;color:#7A9590">${l}</span></div>`).join('')}</div>`;
 
   // ── Build the report HTML ────────────────────────────────────────────
   const subInfo=[n+' respondents',sector,headcount?'~'+parseInt(headcount).toLocaleString()+' headcount':'',filterDesc].filter(Boolean).join(' · ');
@@ -2812,7 +2905,7 @@ body{font-family:'DM Sans',Arial,sans-serif;background:#fff;color:#1A2E24;font-s
 }
 </style></head><body>`;
 
-  // ── PAGE ORDER: Cover → Space → Relationships → WVP → Sentiment → Future → Attendance → Work Styles → Voices
+  // ── PAGE ORDER: Cover → Demographics → Space → Relationships → WVP → Future → Attendance → Work Styles → Sentiment → Voices
   // ── Cover page ────────────────────────────────────────────────────────
   R2 += `<div class="page" style="background:#001A14;min-height:100vh;display:flex;flex-direction:column;justify-content:space-between;page-break-inside:avoid">
   <div>
@@ -2843,19 +2936,57 @@ body{font-family:'DM Sans',Arial,sans-serif;background:#fff;color:#1A2E24;font-s
     </div>
   </div>
   <div style="background:#003F2D;padding:12px 28px;margin-top:40px;display:flex;align-items:center;justify-content:space-between">
-    <div style="font-size:9px;color:rgba(255,255,255,0.5)">Prepared by CBRE Workplace Intelligence</div>
+    <div style="font-size:9px;color:rgba(255,255,255,0.5)">Prepared by CBRE Workplace Survey Analysis</div>
     <div style="font-size:9px;color:rgba(255,255,255,0.5)">Confidential — For internal use only</div>
   </div>
 </div>`;
 
+  // ── DEMOGRAPHICS ─────────────────────────────────────────────────────────
+  {
+    const dCols = [
+      {col:C.DEPT,    label:'Department'},
+      {col:C.ROLE,    label:'Role',           order:['Leader of Leaders','Leader of ICs','Individual Contributor']},
+      {col:C.GEN,     label:'Generation',     order:['Born before 1965','Born 1965–1980','Born 1981–1996','Born 1997 or after','Prefer not to say']},
+      {col:C.TENURE,  label:'Tenure',         order:['Less than 1 year','1–2 years','3–5 years','6–10 years','10+ years']},
+      {col:C.FREQOFF, label:'Office Frequency',order:['Never (fully remote)','Less than one day per week','1 day per week','2–3 days per week','4 days per week','Every day (5 days per week)']},
+      {col:C.WKSCHED, label:'Weekly Schedule Type'},
+      {col:C.Q11,     label:'Has Assigned Workspace', order:['Yes','No']},
+      {col:C.COMMUTE, label:'One-Way Commute',order:['0–15 minutes','15–30 minutes','30–45 minutes','45–60 minutes','60+ minutes']},
+    ];
+    const dPAL = ['#003F2D','#17E88F','#80BBAD','#538184','#DBD99A','#D2785A','#CAD1D3','#8B1A1A'];
+    let dHtml = '';
+    dCols.forEach(({col, label, order}) => {
+      const counts = countBy(rows, col);
+      if (!Object.keys(counts).length) return;
+      let ents = Object.entries(counts);
+      if (order) ents.sort((a,b) => { const ai=order.indexOf(a[0]),bi=order.indexOf(b[0]); return (ai<0?99:ai)-(bi<0?99:bi); });
+      else ents.sort((a,b) => b[1]-a[1]);
+      const tot = ents.reduce((s,[,v]) => s+v, 0);
+      dHtml += `<div class="nb" style="margin-bottom:14px"><div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#7A9590;margin-bottom:7px">${label} · N=${tot}</div>`;
+      ents.forEach(([v,cnt], i) => {
+        const w = pct(cnt, tot);
+        dHtml += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+          <span style="font-size:10px;color:#2A4A3A;min-width:160px;max-width:160px;flex-shrink:0;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v)}</span>
+          <div style="flex:1;height:14px;background:#E8F0ED;border-radius:3px;overflow:hidden"><div style="height:100%;width:${w}%;background:${dPAL[i%dPAL.length]};border-radius:3px"></div></div>
+          <span style="font-size:10px;font-weight:600;color:#1A2E24;min-width:52px;text-align:right">${cnt} (${w}%)</span>
+        </div>`;
+      });
+      dHtml += `</div>`;
+    });
+    R2 += `<div class="pb pi" style="padding-bottom:28px">
+    ${sHead('Demographics','Respondent breakdown by role, generation, tenure, and office attendance patterns')}
+    <div class="two-col">${dHtml}</div>
+    </div>`;
+  }
+
   // ── MODULE 1: Space, Design & Functionality ───────────────────────────────
   R2 += `<div class="pb pi" style="padding-bottom:28px">
-  ${sHead('Space, Design & Functionality','How employees experience the physical workplace — supply adequacy, functionality ratings, design quality, and amenity preferences')}
+  ${sHead('Space, Design & Functionality','How employees experience the physical workplace — supply adequacy, functionality ratings, and design quality')}
 
   ${secLabel('Space Supply Adequacy — What employees have enough of (and what\'s lacking)')}
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px">
     <div style="font-size:8.5px;color:#7A9590;display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px;grid-column:1/-1">
-      ${[['#17E88F','Right amount'],['#C0533A','Too little'],['#DBD99A','Too much']].map(([c,l])=>`<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:${c};border-radius:2px;display:inline-block"></span>${l}</span>`).join('')}
+      ${[['#CAD1D3','None'],['#C0533A','Too little'],['#17E88F','Right amount'],['#DBD99A','Too much']].map(([c,l])=>`<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:${c};border-radius:2px;display:inline-block"></span>${l}</span>`).join('')}
     </div>
     ${supplyFull.map(d=>supBar(d.label,d)).join('')}
   </div>
@@ -2874,11 +3005,6 @@ body{font-family:'DM Sans',Arial,sans-serif;background:#fff;color:#1A2E24;font-s
     </div>
   </div>
 
-  ${ammPDF.length ? `${secLabel('Amenity Location Importance — % who want each amenity within the office space','18px')}
-  <div class="two-col">
-    ${ammPDF.map(d=>{const p2=d.tot?pct(d.off,d.tot):0;return sBar(d.label,p2,'#003F2D');}).join('')}
-  </div>
-  <div style="font-size:9px;color:#7A9590;margin-top:-8px">Sorted by % preferring within-office placement · Remaining respondents prefer building, neighborhood, or not important</div>` : ''}
 </div>`;
 
   // ── MODULE 2: Relationships & Collaboration ────────────────────────────────
@@ -2951,12 +3077,71 @@ body{font-family:'DM Sans',Arial,sans-serif;background:#fff;color:#1A2E24;font-s
   </div>
 </div>`;
 
+  // ── Future Preferences ─────────────────────────────────────────────────────
+  R2 += `<div class="pb pi" style="padding-bottom:28px">
+  ${sHead('Future Work Preferences','Preferred work location, remote and office work drivers, trade-off priorities')}
+
+  ${secLabel('Preferred Work Location · N='+locTotal)}
+  <div class="five-col" style="margin-bottom:12px">
+    ${locEnts.filter(e=>e.n>0).map(e=>{const p2=locTotal?pct(e.n,locTotal):0;return`<div style="background:${e.color}12;border:1px solid ${e.color}30;border-top:3px solid ${e.color};border-radius:8px;padding:12px 10px;text-align:center"><div style="font-size:26px;font-weight:700;color:${e.color};line-height:1;margin-bottom:5px">${p2}%</div><div style="font-size:10px;color:#2A4A3A;line-height:1.35;font-weight:500">${esc(e.label)}</div><div style="font-size:9px;color:#7A9590;margin-top:3px">N = ${e.n}</div></div>`;}).join('')}
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid #D8E8E2;border-radius:8px;overflow:hidden;margin-bottom:20px">
+    ${[['Remote-leaning',remPctPDF,'#C0533A','fully remote + mostly home'],['Hybrid',hybPctPDF,'#80BBAD','equal mix of both'],['Office-leaning',offPctPDF,'#003F2D','mostly + fully office']].map(([l,v,c,sub],i)=>`<div style="padding:12px;text-align:center${i>0?';border-left:1px solid #D8E8E2':''}"><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#7A9590;margin-bottom:5px">${l}</div><div style="font-size:22px;font-weight:700;color:${c};line-height:1;margin-bottom:3px">${v}%</div><div style="font-size:9px;color:#aaa">${sub}</div></div>`).join('')}
+  </div>
+
+  <div class="two-col">
+    <div>
+      ${secLabel('Why work remotely? (% who selected)')}
+      ${rb.map(d=>sBar(d.label,d.p,'#B59B3E')).join('')}
+    </div>
+    <div>
+      ${secLabel('Why come to the office? (% who selected)')}
+      ${ob.map(d=>sBar(d.label,d.p,'#003F2D')).join('')}
+    </div>
+  </div>
+
+  ${secLabel('Trade-off Preferences — % who Agree or Strongly Agree','16px')}
+  ${tradeItems.map(d=>{const ap=d.t?pct((d.d[4]||0)+(d.d[3]||0),d.t):0;return sBar(d.label,ap,ap>=60?'#003F2D':ap>=40?'#538184':'#B59B3E');}).join('')}
+
+  ${ammPDF.length ? `${secLabel('Amenity Location Importance — % who want each within the office space','16px')}
+  <div class="two-col">
+    ${ammPDF.map(d=>{const p2=d.tot?pct(d.off,d.tot):0;return sBar(d.label,p2,'#003F2D');}).join('')}
+  </div>
+  <div style="font-size:9px;color:#7A9590;margin-top:-8px;margin-bottom:8px">Sorted by % preferring within-office placement · Remaining: within building, neighborhood, or not important</div>` : ''}
+</div>`;
+
+  // ── Attendance Drivers ─────────────────────────────────────────────────────
+  R2 += `<div class="pb pi" style="padding-bottom:28px">
+  ${sHead('Attendance Drivers','Why employees choose to come into the office — scored across four strategic dimensions')}
+  <div class="two-col">
+    <div class="nb">
+      ${darkBox(quadSVGStr,'Attendance Driver Quadrant')}
+    </div>
+    <div>
+      ${secLabel('Driver Scores')}
+      ${dims.map(d=>{const w=Math.round(d.score);const bc=d.score>60?'#003F2D':d.score>35?'#538184':'#C0533A';return`<div style="background:#F2F6F4;border-radius:7px;padding:11px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px"><div style="font-size:22px;flex-shrink:0">${d.icon}</div><div style="flex:1"><div style="font-size:12px;font-weight:600;color:#1A2E24;margin-bottom:4px">${d.name}</div><div style="height:10px;background:#D8E8E2;border-radius:3px;overflow:hidden"><div style="height:100%;width:${w}%;background:${bc};border-radius:3px"></div></div></div><div style="font-size:20px;font-weight:700;color:${bc};min-width:42px;text-align:right">${w}%</div></div>`;}).join('')}
+      ${topDriver?callout(`<strong>Top attendance driver: ${topDriver.name}</strong> — ${Math.round(topDriver.score)}% of respondents selected reasons in this dimension. Prioritize designing the in-office experience around this.`,'good'):''}
+    </div>
+  </div>
+</div>`;
+
+  // ── Work Styles ────────────────────────────────────────────────────────────
+  R2 += `<div class="pb pi" style="padding-bottom:28px">
+  ${sHead('Work Styles','How employees allocate time and what kinds of environments they work best in')}
+  <div class="nb" style="margin-bottom:20px">
+    ${darkBox(scalesSVGStr,'Personality Scales')}
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:4px">
+    ${scalesData.map(s=>`<div style="background:#F2F6F4;border-radius:8px;padding:12px 14px"><div style="font-size:22px;font-weight:700;color:#003F2D;margin-bottom:5px">${s.pct}%</div><div style="font-size:11px;font-weight:600;color:#1A2E24;margin-bottom:3px">${s.code}: ${s.low} ↔ ${s.high}</div><div style="font-size:9.5px;color:#7A9590;line-height:1.45">${s.desc}</div></div>`).join('')}
+  </div>
+</div>`;
+
   // ── Sentiment & NPS ────────────────────────────────────────────────────────
   R2 += `<div class="pb pi" style="padding-bottom:28px">
   ${sHead('Sentiment Analysis','Employee NPS, engagement tier breakdown, and workplace experience pyramid')}
 
   <div class="four-col" style="margin-bottom:20px">
-    ${mCard(nps!==null?(nps>=0?'+':'')+nps:'—','eNPS Score','Promoters − Detractors',npsColPrint)}
+    ${mCard(nps!==null?(nps>=0?'+':'')+nps:'—','eNPS Score','Promoters − Detractors',npsColPrint,42)}
     ${mCard(satAvg?satAvg+'/10':'—','Satisfaction','Avg score out of 10','#003F2D')}
     ${mCard(pP+'%','Promoters',pro+' respondents','#003F2D')}
     ${mCard(dP+'%','Detractors',det+' respondents','#C0533A')}
@@ -3007,59 +3192,6 @@ body{font-family:'DM Sans',Arial,sans-serif;background:#fff;color:#1A2E24;font-s
         }).join('')}
       </tbody>
     </table>
-  </div>
-</div>`;
-
-  // ── Future Preferences ─────────────────────────────────────────────────────
-  R2 += `<div class="pb pi" style="padding-bottom:28px">
-  ${sHead('Future Work Preferences','Preferred work location, remote and office work drivers, trade-off priorities')}
-
-  ${secLabel('Preferred Work Location · N='+locTotal)}
-  <div class="five-col" style="margin-bottom:12px">
-    ${locEnts.filter(e=>e.n>0).map(e=>{const p2=locTotal?pct(e.n,locTotal):0;return`<div style="background:${e.color}12;border:1px solid ${e.color}30;border-top:3px solid ${e.color};border-radius:8px;padding:12px 10px;text-align:center"><div style="font-size:26px;font-weight:700;color:${e.color};line-height:1;margin-bottom:5px">${p2}%</div><div style="font-size:10px;color:#2A4A3A;line-height:1.35;font-weight:500">${esc(e.label)}</div><div style="font-size:9px;color:#7A9590;margin-top:3px">N = ${e.n}</div></div>`;}).join('')}
-  </div>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid #D8E8E2;border-radius:8px;overflow:hidden;margin-bottom:20px">
-    ${[['Remote-leaning',remPctPDF,'#C0533A','fully remote + mostly home'],['Hybrid',hybPctPDF,'#80BBAD','equal mix of both'],['Office-leaning',offPctPDF,'#003F2D','mostly + fully office']].map(([l,v,c,sub],i)=>`<div style="padding:12px;text-align:center${i>0?';border-left:1px solid #D8E8E2':''}"><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#7A9590;margin-bottom:5px">${l}</div><div style="font-size:22px;font-weight:700;color:${c};line-height:1;margin-bottom:3px">${v}%</div><div style="font-size:9px;color:#aaa">${sub}</div></div>`).join('')}
-  </div>
-
-  <div class="two-col">
-    <div>
-      ${secLabel('Why work remotely? (% who selected)')}
-      ${rb.map(d=>sBar(d.label,d.p,'#B59B3E')).join('')}
-    </div>
-    <div>
-      ${secLabel('Why come to the office? (% who selected)')}
-      ${ob.map(d=>sBar(d.label,d.p,'#003F2D')).join('')}
-    </div>
-  </div>
-
-  ${secLabel('Trade-off Preferences — % who Agree or Strongly Agree','16px')}
-  ${tradeItems.map(d=>{const ap=d.t?pct((d.d[5]||0)+(d.d[4]||0),d.t):0;return sBar(d.label,ap,ap>=60?'#003F2D':ap>=40?'#538184':'#B59B3E');}).join('')}
-</div>`;
-
-  // ── Attendance Drivers ─────────────────────────────────────────────────────
-  R2 += `<div class="pb pi" style="padding-bottom:28px">
-  ${sHead('Attendance Drivers','Why employees choose to come into the office — scored across four strategic dimensions')}
-  <div class="two-col">
-    <div class="nb">
-      ${darkBox(quadSVGStr,'Attendance Driver Quadrant')}
-    </div>
-    <div>
-      ${secLabel('Driver Scores')}
-      ${dims.map(d=>{const w=Math.round(d.score);const bc=d.score>60?'#003F2D':d.score>35?'#538184':'#C0533A';return`<div style="background:#F2F6F4;border-radius:7px;padding:11px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px"><div style="font-size:22px;flex-shrink:0">${d.icon}</div><div style="flex:1"><div style="font-size:12px;font-weight:600;color:#1A2E24;margin-bottom:4px">${d.name}</div><div style="height:10px;background:#D8E8E2;border-radius:3px;overflow:hidden"><div style="height:100%;width:${w}%;background:${bc};border-radius:3px"></div></div></div><div style="font-size:20px;font-weight:700;color:${bc};min-width:42px;text-align:right">${w}%</div></div>`;}).join('')}
-      ${topDriver?callout(`<strong>Top attendance driver: ${topDriver.name}</strong> — ${Math.round(topDriver.score)}% of respondents selected reasons in this dimension. Prioritize designing the in-office experience around this.`,'good'):''}
-    </div>
-  </div>
-</div>`;
-
-  // ── Work Styles ────────────────────────────────────────────────────────────
-  R2 += `<div class="pb pi" style="padding-bottom:28px">
-  ${sHead('Work Styles','How employees allocate time and what kinds of environments they work best in')}
-  <div class="nb" style="margin-bottom:20px">
-    ${darkBox(scalesSVGStr,'Personality Scales')}
-  </div>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:4px">
-    ${scalesData.map(s=>`<div style="background:#F2F6F4;border-radius:8px;padding:12px 14px"><div style="font-size:22px;font-weight:700;color:#003F2D;margin-bottom:5px">${s.pct}%</div><div style="font-size:11px;font-weight:600;color:#1A2E24;margin-bottom:3px">${s.code}: ${s.low} ↔ ${s.high}</div><div style="font-size:9.5px;color:#7A9590;line-height:1.45">${s.desc}</div></div>`).join('')}
   </div>
 </div>`;
 
