@@ -1269,8 +1269,15 @@ function renderSpace() {
   }
 
   // Supply
-  html += `<div class="chart-card"><div class="chart-card-title">Space Supply Adequacy</div><div class="stacked-chart">`;
-  C.SSUPPLY.forEach((col,i) => html += supplyBar(C.SSUPPLY_L[i], supplyDist(rows,col)));
+  const supplyChartItems = C.SSUPPLY.map((col,i) => ({label:C.SSUPPLY_L[i],...supplyDist(rows,col)}));
+  window._lastSupplyData = supplyChartItems;
+  html += `<div class="chart-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+      <div class="chart-card-title" style="margin-bottom:0">Space Supply Adequacy</div>
+      <button class="export-btn" onclick="exportSupplyPNG()">↓ Export PNG</button>
+    </div>
+    <div class="stacked-chart">`;
+  supplyChartItems.forEach(d => html += supplyBar(d.label, d));
   html += `</div><div class="chart-legend">
     <div class="legend-item"><div class="legend-dot" style="background:#CAD1D3"></div>None</div>
     <div class="legend-item"><div class="legend-dot" style="background:#D2785A"></div>Too little</div>
@@ -1280,13 +1287,25 @@ function renderSpace() {
 
   // Functionality
   const fd = C.SFUNC.map((col,i) => ({label:C.SFUNC_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
-  html += `<div class="chart-card"><div class="chart-card-title">Functionality Ratings <span>avg out of 4</span></div><div class="stacked-chart">`;
+  window._lastFuncData = fd;
+  html += `<div class="chart-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+      <div class="chart-card-title" style="margin-bottom:0">Functionality Ratings <span>avg out of 4</span></div>
+      <button class="export-btn" onclick="exportFuncPNG()">↓ Export PNG</button>
+    </div>
+    <div class="stacked-chart">`;
   fd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
   html += `</div>${likertLegend()}</div>`;
 
   // Design
   const dd = C.SDES.map((col,i) => ({label:C.SDES_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
-  html += `<div class="chart-card"><div class="chart-card-title">Design Ratings <span>avg out of 4</span></div><div class="stacked-chart">`;
+  window._lastDesignData = dd;
+  html += `<div class="chart-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+      <div class="chart-card-title" style="margin-bottom:0">Design Ratings <span>avg out of 4</span></div>
+      <button class="export-btn" onclick="exportDesignPNG()">↓ Export PNG</button>
+    </div>
+    <div class="stacked-chart">`;
   dd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
   html += `</div>${likertLegend()}</div>`;
 
@@ -1621,7 +1640,13 @@ function renderWVP() {
     <div class="stat-card"><div class="stat-card-value">${sorted[sorted.length-1]?.avg?.toFixed(2)||'—'}</div><div class="stat-card-label">Lowest — ${sorted[sorted.length-1]?.label||'—'}</div><div class="stat-card-sub">Priority opportunity</div></div>
   </div>`;
 
-  html += `<div class="chart-card"><div class="chart-card-title">WVP Dimensions — all items <span>avg 1–4</span></div><div class="stacked-chart">`;
+  window._lastWVPData = sorted;
+  html += `<div class="chart-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+      <div class="chart-card-title" style="margin-bottom:0">WVP Dimensions — all items <span>avg 1–4</span></div>
+      <button class="export-btn" onclick="exportWVPPNG()">↓ Export PNG</button>
+    </div>
+    <div class="stacked-chart">`;
   sorted.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
   html += `</div>${likertLegend()}</div>`;
 
@@ -2442,6 +2467,136 @@ function exportEngagementPNG() {
     a.click();
   };
   img.src = url;
+}
+
+// ── Generic SVG export helpers ─────────────────────────────────────────────────
+function downloadSVGasPNG(svgStr, filename) {
+  const blob = new Blob([svgStr], { type:'image/svg+xml;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const img  = new Image();
+  img.onload = () => {
+    const parser = new DOMParser();
+    const doc    = parser.parseFromString(svgStr, 'image/svg+xml');
+    const root   = doc.documentElement;
+    const vb     = root.getAttribute('viewBox').split(' ');
+    const W = parseFloat(vb[2]), H = parseFloat(vb[3]);
+    const scale  = 2;
+    const canvas = document.createElement('canvas');
+    canvas.width  = W * scale;
+    canvas.height = H * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    const a = document.createElement('a');
+    a.download = filename;
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  };
+  img.onerror = () => URL.revokeObjectURL(url);
+  img.src = url;
+}
+
+function buildLikertBarSVG(title, items) {
+  const L5_C = ['#8B1A1A','#D2785A','#17E88F','#003F2D'];
+  const L5_L = ['Strongly Disagree','Disagree','Agree','Strongly Agree'];
+  const PW = 700, LW = 185, BW = 380, avgW = 70, padX = 20, rowH = 26, gap = 6;
+  const headerH = 44, legendH = 22, footerH = 14;
+  const H = headerH + items.length * (rowH + gap) + legendH + footerH + 10;
+  let g = `<svg width="${PW}" height="${H}" viewBox="0 0 ${PW} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="DM Sans,Arial,sans-serif">`;
+  g += `<rect width="${PW}" height="${H}" fill="#0D1F17"/>`;
+  g += `<text x="${padX}" y="18" font-size="10" font-weight="700" letter-spacing="1" fill="#7A9590" text-transform="uppercase">${title.toUpperCase()}</text>`;
+  g += `<text x="${padX}" y="34" font-size="9" fill="#538184">1 = Strongly Disagree · 4 = Strongly Agree</text>`;
+  items.forEach((d, i) => {
+    const y = headerH + i * (rowH + gap);
+    const total = d.t || 0;
+    let x = padX + LW;
+    // label
+    const lbl = d.label.length > 28 ? d.label.slice(0,27) + '…' : d.label;
+    g += `<text x="${padX + LW - 6}" y="${y + rowH/2 + 4}" text-anchor="end" font-size="9.5" fill="#C8D8D4">${lbl}</text>`;
+    // background track
+    g += `<rect x="${x}" y="${y}" width="${BW}" height="${rowH}" rx="3" fill="rgba(255,255,255,0.05)"/>`;
+    // segments
+    [1,2,3,4].forEach((s, si) => {
+      const n = d.d ? (d.d[s]||0) : 0;
+      const w = total ? Math.round((n/total)*BW) : 0;
+      if (w > 0) {
+        g += `<rect x="${x}" y="${y}" width="${w}" height="${rowH}" fill="${L5_C[si]}" ${si===0?'rx="3"':''}/>`;
+        if (w > 24) g += `<text x="${x + w/2}" y="${y + rowH/2 + 4}" text-anchor="middle" font-size="8.5" font-weight="700" fill="${si<2?'rgba(255,255,255,0.85)':'rgba(0,0,0,0.75)'}">${Math.round((n/total)*100)}%</text>`;
+        x += w;
+      }
+    });
+    // avg
+    const avgStr = d.avg !== null && d.avg !== undefined ? d.avg.toFixed(2) : '—';
+    g += `<text x="${padX + LW + BW + 10}" y="${y + rowH/2 + 4}" font-size="9.5" font-weight="700" fill="#17E88F">${avgStr}</text>`;
+  });
+  // legend
+  const legY = headerH + items.length * (rowH + gap) + 8;
+  let lx = padX + LW;
+  L5_L.forEach((l, i) => {
+    g += `<rect x="${lx}" y="${legY}" width="9" height="9" rx="2" fill="${L5_C[i]}"/>`;
+    g += `<text x="${lx+12}" y="${legY+8}" font-size="8.5" fill="#7A9590">${l}</text>`;
+    lx += l.length * 5 + 24;
+  });
+  g += `</svg>`;
+  return g;
+}
+
+function buildSupplyBarSVG(title, items) {
+  const SEG_C = ['#CAD1D3','#D2785A','#17E88F','#DBD99A'];
+  const SEG_L = ['None','Too little','Right amount','Too much'];
+  const PW = 700, LW = 185, BW = 380, padX = 20, rowH = 26, gap = 6;
+  const headerH = 44, legendH = 22, footerH = 14;
+  const H = headerH + items.length * (rowH + gap) + legendH + footerH + 10;
+  let g = `<svg width="${PW}" height="${H}" viewBox="0 0 ${PW} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="DM Sans,Arial,sans-serif">`;
+  g += `<rect width="${PW}" height="${H}" fill="#0D1F17"/>`;
+  g += `<text x="${padX}" y="18" font-size="10" font-weight="700" letter-spacing="1" fill="#7A9590">${title.toUpperCase()}</text>`;
+  items.forEach((d, i) => {
+    const y = headerH + i * (rowH + gap);
+    const total = d.t || 0;
+    let x = padX + LW;
+    const lbl = d.label.length > 28 ? d.label.slice(0,27) + '…' : d.label;
+    g += `<text x="${padX + LW - 6}" y="${y + rowH/2 + 4}" text-anchor="end" font-size="9.5" fill="#C8D8D4">${lbl}</text>`;
+    g += `<rect x="${x}" y="${y}" width="${BW}" height="${rowH}" rx="3" fill="rgba(255,255,255,0.05)"/>`;
+    [d.n||0, d.l||0, d.r||0, d.m||0].forEach((n, si) => {
+      const w = total ? Math.round((n/total)*BW) : 0;
+      if (w > 0) {
+        g += `<rect x="${x}" y="${y}" width="${w}" height="${rowH}" fill="${SEG_C[si]}" ${si===0?'rx="3"':''}/>`;
+        if (w > 22) g += `<text x="${x + w/2}" y="${y + rowH/2 + 4}" text-anchor="middle" font-size="8.5" font-weight="700" fill="rgba(0,0,0,0.7)">${Math.round((n/total)*100)}%</text>`;
+        x += w;
+      }
+    });
+  });
+  const legY = headerH + items.length * (rowH + gap) + 8;
+  let lx = padX + LW;
+  SEG_L.forEach((l, i) => {
+    g += `<rect x="${lx}" y="${legY}" width="9" height="9" rx="2" fill="${SEG_C[i]}"/>`;
+    g += `<text x="${lx+12}" y="${legY+8}" font-size="8.5" fill="#7A9590">${l}</text>`;
+    lx += l.length * 5 + 24;
+  });
+  g += `</svg>`;
+  return g;
+}
+
+function exportSupplyPNG() {
+  const d = window._lastSupplyData;
+  if (!d) return;
+  downloadSVGasPNG(buildSupplyBarSVG('Space Supply Adequacy', d), 'space-supply.png');
+}
+function exportFuncPNG() {
+  const d = window._lastFuncData;
+  if (!d) return;
+  downloadSVGasPNG(buildLikertBarSVG('Functionality Ratings', d), 'space-functionality.png');
+}
+function exportDesignPNG() {
+  const d = window._lastDesignData;
+  if (!d) return;
+  downloadSVGasPNG(buildLikertBarSVG('Design Ratings', d), 'space-design.png');
+}
+function exportWVPPNG() {
+  const d = window._lastWVPData;
+  if (!d) return;
+  downloadSVGasPNG(buildLikertBarSVG('WVP Dimensions', d), 'wvp-dimensions.png');
 }
 
 function renderSentiment() {
