@@ -753,6 +753,8 @@ select.client-name-input option { background: #0D2B22; color: var(--text); }
       </div>
     </div>
 
+    <div id="columnWarning" style="display:none;padding:0.5rem 0.75rem 0"></div>
+
     <div class="section-panel active" id="tab-demographics">
       <h2 class="section-heading">Demographics</h2>
       <p class="section-sub">Breakdown of survey respondents by key demographic segments.</p>
@@ -971,11 +973,36 @@ function handleFile(file) {
   reader.readAsText(file);
 }
 
+function checkColumns() {
+  const expected = [];
+  for (const [k, v] of Object.entries(C)) {
+    if (k.endsWith('_L')) continue;
+    if (Array.isArray(v)) v.forEach(col => expected.push(col));
+    else expected.push(v);
+  }
+  const missing = expected.filter(col => colIdx[col] === undefined);
+  const el = document.getElementById('columnWarning');
+  if (!missing.length) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  el.innerHTML = `<div style="background:rgba(210,120,90,0.12);border:1px solid rgba(210,120,90,0.35);border-radius:6px;padding:0.6rem 0.9rem;font-size:0.8rem;color:var(--text);display:flex;align-items:flex-start;gap:0.75rem">
+    <span style="color:#D2785A;font-size:1rem;line-height:1.4">⚠</span>
+    <div style="flex:1">
+      <strong style="color:#D2785A">${missing.length} expected column${missing.length>1?'s':''} not found in this CSV</strong> — sections using these columns will show no data.
+      <details style="margin-top:0.3rem">
+        <summary style="cursor:pointer;color:var(--text-muted);font-size:0.75rem">Show missing (${missing.length})</summary>
+        <code style="display:block;margin-top:0.3rem;font-size:0.72rem;color:var(--text-muted);word-break:break-all">${missing.join(', ')}</code>
+      </details>
+    </div>
+    <button onclick="document.getElementById('columnWarning').style.display='none'" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;padding:0;line-height:1">×</button>
+  </div>`;
+}
+
 function initApp() {
   document.getElementById('uploadScreen').style.display = 'none';
   document.getElementById('appLayout').classList.add('active');
   buildFilters();
   applyFilters();
+  checkColumns();
 }
 
 function resetApp() {
@@ -2066,6 +2093,11 @@ function renderAttendance() {
       items:[{l:'Work-life separation',pct:gp('OPOTBEN.BWLB')},{l:'Private workspace',pct:gp('OPOTBEN.OPRIVATE')},{l:'Fewer distractions',pct:gp('OPOTBEN.ODISTRACT')}] },
   ];
   const top = [...dims].sort((a,b)=>b.score-a.score)[0];
+
+  if (!dims.some(d => d.score > 0)) {
+    document.getElementById('attendanceContent').innerHTML = `<div style="color:var(--text-muted);font-size:0.9rem;padding:2rem 0">No attendance driver data found for this dataset. Expected columns: OPOTBEN.*</div>`;
+    return;
+  }
 
   let html = `<div class="cards-grid" style="grid-template-columns:1fr">
     <div class="stat-card"><div class="stat-card-value">${top?.name||'—'}</div><div class="stat-card-label">Top Attendance Driver</div><div class="stat-card-sub">${top?Math.round(top.score)+'% of respondents':''}</div></div>
@@ -3413,7 +3445,10 @@ function loadSampleData() {
     C.TIME_I,C.TIME_O,C.COL_S,C.COL_U,C.MTG_S,C.MTG_M,C.MTG_L,
     ...C.REL,...C.LEARN,...C.SOC,...C.HOST,...C.WVP,
     C.SAT,C.ENPS,C.Q42,C.Q43,C.Q45,
-    ...C.RBEN,...C.OBEN,...C.TRADE,...C.AMM
+    ...C.RBEN,...C.OBEN,...C.TRADE,...C.AMM,
+    C.WKSCHED,C.TLOCAL,C.MLOCAL,C.Q11,C.Q12,C.COMMUTE,C.Q15,
+    ...C.Q20,C.LUNFREQ,C.LUNLOCAL,C.TECHNEED,
+    C.Q26,C.Q31,C.Q32,C.Q34,C.Q51
   ];
 
   const N = 140;
@@ -3429,8 +3464,10 @@ function loadSampleData() {
 
     // Supply
     C.SSUPPLY.forEach(()=>row.push(isField&&Math.random()>0.3?'':rnd(supply,[50,30,12,8])));
-    // Func + Design + Vibe
-    [...C.SFUNC,...C.SDES,...C.VIBE].forEach(()=>row.push(isField&&Math.random()>0.4?'':rnd(l5,[15,40,25,15,5])));
+    // Func + Design
+    [...C.SFUNC,...C.SDES].forEach(()=>row.push(isField&&Math.random()>0.4?'':rnd(l5,[15,40,25,15,5])));
+    // Vibe (numeric % split)
+    const [vd,vq]=pair(); row.push(vd,vq);
     // Time splits
     const [ti,to]=pair(); row.push(ti,to);
     const [cs,cu]=pair(); row.push(cs,cu);
@@ -3456,6 +3493,23 @@ function loadSampleData() {
     C.TRADE.forEach(()=>row.push(rnd(l5,[15,38,25,15,7])));
     // Amenities
     C.AMM.forEach(()=>row.push(rnd(ammO,[45,25,20,10])));
+    // New 2025 columns
+    row.push(rnd(['Standard 5-day','Flex schedule','4/10 schedule','Compressed week'],[50,25,15,10])); // WKSCHED
+    row.push(Math.random()>0.35?'Yes':'No'); // TLOCAL
+    row.push(Math.random()>0.4?'Yes':'No');  // MLOCAL
+    row.push(rnd(['Yes','No'],[60,40]));      // Q11
+    row.push(rnd(['Yes','No'],[50,50]));      // Q12
+    row.push(rnd(['Less than 15 min','15–30 min','31–45 min','46–60 min','More than 60 min'],[15,30,30,15,10])); // COMMUTE
+    row.push(rnd(['Yes','No'],[55,45]));      // Q15
+    C.Q20.forEach(()=>row.push(Math.random()>0.7?'X':''));  // Q20.A1–A5
+    row.push(rnd(['Daily','2–3 days/week','Once a week','Rarely','Never'],[25,35,20,15,5])); // LUNFREQ
+    row.push(rnd(['On-site café','Nearby restaurant','Brought from home','Skip lunch'],[20,40,30,10])); // LUNLOCAL
+    row.push(rnd(['Standard equipment works fine','I need specific or specialized equipment'],[60,40])); // TECHNEED
+    row.push(Math.random()>0.65?rnd(['Need a quiet recording space','Lab access required','Sample library needed','Private studio']):''); // Q26
+    row.push(rnd(['Yes','No'],[50,50]));      // Q31
+    row.push(Math.random()>0.4?String(ri(1,10)):''); // Q32
+    row.push(Math.random()>0.4?String(ri(1,10)):''); // Q34
+    row.push(rnd(['Yes','No'],[55,45]));      // Q51
     dataRows.push(row);
   }
 
