@@ -1181,9 +1181,9 @@ function renderDemo() {
   const COLS = [
     { col:C.DEPT, label:'Department', order:null },
     { col:C.ROLE, label:'Role', order:['Leader of Leaders','Leader of ICs','Individual Contributor'] },
-    { col:C.GEN, label:'Generation', order:['Born before 1965','Born 1965–1980','Born 1981–1996','Born 1997 or after','Prefer not to say'] },
+    { col:C.GEN, label:'Generation', order:['Born 1997 or after','Born 1981–1996','Born 1965–1980','Born before 1965','Prefer not to say'] },
     { col:C.TENURE, label:'Tenure', order:['Less than 1 year','1–2 years','3–5 years','6–10 years','10+ years'] },
-    { col:C.FREQOFF, label:'Office Frequency', order:['Every day (5 days/week)','4 days per week','3 days per week','2 days per week','1 day per week','Less than one day per week','Never (fully remote)'] },
+    { col:C.FREQOFF, label:'Office Frequency', order:['Never (fully remote)','Less than one day per week','1 day per week','2–3 days per week','4 days per week','Every day (5 days per week)'] },
     { col:C.WKSCHED, label:'Weekly Schedule Type', order:null },
     { col:C.TLOCAL, label:'Same Office as Majority of Team', order:['Yes','No'] },
     { col:C.MLOCAL, label:'Same Office as Direct Manager', order:['Yes','No'] },
@@ -1831,7 +1831,7 @@ function renderFuture() {
     <div class="tradeoff-pies">`;
 
   td.forEach(d => {
-    const agreeN   = (d.d[5]||0) + (d.d[4]||0);
+    const agreeN   = (d.d[4]||0) + (d.d[3]||0);
     const agreePct = d.t ? pct(agreeN, d.t) : 0;
     const segs     = [4,3,2,1].map((s,i) => ({value:d.d[s]||0, color:L5_COLORS[i]}));
     html += `<div class="tradeoff-pie-card">
@@ -2258,7 +2258,7 @@ function exportTradeoffPNG() {
   g += `<text x="${W/2}" y="18" text-anchor="middle" font-size="12" font-weight="700" fill="#F2F4F3">Trade-off Preferences</text>`;
   g += `<text x="${W/2}" y="33" text-anchor="middle" font-size="8.5" fill="#80BBAD">Rated on a 1–4 scale · Center = % who Agree or Strongly Agree</text>`;
   td.forEach((d, idx) => {
-    const agreeN = (d.d[5]||0) + (d.d[4]||0);
+    const agreeN = (d.d[4]||0) + (d.d[3]||0);
     const agreePct = d.t ? Math.round((agreeN / d.t) * 100) : 0;
     const cx = pad + idx * cardW + cardW / 2, pieY = 50, cy = pieY + pieSize / 2;
     const r = pieSize / 2 - 14;
