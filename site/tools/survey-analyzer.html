@@ -813,12 +813,12 @@ const C = {
   SSUPPLY_L:['Functional individual workspaces','Private focus/phone spaces','Informal collaboration','Formal meeting rooms','Large multipurpose/training','Wellness/quiet rooms','Social spaces','Food & beverage'],
   SFUNC:['SFUNCTION.ICLEAN','SFUNCTION.ITECH','SFUNCTION.CCLEAN','SFUNCTION.CTECH','SFUNCTION.FURN','SFUNCTION.WIFI','SFUNCTION.TEMP','SFUNCTION.LIGHT','SFUNCTION.NOISE','SFUNCTION.WELLAVAIL','SFUNCTION.RRCLEAN'],
   SFUNC_L:['Individual workspace cleanliness','Individual workspace technology','Meeting room cleanliness','Meeting room technology','Furniture ergonomics','Wi-Fi reliability','Temperature comfort','Lighting quality','Noise levels acceptable','Inclusive support spaces','Restroom quality'],
-  SDES:['SDESIGN.DECOR','SDESIGN.VISPRAC','SDESIGN.MOVE','SDESIGN.MOBLVL','SDESIGN.WELCOME','SDESIGN.RESOURCES','SDESIGN.NATURE'],
-  SDES_L:['Decor and finishes','Visual/practical balance','Movement across settings','Mobility accommodation','Visitor experience','Resource access','Connection to nature'],
+  SDES:['SDESIGN.DECOR','SDESIGN.VISPRAC','SDESIGN.MOVE','SDESIGN.MOBLVL','SDESIGN.WELCOME','SDESIGN.RESOURCES','SDESIGN.NATURE','SDESIGN.WELLBEN'],
+  SDES_L:['Decor and finishes','Visual/practical balance','Movement across settings','Mobility accommodation','Visitor experience','Resource access','Connection to nature','Well-being resources & benefits'],
   VIBE:['VIBE.DYNAMIC','VIBE.QUIET'],
   VIBE_L:['Dynamic (coffee-shop energy)','Quiet (library focus)'],
-  REL:['RELATION.FRIEND','RELATION.MENTOR','RELATION.TCONNECT','RELATION.NTCONNECT','RELATION.COMMUNITY','RELATION.TRAINING','RELATION.WELLBEN'],
-  REL_L:['Friends at work','Has a mentor','Team connection','Cross-team interaction','Community sense','Training adequacy','Well-being resources & benefits'],
+  REL:['RELATION.FRIEND','RELATION.MENTOR','RELATION.TCONNECT','RELATION.NTCONNECT','RELATION.COMMUNITY','RELATION.TRAINING'],
+  REL_L:['Friends at work','Has a mentor','Team connection','Cross-team interaction','Community sense','Training adequacy'],
   LEARN:['LEARNOPP.FEEDBACK','LEARNOPP.MORALE','LEARNOPP.COMPCOLLAB','LEARNOPP.ONBOARD','LEARNOPP.PDEV','LEARNOPP.BOUND','LEARNOPP.TOOLS'],
   LEARN_L:['Mentoring & coaching','Relationship building','Complex collaboration','Onboarding','Professional development','Work/life boundaries','Office-only tools & tech'],
   SOC:['SOCIALOPP.CELEB','SOCIALOPP.LUNCH','SOCIALOPP.HH','SOCIALOPP.EVENT','SOCIALOPP.ERG'],
@@ -835,8 +835,8 @@ const C = {
   RBEN_L:['Less commuting','Flexible living','Flexible location','Flexible schedule','Expense savings','Childcare ease','Fewer distractions','More privacy','Custom setup'],
   OBEN:['OPOTBEN.GATHER','OPOTBEN.LEADVIS','OPOTBEN.COMMS','OPOTBEN.BWLB','OPOTBEN.OCONNECT','OPOTBEN.TECH','OPOTBEN.ODISTRACT','OPOTBEN.OPRIVATE','OPOTBEN.OCONFIG'],
   OBEN_L:['Team gatherings','Leadership visibility','Better communication','Work-life separation','Office connections','Better technology','Fewer distractions','Private workspace','Custom setup'],
-  TRADE:['TRADEOFF.RFLEX','TRADEOFF.ENHANCED'],
-  TRADE_L:['Greater remote flexibility','Enhanced collaborative spaces'],
+  TRADE:['TRADEOFF.RFLEX','TRADEOFF.PRIVACC','TRADEOFF.ENHANCED'],
+  TRADE_L:['Greater remote flexibility','Access to private enclosed space','Enhanced collaborative spaces'],
   AMM:['AMMEN.MPRTRAIN','AMMEN.CCENTER','AMMEN.PANTRY','AMMEN.HFOOD','AMMEN.COFFEE','AMMEN.GNGFOOD','AMMEN.LOCKER','AMMEN.GYM','AMMEN.RECEP','AMMEN.OUTDOOR'],
   AMM_L:['Meeting/training rooms','Conference/event center','Pantry/kitchen','Prepared food','Coffee','Grab & go food','Lockers/showers','Gym/fitness','Reception','Outdoor spaces'],
   // New 2025 survey columns
@@ -2654,7 +2654,7 @@ function exportPDFReport() {
 
   // Pyramid
   const pyrLevels=[
-    {name:'Physical Environment',short:'Physical',cols:[...C.SFUNC,...C.SDES,...C.VIBE],color:'#003F2D'},
+    {name:'Physical Environment',short:'Physical',cols:[...C.SFUNC,...C.SDES],color:'#003F2D'},
     {name:'Connections',short:'Connect.',cols:[...C.REL,...C.LEARN,...C.SOC],color:'#538184'},
     {name:'Belonging & Values',short:'Belonging',cols:[...C.WVP],color:'#80BBAD'},
   ];
