@@ -2021,12 +2021,15 @@ function renderWorkStyles() {
   // DQ: quiet env preference — avg % time in quiet environment (VIBE.QUIET is numeric 0–100)
   const dq = Math.round(avg(numVals(rows, 'VIBE.QUIET')) || 0);
 
-  // NP: large-meeting proportion (Q30.A3 avg) as specialized-needs proxy
-  const np = Math.round(avg(numVals(rows, C.MTG_L)) || 0);
+  // NP: % who require specific (not universal) tech/space needs (TECHNEED)
+  const techRows = rows.filter(r => { const v = gv(r,'TECHNEED'); return v && v.trim(); });
+  const np = techRows.length ? Math.round(techRows.filter(r => gv(r,'TECHNEED').trim().toLowerCase().includes('specific')).length / techRows.length * 100) : 0;
 
-  // LM: cross-team interaction score normalized — avg Likert(RELATION.NTCONNECT) / 4 × 100
-  const ntVals = rows.map(r => parseLikert(gv(r, 'RELATION.NTCONNECT'))).filter(v => v !== null);
-  const lm = Math.round(ntVals.length ? (avg(ntVals) / 4 * 100) : 0);
+  // LM: % of respondents working with distributed (non-colocated) teams
+  // Local = TLOCAL Yes AND MLOCAL Yes; Multiregional = at least one No
+  const lmRows = rows.filter(r => { const t=gv(r,'TLOCAL'),m=gv(r,'MLOCAL'); return t&&t.trim()&&m&&m.trim(); });
+  const lmLocal = lmRows.filter(r => gv(r,'TLOCAL').trim().toLowerCase()==='yes' && gv(r,'MLOCAL').trim().toLowerCase()==='yes');
+  const lm = lmRows.length ? Math.round((1 - lmLocal.length / lmRows.length) * 100) : 50;
 
   const n = rows.length;
 
@@ -2038,9 +2041,9 @@ function renderWorkStyles() {
     { code:'DQ', pct: dq, low:'Dynamic',     high:'Quiet',
       desc:'Environmental preferences. Lower = bustling, energetic environments; higher = calm, quiet workspaces.' },
     { code:'NP', pct: np, low:'Universal',   high:'Specific',
-      desc:'Workspace needs. Lower = standard equipment needs; higher = specialized requirements (labs, unique hardware).' },
+      desc:'Workspace needs. Lower = standard equipment/tech (monitors, keyboard); higher = specialized requirements (labs, unique hardware). Derived from Q25.' },
     { code:'LM', pct: lm, low:'Local',       high:'Multiregional',
-      desc:'Team distribution. Lower = co-located teams; higher = distributed, multi-location collaboration.' },
+      desc:'Team distribution. Lower = team and manager colocated in same office; higher = distributed team or remote manager. Derived from Q9–Q10.' },
   ];
 
   // ── Stat cards ──────────────────────────────────────────────────────
@@ -2677,9 +2680,11 @@ function exportPDFReport() {
   const ic=Math.round(avg(numVals(rows,C.TIME_O))||0);
   const su=Math.round(avg(numVals(rows,C.COL_U))||0);
   const dq=Math.round(avg(numVals(rows,'VIBE.QUIET'))||0);
-  const np=Math.round(avg(numVals(rows,C.MTG_L))||0);
-  const ntVals=rows.map(r=>parseLikert(gv(r,'RELATION.NTCONNECT'))).filter(v=>v!==null);
-  const lm=Math.round(ntVals.length?(avg(ntVals)/4*100):0);
+  const npR=rows.filter(r=>{const v=gv(r,'TECHNEED');return v&&v.trim();});
+  const np=npR.length?Math.round(npR.filter(r=>gv(r,'TECHNEED').trim().toLowerCase().includes('specific')).length/npR.length*100):0;
+  const lmR=rows.filter(r=>{const t=gv(r,'TLOCAL'),m=gv(r,'MLOCAL');return t&&t.trim()&&m&&m.trim();});
+  const lmLoc=lmR.filter(r=>gv(r,'TLOCAL').trim().toLowerCase()==='yes'&&gv(r,'MLOCAL').trim().toLowerCase()==='yes');
+  const lm=lmR.length?Math.round((1-lmLoc.length/lmR.length)*100):50;
   const scalesData=[
     {code:'IC',pct:ic,low:'Individual',high:'Collaborative',desc:'Time spent collaborating vs. working independently'},
     {code:'SU',pct:su,low:'Scheduled', high:'Unscheduled',  desc:'Structured routines vs. spontaneous interaction patterns'},
