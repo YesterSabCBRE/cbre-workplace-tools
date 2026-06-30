@@ -1143,7 +1143,7 @@ function stackedBar(label, d, t, a, lblClass) {
   lblClass = lblClass || 'bar-label';
   if (!t) return `<div class="bar-row"><span class="${lblClass}">${label}</span><span style="font-size:0.72rem;color:var(--text-muted)">No data</span></div>`;
   const segData = [1,2,3,4].map((s,i) => ({
-    w: pct(d[s], t), color: L5_COLORS[i], light: i === 1 || i === 2, name: L5_LABELS[i]
+    w: pct(d[s], t), color: L5_COLORS[i], light: i === 0 || i === 3, name: L5_LABELS[i]
   }));
   const track = buildStackedTrack(segData);
   return `<div class="bar-row"><span class="${lblClass}" title="${label}">${label}</span>${track}<span class="bar-avg">${a !== null ? a.toFixed(1) : '—'}</span></div>`;
