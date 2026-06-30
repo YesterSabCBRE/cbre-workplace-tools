@@ -3383,12 +3383,12 @@ function loadSampleData() {
   document.getElementById('uploadError').style.display = 'none';
 
   const depts = ['GC & Concrete Operations','Accounting and Payroll','IT','Risk and Safety','Marketing and Business Development','P&C and L&D','Administration','GC & Concrete Estimating','Officers'];
-  const roles = ['Employee','Manager','Leadership'];
-  const gens = ['Born before 1965','Born 1965-1980','Born 1981-1996','Born 1997 or after'];
-  const tens = ['0-5 years','6-10 years','11-20 years','21-30 years','30+ years'];
-  const freqs = ['Every day','4 days per week','2-3 days per week','1 day per week','Less than one day per week','Never'];
+  const roles = ['Individual Contributor','Leader of ICs','Leader of Leaders'];
+  const gens = ['Born before 1965','Born 1965–1980','Born 1981–1996','Born 1997 or after'];
+  const tens = ['Less than 1 year','1–2 years','3–5 years','6–10 years','10+ years'];
+  const freqs = ['Every day (5 days per week)','4 days per week','2–3 days per week','1 day per week','Less than one day per week','Never (fully remote)'];
   const supply = ['Right amount','Too little','Too much','None'];
-  const l5 = ['Strongly Agree','Agree','Neither Agree nor Disagree','Disagree','Strongly Disagree'];
+  const l5 = ['Strongly Agree','Agree','Disagree','Strongly Disagree'];
   const hostF = ['Always','Often','Occasionally','Rarely','Never'];
   const q45o = ['Fully remote','Mostly home','Equal mix','Mostly office','Fully office'];
   const ammO = ['Important to have within the office space','Important to have within the building/site','Important to have within the surrounding neighborhood area','Not important'];
@@ -3424,7 +3424,7 @@ function loadSampleData() {
     const gen = rnd(gens,[5,20,45,30]);
     const ten = rnd(tens,[35,25,20,12,8]);
     const isField = dept==='GC & Concrete Operations'||dept==='GC & Concrete Estimating';
-    const freq = isField ? rnd(['Less than one day per week','Never','1 day per week'],[40,30,30]) : rnd(freqs.slice(0,4),[20,25,35,20]);
+    const freq = isField ? rnd(['Less than one day per week','Never (fully remote)','1 day per week'],[40,30,30]) : rnd(freqs.slice(0,4),[20,25,35,20]);
     const row = [dept,role,gen,ten,freq];
 
     // Supply
@@ -3459,7 +3459,7 @@ function loadSampleData() {
     dataRows.push(row);
   }
 
-  const allCsvRows = [cols, cols, cols, cols, cols, ...dataRows];
+  const allCsvRows = [cols, cols, cols, ...dataRows];
   const csvText = allCsvRows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   if(parseCSV(csvText)) initApp();
 }
