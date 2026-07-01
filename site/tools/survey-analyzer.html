@@ -266,7 +266,7 @@ select.client-name-input option { background: #0D2B22; color: var(--text); }
 .bar-track { flex: 1; height: 26px; display: flex; border-radius: 4px; overflow: hidden; min-width: 0; }
 .bar-seg { display: flex; align-items: center; justify-content: center; font-size: 0.66rem; font-weight: 600; color: rgba(0,0,0,0.7); white-space: nowrap; overflow: hidden; }
 .bar-seg-lt { color: rgba(255,255,255,0.85); }
-.bar-avg { font-size: 0.8rem; font-weight: 600; color: var(--accent); min-width: 34px; text-align: right; flex-shrink: 0; }
+.bar-avg { font-size: 0.72rem; font-weight: 600; color: var(--accent); min-width: 76px; text-align: right; flex-shrink: 0; white-space: nowrap; }
 
 /* LEGEND */
 .chart-legend { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; }
@@ -1322,7 +1322,7 @@ function stackedBar(label, d, t, a, lblClass, orgAvg) {
   const orgStr = (orgAvg != null)
     ? `<span style="font-size:0.67rem;color:var(--text-muted);margin-left:2px">org ${orgAvg.toFixed(1)}</span>`
     : '';
-  return `<div class="bar-row"><span class="${lblClass}" title="${label}">${label}</span>${track}<span class="bar-avg">${a !== null ? a.toFixed(1) : '—'}${orgStr}</span></div>`;
+  return `<div class="bar-row"><span class="${lblClass}" title="${label}">${label}</span>${track}<span class="bar-avg">${a !== null ? `avg ${a.toFixed(1)}/4` : '—'}${orgStr}</span></div>`;
 }
 
 function supplyBar(label, c) {
@@ -1421,12 +1421,15 @@ function renderDemo() {
     const tot = ents.reduce((s,e) => s+e[1], 0);
     let bars = ents.map(([v,n],i) => {
       const w = pct(n,tot);
+      const isFullOffice = col === C.FREQOFF && v === 'Every day (5 days per week)';
+      const barColor = isFullOffice ? '#17E88F' : PAL[i%PAL.length];
+      const labelStyle = isFullOffice ? 'font-size:0.74rem;color:#17E88F;font-weight:600;min-width:155px;max-width:155px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis' : 'font-size:0.74rem;color:var(--text);min-width:155px;max-width:155px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
       return `<div class="h-bar-row" style="margin-bottom:0.35rem">
-        <span style="font-size:0.74rem;color:var(--text);min-width:155px;max-width:155px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${v}">${v}</span>
+        <span style="${labelStyle}" title="${v}">${v}</span>
         <div style="flex:1;height:20px;background:var(--card-border);border-radius:4px;overflow:hidden;">
-          <div style="height:100%;width:${w}%;background:${PAL[i%PAL.length]};border-radius:4px;"></div>
+          <div style="height:100%;width:${w}%;background:${barColor};border-radius:4px;"></div>
         </div>
-        <span style="font-size:0.72rem;color:var(--text-muted);min-width:65px;text-align:right">${n} (${w}%)</span>
+        <span style="font-size:0.72rem;color:${isFullOffice?'#17E88F':'var(--text-muted)'};min-width:65px;text-align:right;${isFullOffice?'font-weight:600':''}">${n} (${w}%)</span>
       </div>`;
     }).join('');
     html += `<div class="chart-card"><div class="chart-card-title">${label} <span>N=${tot}</span></div>${bars}</div>`;
@@ -1662,24 +1665,29 @@ function renderRel() {
 
   // Relationships
   const isFilteredR = filteredRows.length < allRows.length;
+  const GRP_HDR = txt => `<div style="font-size:0.68rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);padding:0.6rem 0 0.2rem;border-top:1px solid var(--card-border);margin-bottom:0.4rem">${txt}</div>`;
+  html += GRP_HDR('Relationships');
   const rd = C.REL.map((col,i) => ({label:C.REL_L[i],...likertDist(rows,col),orgAvg:isFilteredR?likertDist(allRows,col).avg:null})).sort((a,b)=>(b.avg||0)-(a.avg||0));
   html += `<div class="chart-card"><div class="chart-card-title">Workplace Relationships <span>avg 1–4</span></div><div class="stacked-chart">`;
   rd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg, null, d.orgAvg));
   html += `</div>${likertLegend()}</div>`;
 
   // Learning
+  html += GRP_HDR('Learning');
   const ld = C.LEARN.map((col,i) => ({label:C.LEARN_L[i],...likertDist(rows,col),orgAvg:isFilteredR?likertDist(allRows,col).avg:null})).sort((a,b)=>(b.avg||0)-(a.avg||0));
   html += `<div class="chart-card"><div class="chart-card-title">In-Office Activity Importance <span>how important is being in-person for each</span></div><div class="stacked-chart">`;
   ld.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg, null, d.orgAvg));
   html += `</div>${likertLegend()}</div>`;
 
   // Social
+  html += GRP_HDR('Social');
   const sd = C.SOC.map((col,i) => ({label:C.SOC_L[i],...likertDist(rows,col),orgAvg:isFilteredR?likertDist(allRows,col).avg:null})).sort((a,b)=>(b.avg||0)-(a.avg||0));
   html += `<div class="chart-card"><div class="chart-card-title">Social Opportunity Importance</div><div class="stacked-chart">`;
   sd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg, null, d.orgAvg));
   html += `</div>${likertLegend()}</div>`;
 
   // Hosting
+  html += GRP_HDR('Hosting');
   const hostColors = ['#003F2D','#17E88F','#D2785A','#8B1A1A'];
   const hd = C.HOST.map((col,i) => {
     const d2={4:0,3:0,2:0,1:0}; let t=0;
@@ -2235,12 +2243,12 @@ function quadrantSVG(dims) {
     const tx = cx + labelR * Math.cos(lRad);
     const ty = cy + labelR * Math.sin(lRad);
     label.forEach((line, i) => {
-      const ly = ty + (i - (label.length - 1) / 2) * 12;
-      g += `<text x="${tx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="9.5" fill="rgba(242,244,243,0.9)" text-anchor="${anchor}" dominant-baseline="middle" font-family="DM Sans,sans-serif">${line}</text>`;
+      const ly = ty + (i - (label.length - 1) / 2) * 14;
+      g += `<text x="${tx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="12" fill="rgba(242,244,243,0.9)" text-anchor="${anchor}" dominant-baseline="middle" font-family="DM Sans,sans-serif">${line}</text>`;
     });
   });
 
-  return `<svg id="attendanceQuadrant" xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="display:block;margin:0 auto">${g}</svg>`;
+  return `<svg id="attendanceQuadrant" xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" overflow="visible" style="display:block;margin:0 auto">${g}</svg>`;
 }
 
 function exportQuadrantPNG() {
@@ -3116,7 +3124,10 @@ function renderSentiment() {
     const totalV = posData.length + negData.length + specVData.length;
     html += `<div class="chart-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem">
-        <div class="chart-card-title" style="margin-bottom:0">Verbatim Responses <span>${totalV} total</span></div>
+        <div>
+          <div class="chart-card-title" style="margin-bottom:0.15rem">Verbatim Responses <span>${totalV} total</span></div>
+          <div style="font-size:0.68rem;color:var(--text-muted)">Showing up to ${VLIMIT} responses per question — use the search box to filter</div>
+        </div>
       </div>
       <input type="text" class="verbatim-search" placeholder="🔍 Search verbatims..." oninput="filterVerbatims(this.value)">`;
     if (posData.length) {
