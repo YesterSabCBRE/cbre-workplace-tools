@@ -1215,6 +1215,19 @@ function checkColumns() {
 }
 
 function initApp() {
+  // If this is a client package, load preloaded data into the block-scoped vars
+  if (window.__PRELOADED__ && !allRows.length) {
+    const p = window.__PRELOADED__;
+    allRows = p.allRows || [];
+    colIdx  = p.colIdx  || {};
+    const m = p.meta || {};
+    const cn = document.getElementById('clientName');
+    const si = document.getElementById('sectorInput');
+    const hi = document.getElementById('headcountInput');
+    if (cn && m.clientName) cn.value = m.clientName;
+    if (si && m.sector) Array.from(si.options).forEach(o => { if (o.value === m.sector) o.selected = true; });
+    if (hi && m.headcount) hi.value = m.headcount;
+  }
   document.getElementById('uploadScreen').style.display = 'none';
   document.getElementById('appLayout').classList.add('active');
   buildFilters();
@@ -3916,27 +3929,14 @@ function downloadClientPackage() {
 
   const autoloadScript = `<script>
 (function(){
-  var d=window.__PRELOADED__;
-  if(!d)return;
-  // Populate global data so initApp() works
-  allRows=d.allRows;colIdx=d.colIdx;
-  var m=d.meta;
-  // Pre-fill meta inputs
-  var cn=document.getElementById('clientName');
-  var si=document.getElementById('sectorInput');
-  var hi=document.getElementById('headcountInput');
-  if(cn&&m.clientName)cn.value=m.clientName;
-  if(si&&m.sector)Array.from(si.options).forEach(function(o){if(o.value===m.sector)o.selected=true;});
-  if(hi&&m.headcount)hi.value=m.headcount;
-  // Remove client package button from exported file
+  if(!window.__PRELOADED__)return;
   var pkgBtn=document.getElementById('clientPkgBtn');if(pkgBtn)pkgBtn.remove();
-  // Replace upload zone with Access Dashboard button
   var zone=document.getElementById('uploadZone');
   if(zone){
     zone.style.cssText='display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1rem;gap:0.75rem;border:1px solid rgba(23,232,143,0.2);border-radius:12px;background:rgba(23,232,143,0.04)';
     zone.innerHTML='<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:rgba(23,232,143,0.6);margin-bottom:0.25rem">${clientLabel}<\\/div>'+
       '<button onclick="initApp()" style="background:#17E88F;color:#001A14;border:none;border-radius:8px;padding:0.9rem 2.75rem;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:0.01em">Access Dashboard →<\\/button>'+
-      '<div style="font-size:0.72rem;color:rgba(242,244,243,0.35)">${n} survey responses · ready to explore<\\/div>';
+      '<div style="font-size:0.72rem;color:rgba(242,244,243,0.45)">${n} responses loaded · click to explore<\\/div>';
   }
 })();
 <\/script>`;
