@@ -2149,10 +2149,17 @@ function personalityScalesSVG(chartOrder) {
     if (s.orgPct !== null && s.orgPct !== undefined) {
       const ox = padL + (s.orgPct / 100) * trackW;
       const d = 6;
+      g += `<g onmousemove="showScaleTip(event,'Company avg: ${s.orgPct}%')" onmouseleave="hideScaleTip()" style="cursor:default">`;
       g += `<polygon points="${ox.toFixed(1)},${(cy - d).toFixed(1)} ${(ox + d).toFixed(1)},${cy.toFixed(1)} ${ox.toFixed(1)},${(cy + d).toFixed(1)} ${(ox - d).toFixed(1)},${cy.toFixed(1)}" fill="none" stroke="rgba(23,232,143,0.5)" stroke-width="1.5"/>`;
+      g += `<circle cx="${ox.toFixed(1)}" cy="${cy.toFixed(1)}" r="10" fill="transparent"/>`;
+      g += `</g>`;
     }
     // Pill marker (filtered or overall avg)
+    const pillLabel = s.orgPct !== null && s.orgPct !== undefined ? `Filtered avg: ${s.pct}%` : `${s.pct}%`;
+    g += `<g onmousemove="showScaleTip(event,'${pillLabel}')" onmouseleave="hideScaleTip()" style="cursor:default">`;
     g += `<rect x="${pillX.toFixed(1)}" y="${(cy - pillH / 2).toFixed(1)}" width="${pillW}" height="${pillH}" rx="8" fill="rgba(242,244,243,0.72)"/>`;
+    g += `<rect x="${pillX.toFixed(1)}" y="${(cy - 12).toFixed(1)}" width="${pillW}" height="24" rx="8" fill="transparent"/>`;
+    g += `</g>`;
     // Right label
     g += `<text x="${padL + trackW + 10}" y="${cy}" font-size="11" fill="rgba(23,232,143,0.85)" text-anchor="start" dominant-baseline="middle" font-family="DM Sans,Arial,sans-serif">${s.high}</text>`;
   });
@@ -2181,6 +2188,24 @@ function personalityScalesSVG(chartOrder) {
   }
 
   return `<svg id="personalityScalesSVG" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block;margin:0 auto;max-width:100%">${g}</svg>`;
+}
+
+function showScaleTip(evt, text) {
+  let tip = document.getElementById('scaleTip');
+  if (!tip) {
+    tip = document.createElement('div');
+    tip.id = 'scaleTip';
+    tip.style.cssText = 'position:fixed;background:rgba(0,26,20,0.95);color:#17E88F;font-size:0.75rem;font-weight:700;padding:4px 10px;border-radius:6px;pointer-events:none;z-index:9999;border:1px solid rgba(23,232,143,0.3);white-space:nowrap;';
+    document.body.appendChild(tip);
+  }
+  tip.textContent = text;
+  tip.style.display = 'block';
+  tip.style.left = (evt.clientX + 14) + 'px';
+  tip.style.top  = (evt.clientY - 28) + 'px';
+}
+function hideScaleTip() {
+  const tip = document.getElementById('scaleTip');
+  if (tip) tip.style.display = 'none';
 }
 
 function exportPersonalityScalesPNG() {
