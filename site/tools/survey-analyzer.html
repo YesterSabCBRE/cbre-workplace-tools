@@ -3905,7 +3905,7 @@ function downloadClientPackage() {
   const origText = btn ? btn.textContent : '';
   if (btn) { btn.textContent = 'Generating…'; btn.disabled = true; }
 
-  // Escape </script> so it doesn't break the injected <script> tag
+  // Escape closing-script tags in JSON to avoid breaking the injected script block
   const dataJson = JSON.stringify({ allRows, colIdx, meta: { clientName, sector, headcount } })
                     .replace(/<\/script>/gi, '<\\/script>');
 
