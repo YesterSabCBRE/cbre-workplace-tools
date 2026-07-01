@@ -1597,14 +1597,15 @@ function renderSpace() {
   }
 
   // Specialty Space Verbatims (Q26)
-  const specData = rows.map(r => gv(r, C.Q26)).filter(v => v && v.length > 5);
+  const specData = rows.map(r => ({ text: gv(r, C.Q26), dept: gv(r, C.DEPT) })).filter(v => v.text && v.text.length > 5);
   if (specData.length) {
     const VLIMIT = 20;
+    const specItem = ({text, dept}) => `<div class="verbatim-item">"${esc(text)}"${dept ? `<span style="display:inline-block;font-size:0.65rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);background:var(--card-border);border-radius:100px;padding:1px 7px;margin-left:8px;vertical-align:middle">${esc(dept)}</span>` : ''}</div>`;
     let vh = `<div class="verbatim-list">`;
-    specData.slice(0,VLIMIT).forEach(v => { vh += `<div class="verbatim-item">"${esc(v)}"</div>`; });
+    specData.slice(0,VLIMIT).forEach(v => { vh += specItem(v); });
     if (specData.length > VLIMIT) {
       vh += `<div class="verbatim-overflow" style="display:none">`;
-      specData.slice(VLIMIT).forEach(v => { vh += `<div class="verbatim-item">"${esc(v)}"</div>`; });
+      specData.slice(VLIMIT).forEach(v => { vh += specItem(v); });
       vh += `</div><button class="verbatim-more-btn" onclick="this.previousElementSibling.style.display='block';this.style.display='none'">Show ${specData.length-VLIMIT} more ▼</button>`;
     }
     vh += `</div>`;
