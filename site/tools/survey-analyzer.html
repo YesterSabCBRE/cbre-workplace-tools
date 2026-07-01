@@ -1668,21 +1668,21 @@ function renderRel() {
   const GRP_HDR = txt => `<div style="font-size:0.68rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);padding:0.6rem 0 0.2rem;border-top:1px solid var(--card-border);margin-bottom:0.4rem">${txt}</div>`;
   html += GRP_HDR('Relationships');
   const rd = C.REL.map((col,i) => ({label:C.REL_L[i],...likertDist(rows,col),orgAvg:isFilteredR?likertDist(allRows,col).avg:null})).sort((a,b)=>(b.avg||0)-(a.avg||0));
-  html += `<div class="chart-card"><div class="chart-card-title">Workplace Relationships <span>avg 1–4</span></div><div class="stacked-chart">`;
+  html += `<div class="chart-card"><div class="chart-card-title">Workplace Relationships <span>avg 1–4</span></div><div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:0.75rem">How much do you agree with the following statements about your relationships at work?</div><div class="stacked-chart">`;
   rd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg, null, d.orgAvg));
   html += `</div>${likertLegend()}</div>`;
 
   // Learning
   html += GRP_HDR('Learning');
   const ld = C.LEARN.map((col,i) => ({label:C.LEARN_L[i],...likertDist(rows,col),orgAvg:isFilteredR?likertDist(allRows,col).avg:null})).sort((a,b)=>(b.avg||0)-(a.avg||0));
-  html += `<div class="chart-card"><div class="chart-card-title">In-Office Activity Importance <span>how important is being in-person for each</span></div><div class="stacked-chart">`;
+  html += `<div class="chart-card"><div class="chart-card-title">In-Office Activity Importance <span>avg 1–4</span></div><div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:0.75rem">How important is being physically in the office for each of the following activities?</div><div class="stacked-chart">`;
   ld.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg, null, d.orgAvg));
   html += `</div>${likertLegend()}</div>`;
 
   // Social
   html += GRP_HDR('Social');
   const sd = C.SOC.map((col,i) => ({label:C.SOC_L[i],...likertDist(rows,col),orgAvg:isFilteredR?likertDist(allRows,col).avg:null})).sort((a,b)=>(b.avg||0)-(a.avg||0));
-  html += `<div class="chart-card"><div class="chart-card-title">Social Opportunity Importance</div><div class="stacked-chart">`;
+  html += `<div class="chart-card"><div class="chart-card-title">Social Opportunity Importance</div><div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:0.75rem">How important are the following social activities to your overall in-office experience?</div><div class="stacked-chart">`;
   sd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg, null, d.orgAvg));
   html += `</div>${likertLegend()}</div>`;
 
@@ -1695,7 +1695,7 @@ function renderRel() {
     const a = t ? (4*d2[4]+3*d2[3]+2*d2[2]+1*d2[1])/t : null;
     return {label:C.HOST_L[i], d:d2, t, avg:a};
   }).sort((a,b)=>(b.avg||0)-(a.avg||0));
-  html += `<div class="chart-card"><div class="chart-card-title">Hosting Frequency at Office <span>Daily/Weekly · Biweekly/Monthly · Rarely · Never</span></div><div class="stacked-chart">`;
+  html += `<div class="chart-card"><div class="chart-card-title">Hosting Frequency at Office</div><div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:0.75rem">How frequently do you host each of the following groups in the office?</div><div class="stacked-chart">`;
   hd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
   html += `</div><div class="chart-legend">${['Daily/Weekly','Biweekly/Monthly','Quarterly/Rarely','Never'].map((l,i)=>`<div class="legend-item"><div class="legend-dot" style="background:${hostColors[i]}"></div>${l}</div>`).join('')}</div></div>`;
 
@@ -3333,6 +3333,13 @@ function exportPDFReport() {
   function darkBox(content,title){return`<div style="background:#001A14;border-radius:8px;padding:16px;margin-bottom:14px">${title?`<div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#538184;margin-bottom:12px">${title}</div>`:''} ${content}</div>`;}
   function vItem(v,pos){return`<div style="border-left:3px solid ${pos?'#17E88F':'#C0533A'};background:#F5FAF7;border-radius:0 5px 5px 0;padding:9px 13px;margin-bottom:8px;font-size:10.5px;color:#1A2E24;line-height:1.6;font-style:italic">"${esc(v.text)}"${v.dept?`<span style="display:inline-block;font-size:8px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#7A9590;background:#E2EEE9;border-radius:100px;padding:1px 6px;margin-left:6px;font-style:normal">${esc(v.dept)}</span>`:''}</div>`;}
   const likertLegendPrint = `<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px">${[['#8B1A1A','Strongly Disagree'],['#D2785A','Disagree'],['#17E88F','Agree'],['#003F2D','Strongly Agree']].map(([c,l])=>`<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;background:${c};border-radius:2px;flex-shrink:0"></div><span style="font-size:9px;color:#7A9590">${l}</span></div>`).join('')}</div>`;
+  // Amenity stacked bar (office / building / neighborhood / not important)
+  function ammBar(label,d){
+    if(!d.tot)return'';
+    const op=pct(d.off,d.tot),bp=pct(d.bld,d.tot),np=pct(d.nbr,d.tot),xp=pct(d.not,d.tot);
+    const segs=[[op,'#17E88F'],[bp,'#80BBAD'],[np,'#DBD99A'],[xp,'#D2785A']].map(([w,c])=>w>0?`<div style="width:${w}%;background:${c};height:100%;display:flex;align-items:center;justify-content:center">${w>=7?`<span style="font-size:9px;font-weight:700;color:rgba(0,0,0,0.72)">${w}%</span>`:''}</div>`:'').join('');
+    return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px"><span style="font-size:11px;color:#2A4A3A;min-width:195px;max-width:195px;flex-shrink:0;line-height:1.35">${esc(label)}</span><div style="flex:1;height:18px;display:flex;border-radius:3px;overflow:hidden;background:#E8F0ED">${segs}</div></div>`;
+  }
 
   // ── Build the report HTML ────────────────────────────────────────────
   const subInfo=[n+' respondents',sector,headcount?'~'+parseInt(headcount).toLocaleString()+' headcount':'',filterDesc].filter(Boolean).join(' · ');
@@ -3497,6 +3504,7 @@ body{font-family:'DM Sans',Arial,sans-serif;background:#fff;color:#1A2E24;font-s
       </div>` : ''}
     </div>
   </div>
+  ${(()=>{const q32V=rows.map(r=>({text:gv(r,C.Q32),dept:gv(r,C.DEPT)})).filter(v=>v.text&&v.text.length>10).slice(0,10);return q32V.length?`${secLabel('What Promotes or Inhibits Collaboration ('+q32V.length+' of '+rows.filter(r=>gv(r,C.Q32)&&gv(r,C.Q32).length>10).length+' responses)','16px')}<div class="two-col">${q32V.map(v=>`<div style="border-left:3px solid #538184;background:#F2F6F4;border-radius:0 5px 5px 0;padding:9px 13px;margin-bottom:8px;font-size:10.5px;color:#1A2E24;line-height:1.6;font-style:italic">"${esc(v.text)}"${v.dept?`<span style="display:inline-block;font-size:8px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#7A9590;background:#E2EEE9;border-radius:100px;padding:1px 6px;margin-left:6px;font-style:normal">${esc(v.dept)}</span>`:''}</div>`).join('')}</div>`:'';})()}
 </div>`;
 
   // ── MODULE 3: WVP & Attachment ─────────────────────────────────────────────
@@ -3554,11 +3562,12 @@ body{font-family:'DM Sans',Arial,sans-serif;background:#fff;color:#1A2E24;font-s
   ${secLabel('Trade-off Preferences — % who Agree or Strongly Agree','16px')}
   ${tradeItems.map(d=>{const ap=d.t?pct((d.d[4]||0)+(d.d[3]||0),d.t):0;return sBar(d.label,ap,ap>=60?'#003F2D':ap>=40?'#538184':'#B59B3E');}).join('')}
 
-  ${ammPDF.length ? `${secLabel('Amenity Location Importance — % who want each within the office space','16px')}
-  <div class="two-col">
-    ${ammPDF.map(d=>{const p2=d.tot?pct(d.off,d.tot):0;return sBar(d.label,p2,'#003F2D');}).join('')}
+  ${ammPDF.length ? `${secLabel('Amenity Location Importance','16px')}
+  <div style="font-size:9px;color:#7A9590;display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+    ${[['#17E88F','Within office'],['#80BBAD','Within building'],['#DBD99A','Neighborhood'],['#D2785A','Not important']].map(([c,l])=>`<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:${c};border-radius:2px;display:inline-block"></span>${l}</span>`).join('')}
   </div>
-  <div style="font-size:9px;color:#7A9590;margin-top:-8px;margin-bottom:8px">Sorted by % preferring within-office placement · Remaining: within building, neighborhood, or not important</div>` : ''}
+  ${ammPDF.map(d=>ammBar(d.label,d)).join('')}
+  <div style="font-size:9px;color:#7A9590;margin-top:4px">Sorted by % preferring within-office placement</div>` : ''}
 </div>`;
 
   // ── Attendance Drivers ─────────────────────────────────────────────────────
@@ -3723,6 +3732,67 @@ body{font-family:'DM Sans',Arial,sans-serif;background:#fff;color:#1A2E24;font-s
   </div>
 </div>`;
   }
+
+  // ── Methodology ───────────────────────────────────────────────────────────
+  R2 += `<div class="pb pi" style="padding-bottom:28px">
+  ${sHead('Methodology & Scale Reference','How survey questions were scored, classified, and aggregated in this report')}
+
+  <div class="two-col" style="margin-bottom:20px">
+    <div>
+      <div class="nb" style="margin-bottom:14px">
+        <div style="font-size:12px;font-weight:700;color:#1A2E24;margin-bottom:8px">Agreement Scale (1–4)</div>
+        <div style="font-size:11px;color:#2A4A3A;line-height:1.65">Most questions use a 4-point agreement scale: <strong>4 = Strongly Agree</strong> down to <strong>1 = Strongly Disagree</strong> (no neutral option). Averages above <strong>3.0</strong> indicate positive sentiment; below <strong>2.5</strong> flags a concern area. Scores are expressed as a percentage of the 4-point maximum in pyramid and composite views.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+          ${[['#003F2D','Strongly Agree'],['#17E88F','Agree'],['#D2785A','Disagree'],['#8B1A1A','Strongly Disagree']].map(([c,l])=>`<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;background:${c};border-radius:2px;flex-shrink:0"></div><span style="font-size:9px;color:#7A9590">${l}</span></div>`).join('')}
+        </div>
+      </div>
+      <div class="nb" style="margin-bottom:14px">
+        <div style="font-size:12px;font-weight:700;color:#1A2E24;margin-bottom:8px">Employee NPS (eNPS)</div>
+        <div style="font-size:11px;color:#2A4A3A;line-height:1.65">Derived from a 0–10 likelihood-to-recommend question. <strong>Promoters</strong> score 9–10, <strong>Passives</strong> 7–8, <strong>Detractors</strong> 0–6.<br><strong>eNPS = % Promoters − % Detractors</strong>. A score above +30 is considered strong; above +50 is excellent. High passives (&gt;40%) warrant attention — they can shift either direction.</div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          ${[['#003F2D','Promoters (9–10)'],['#80BBAD','Passives (7–8)'],['#C0533A','Detractors (0–6)']].map(([c,l])=>`<div style="background:#F2F6F4;border-radius:5px;padding:6px 10px;border-left:3px solid ${c}"><div style="font-size:9px;color:#7A9590">${l}</div></div>`).join('')}
+        </div>
+      </div>
+      <div class="nb">
+        <div style="font-size:12px;font-weight:700;color:#1A2E24;margin-bottom:8px">Supply Adequacy Scale</div>
+        <div style="font-size:11px;color:#2A4A3A;line-height:1.65">Space supply questions ask employees to rate each space type as <strong>Too little</strong>, <strong>Right amount</strong>, <strong>Too much</strong>, or <strong>None</strong>. Bars show the distribution across all four responses. High "Too little" percentages identify the highest-leverage supply gaps.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+          ${[['#CAD1D3','None'],['#C0533A','Too little'],['#17E88F','Right amount'],['#DBD99A','Too much']].map(([c,l])=>`<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;background:${c};border-radius:2px;flex-shrink:0"></div><span style="font-size:9px;color:#7A9590">${l}</span></div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="nb" style="margin-bottom:14px">
+        <div style="font-size:12px;font-weight:700;color:#1A2E24;margin-bottom:8px">Workplace Value Proposition (WVP)</div>
+        <div style="font-size:11px;color:#2A4A3A;line-height:1.65">Nine dimensions of organizational culture are averaged and scaled to a 0–100 composite. Scores ≥ 70 indicate <strong>strong attachment</strong>; 50–69 <strong>moderate</strong>; &lt; 50 signals meaningful disengagement. Each dimension uses the 4-point agreement scale.</div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          ${[['#003F2D','≥ 70 Strong'],['#538184','50–69 Moderate'],['#C0533A','< 50 Low']].map(([c,l])=>`<div style="background:#F2F6F4;border-radius:5px;padding:6px 10px;border-left:3px solid ${c}"><div style="font-size:9px;color:#7A9590">${l}</div></div>`).join('')}
+        </div>
+      </div>
+      <div class="nb" style="margin-bottom:14px">
+        <div style="font-size:12px;font-weight:700;color:#1A2E24;margin-bottom:8px">Engagement Pyramid</div>
+        <div style="font-size:11px;color:#2A4A3A;line-height:1.65">Three nested levels of workplace experience, each scored as an average Likert score expressed as a % of the 4-point maximum:</div>
+        <div style="margin-top:8px">
+          ${[['#003F2D','Physical Environment','Foundational space quality, cleanliness, technology, and comfort'],['#538184','Connections','Team relationships, learning culture, and social engagement'],['#80BBAD','Belonging & Values','Culture, WVP, and organizational identity']].map(([c,l,d])=>`<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:7px"><div style="width:12px;height:12px;background:${c};border-radius:2px;flex-shrink:0;margin-top:2px"></div><div><div style="font-size:10.5px;font-weight:600;color:#1A2E24">${l}</div><div style="font-size:9.5px;color:#7A9590">${d}</div></div></div>`).join('')}
+        </div>
+      </div>
+      <div class="nb">
+        <div style="font-size:12px;font-weight:700;color:#1A2E24;margin-bottom:8px">Amenity Location Importance</div>
+        <div style="font-size:11px;color:#2A4A3A;line-height:1.65">Respondents indicate where each amenity should ideally be located. Bars show the full distribution across four preference tiers:</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+          ${[['#17E88F','Within office'],['#80BBAD','Within building'],['#DBD99A','Neighborhood'],['#D2785A','Not important']].map(([c,l])=>`<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;background:${c};border-radius:2px;flex-shrink:0"></div><span style="font-size:9px;color:#7A9590">${l}</span></div>`).join('')}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="font-size:9px;color:#9AB0AA;border-top:1px solid #D8E8E2;padding-top:12px;line-height:1.7">
+    <strong>Data collection:</strong> Survey administered via Qualtrics. All responses are anonymous and voluntarily provided. &nbsp;·&nbsp;
+    <strong>Rounding:</strong> Percentages are rounded to the nearest whole number and may not sum to exactly 100%. &nbsp;·&nbsp;
+    <strong>Thresholds:</strong> Questions with fewer than 5 responses in a segment are suppressed to protect anonymity. &nbsp;·&nbsp;
+    <strong>Prepared by:</strong> CBRE Workplace Survey Analysis · Confidential — For internal use only
+  </div>
+</div>`;
 
   // Close
   R2 += `</body></html>`;
