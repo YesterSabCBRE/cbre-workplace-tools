@@ -1735,22 +1735,18 @@ function renderRel() {
   }
 
   // Hallway Recognition (Q34)
-  const q34Dist = likertDist(rows, C.Q34);
-  if (q34Dist.t > 0) {
-    const q34Labels = { 4:'Always', 3:'Often', 2:'Occasionally', 1:'Rarely' };
-    const q34Counts = countBy(rows, C.Q34);
-    const q34Order = ['Always','Often','Occasionally','Rarely'];
-    const q34Ents = Object.entries(q34Counts).sort((a,b) => {
-      return q34Order.indexOf(a[0]) - q34Order.indexOf(b[0]);
-    });
+  const Q34_ORDER = ['Always','Often','Occasionally','Rarely'];
+  const Q34_PAL   = {'Always':'#17E88F','Often':'#80BBAD','Occasionally':'#DBD99A','Rarely':'#D2785A'};
+  const q34Raw = countBy(rows, C.Q34);
+  const q34Ents = Q34_ORDER.map(k => [k, q34Raw[k] || 0]).filter(([,n]) => n > 0);
+  if (q34Ents.length > 0) {
     const q34Tot = q34Ents.reduce((s,[,n]) => s+n, 0);
-    const PAL = ['#17E88F','#80BBAD','#DBD99A','#D2785A'];
-    const q34Bars = q34Ents.map(([v,n], i) => {
+    const q34Bars = q34Ents.map(([v,n]) => {
       const w = pct(n, q34Tot);
       return `<div class="h-bar-row" style="margin-bottom:0.35rem">
         <span style="font-size:0.74rem;color:var(--text);min-width:110px;flex-shrink:0">${v}</span>
         <div style="flex:1;height:20px;background:var(--card-border);border-radius:4px;overflow:hidden;">
-          <div style="height:100%;width:${w}%;background:${PAL[i%PAL.length]};border-radius:4px;"></div>
+          <div style="height:100%;width:${w}%;background:${Q34_PAL[v]};border-radius:4px;"></div>
         </div>
         <span style="font-size:0.72rem;color:var(--text-muted);min-width:65px;text-align:right">${n} (${w}%)</span>
       </div>`;
@@ -3826,7 +3822,7 @@ function loadSampleData() {
     row.push(Math.random()>0.65?rnd(['Need a quiet recording space','Lab access required','Sample library needed','Private studio']):''); // Q26
     row.push(rnd(['Yes','No'],[50,50]));      // Q31
     row.push(Math.random()>0.4?String(ri(1,10)):''); // Q32
-    row.push(Math.random()>0.4?String(ri(1,10)):''); // Q34
+    row.push(Math.random()>0.15?rnd(['Always','Often','Occasionally','Rarely'],[20,40,30,10]):''); // Q34
     row.push(Math.random()>0.6?rnd(['More flexible seating options would help.','Quiet zones are needed — the open floor plan is too loud.','Overall a positive experience, just need better tech.','The space works well for collaboration but not for focus work.','Would love more natural light and greenery.','Parking is the biggest pain point for me.','The office vibe has improved a lot this past year.','More standing desks and ergonomic options please.','Having a dedicated space for my team would make in-office days much better.','','']):''); // Q51
     dataRows.push(row);
   }
