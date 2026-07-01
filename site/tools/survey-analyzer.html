@@ -3944,9 +3944,13 @@ function downloadClientPackage() {
   fetch(window.location.pathname + window.location.search)
     .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
     .then(html => {
-      // Use function replacements to avoid $ being treated as regex special chars
+      // Inject preload script — use lastIndexOf for </body> to avoid matching
+      // the literal </body> inside exportPDFReport's R2 template string
       html = html.replace(/<head>/i, () => '<head>' + preloadScript);
-      html = html.replace(/<\/body>/i, () => autoloadScript + '</body>');
+      const bodyClose = html.lastIndexOf('</body>');
+      if (bodyClose !== -1) {
+        html = html.slice(0, bodyClose) + autoloadScript + html.slice(bodyClose);
+      }
       const slug = (clientName || 'client').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
       const url  = URL.createObjectURL(blob);
