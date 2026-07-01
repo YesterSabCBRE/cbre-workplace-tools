@@ -3859,33 +3859,48 @@ function downloadClientPackage() {
   const origText = btn ? btn.textContent : '';
   if (btn) { btn.textContent = 'Generating…'; btn.disabled = true; }
 
+  // Escape </script> so it doesn't break the injected <script> tag
   const dataJson = JSON.stringify({ allRows, colIdx, meta: { clientName, sector, headcount } })
                     .replace(/<\/script>/gi, '<\\/script>');
 
   const preloadScript = `<script>window.__PRELOADED__=${dataJson};<\/script>`;
 
+  const n = allRows.length;
+  const clientLabel = clientName || 'Survey Analysis';
+
   const autoloadScript = `<script>
 (function(){
   var d=window.__PRELOADED__;
   if(!d)return;
+  // Populate global data so initApp() works
   allRows=d.allRows;colIdx=d.colIdx;
   var m=d.meta;
+  // Pre-fill meta inputs
   var cn=document.getElementById('clientName');
   var si=document.getElementById('sectorInput');
   var hi=document.getElementById('headcountInput');
   if(cn&&m.clientName)cn.value=m.clientName;
-  if(si&&m.sector){si.value='';Array.from(si.options).forEach(function(o){if(o.value===m.sector)o.selected=true;});}
+  if(si&&m.sector)Array.from(si.options).forEach(function(o){if(o.value===m.sector)o.selected=true;});
   if(hi&&m.headcount)hi.value=m.headcount;
+  // Remove client package button from exported file
   var pkgBtn=document.getElementById('clientPkgBtn');if(pkgBtn)pkgBtn.remove();
-  initApp();
+  // Replace upload zone with Access Dashboard button
+  var zone=document.getElementById('uploadZone');
+  if(zone){
+    zone.style.cssText='display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1rem;gap:0.75rem;border:1px solid rgba(23,232,143,0.2);border-radius:12px;background:rgba(23,232,143,0.04)';
+    zone.innerHTML='<div style="font-size:0.72rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:rgba(23,232,143,0.6);margin-bottom:0.25rem">${clientLabel}<\\/div>'+
+      '<button onclick="initApp()" style="background:#17E88F;color:#001A14;border:none;border-radius:8px;padding:0.9rem 2.75rem;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:0.01em">Access Dashboard →<\\/button>'+
+      '<div style="font-size:0.72rem;color:rgba(242,244,243,0.35)">${n} survey responses · ready to explore<\\/div>';
+  }
 })();
 <\/script>`;
 
   fetch(window.location.pathname + window.location.search)
     .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
     .then(html => {
-      html = html.replace(/<head>/i, '<head>' + preloadScript);
-      html = html.replace(/<\/body>/i, autoloadScript + '</body>');
+      // Use function replacements to avoid $ being treated as regex special chars
+      html = html.replace(/<head>/i, () => '<head>' + preloadScript);
+      html = html.replace(/<\/body>/i, () => autoloadScript + '</body>');
       const slug = (clientName || 'client').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
       const url  = URL.createObjectURL(blob);
@@ -3893,7 +3908,7 @@ function downloadClientPackage() {
       a.href = url; a.download = (slug || 'client') + '-survey-report.html'; a.click();
       URL.revokeObjectURL(url);
     })
-    .catch(() => alert('Could not fetch page source. If running locally, open via a server.'))
+    .catch(() => alert('Could not fetch page source. Make sure you are viewing the live site (not a local file) when generating the package.'))
     .finally(() => { if (btn) { btn.textContent = origText; btn.disabled = false; } });
 }
 
