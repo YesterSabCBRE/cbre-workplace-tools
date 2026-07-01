@@ -789,6 +789,7 @@ select.client-name-input option { background: #0D2B22; color: var(--text); }
         </div>
         <button class="reset-btn" onclick="resetFilters()">Reset</button>
         <button class="reset-btn" onclick="exportPDFReport()" style="color:var(--accent);border-color:rgba(23,232,143,0.35);margin-left:0.25rem">↓ Export PDF</button>
+        <button id="clientPkgBtn" class="reset-btn" onclick="downloadClientPackage()" style="color:var(--accent);border-color:rgba(23,232,143,0.35);margin-left:0.25rem">↓ Client Package</button>
       </div>
     </div>
 
@@ -3846,6 +3847,56 @@ body{font-family:'DM Sans',Arial,sans-serif;background:#fff;color:#1A2E24;font-s
 }
 
 // ─── SAMPLE DATA ──────────────────────────────────────────────────────────────
+// ─── CLIENT PACKAGE EXPORT ────────────────────────────────────────────────────
+function downloadClientPackage() {
+  if (!allRows.length) { alert('No data loaded — please upload a survey file first.'); return; }
+
+  const clientName = (document.getElementById('clientName')?.value || '').trim();
+  const sector     = (document.getElementById('sectorInput')?.value || '').trim();
+  const headcount  = (document.getElementById('headcountInput')?.value || '').trim();
+
+  const btn = document.getElementById('clientPkgBtn');
+  const origText = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = 'Generating…'; btn.disabled = true; }
+
+  const dataJson = JSON.stringify({ allRows, colIdx, meta: { clientName, sector, headcount } })
+                    .replace(/<\/script>/gi, '<\\/script>');
+
+  const preloadScript = `<script>window.__PRELOADED__=${dataJson};<\/script>`;
+
+  const autoloadScript = `<script>
+(function(){
+  var d=window.__PRELOADED__;
+  if(!d)return;
+  allRows=d.allRows;colIdx=d.colIdx;
+  var m=d.meta;
+  var cn=document.getElementById('clientName');
+  var si=document.getElementById('sectorInput');
+  var hi=document.getElementById('headcountInput');
+  if(cn&&m.clientName)cn.value=m.clientName;
+  if(si&&m.sector){si.value='';Array.from(si.options).forEach(function(o){if(o.value===m.sector)o.selected=true;});}
+  if(hi&&m.headcount)hi.value=m.headcount;
+  var pkgBtn=document.getElementById('clientPkgBtn');if(pkgBtn)pkgBtn.remove();
+  initApp();
+})();
+<\/script>`;
+
+  fetch(window.location.pathname + window.location.search)
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+    .then(html => {
+      html = html.replace(/<head>/i, '<head>' + preloadScript);
+      html = html.replace(/<\/body>/i, autoloadScript + '</body>');
+      const slug = (clientName || 'client').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = (slug || 'client') + '-survey-report.html'; a.click();
+      URL.revokeObjectURL(url);
+    })
+    .catch(() => alert('Could not fetch page source. If running locally, open via a server.'))
+    .finally(() => { if (btn) { btn.textContent = origText; btn.disabled = false; } });
+}
+
 function loadSampleData() {
   document.getElementById('uploadError').style.display = 'none';
 
