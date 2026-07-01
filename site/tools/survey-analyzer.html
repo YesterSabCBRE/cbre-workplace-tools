@@ -581,7 +581,7 @@ select.client-name-input option { background: #0D2B22; color: var(--text); }
   .nps-grid { grid-template-columns: 1fr; }
 }
 </style>
-<script>(function(){const t=localStorage.getItem('wt-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
+<script>(function(){try{const t=localStorage.getItem('wt-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
 </head>
 <body>
 
@@ -1377,11 +1377,12 @@ function toggleTheme() {
   const isLight = html.getAttribute('data-theme') === 'light';
   const next = isLight ? 'dark' : 'light';
   html.setAttribute('data-theme', next);
-  localStorage.setItem('wt-theme', next);
+  try { localStorage.setItem('wt-theme', next); } catch(e) {}
   document.getElementById('themeToggle').textContent = next === 'light' ? 'Dark mode' : 'Light mode';
 }
 document.addEventListener('DOMContentLoaded', () => {
-  const t = localStorage.getItem('wt-theme') || 'dark';
+  let t = 'dark';
+  try { t = localStorage.getItem('wt-theme') || 'dark'; } catch(e) {}
   const btn = document.getElementById('themeToggle');
   if (btn) btn.textContent = t === 'light' ? 'Dark mode' : 'Light mode';
 });
