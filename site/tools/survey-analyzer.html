@@ -884,8 +884,8 @@ const C = {
   // New 2025 survey columns
   WKSCHED:'WKSCHED', TLOCAL:'TLOCAL', MLOCAL:'MLOCAL',
   Q11:'Q11', Q12:'Q12', COMMUTE:'COMMUTE', Q15:'Q15',
-  Q20:['Q20.A1','Q20.A2','Q20.A3','Q20.A4','Q20.A5'],
-  Q20_L:['Socializing nearby','Calls/meetings nearby','Devices/equipment/HVAC','Outside noise','Other'],
+  Q20:['Q20.A1','Q20.A2','Q20.A3','Q20.A4','Q20.A5','Q20.A6'],
+  Q20_L:['Socializing nearby','Calls/meetings nearby','Devices/equipment/HVAC','Outside noise','Other','N/A — no noise distractions'],
   LUNFREQ:'LUNFREQ', LUNLOCAL:'LUNLOCAL', TECHNEED:'TECHNEED',
   Q26:'Q26.A1', Q31:'Q31', Q32:'Q32.A1', Q34:'Q34.A1', Q51:'Q51.A1',
 };
@@ -961,6 +961,138 @@ function likertDist(rows, col) {
   rows.forEach(r => { const v = parseLikert(gv(r, col)); if (v !== null) { d[v]++; t++; } });
   const a = t ? (4*d[4]+3*d[3]+2*d[2]+1*d[1]) / t : null;
   return { d, t, avg: a };
+}
+
+// ── Sentiment classification helpers (k-means + engagement slope) ──────────
+
+function kMeans3(data, maxIter) {
+  maxIter = maxIter || 50;
+  const n = data.length;
+  if (n <= 3) return data.map(function(_, i) { return i % 3; });
+
+  function dist(a, b) {
+    var ss = 0, cnt = 0;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != null && b[i] != null) { ss += (a[i] - b[i]) * (a[i] - b[i]); cnt++; }
+    }
+    return cnt === 0 ? Infinity : Math.sqrt(ss / cnt) * Math.sqrt(a.length);
+  }
+
+  function centroid(pts) {
+    var dim = pts[0].length, sums = new Array(dim).fill(0), cnts = new Array(dim).fill(0);
+    pts.forEach(function(p) { p.forEach(function(v, i) { if (v != null) { sums[i] += v; cnts[i]++; } }); });
+    return sums.map(function(s, i) { return cnts[i] > 0 ? s / cnts[i] : 0.5; });
+  }
+
+  // k-means++ init
+  var centroids = [data[Math.floor(Math.random() * n)]];
+  while (centroids.length < 3) {
+    var dists = data.map(function(p) { return Math.min.apply(null, centroids.map(function(c) { return dist(p, c); })); });
+    var total = dists.reduce(function(s, v) { return s + v; }, 0);
+    if (total === 0) { centroids.push(data[centroids.length] || data[0]); continue; }
+    var r = Math.random() * total;
+    var added = false;
+    for (var j = 0; j < n; j++) { r -= dists[j]; if (r <= 0) { centroids.push(data[j]); added = true; break; } }
+    if (!added) centroids.push(data[n - 1]);
+  }
+
+  var assignments = new Array(n).fill(0);
+  for (var iter = 0; iter < maxIter; iter++) {
+    var next = data.map(function(p) {
+      var mi = 0, md = Infinity;
+      centroids.forEach(function(c, ci) { var d = dist(p, c); if (d < md) { md = d; mi = ci; } });
+      return mi;
+    });
+    if (next.every(function(a, i) { return a === assignments[i]; })) break;
+    assignments = next;
+    for (var c = 0; c < 3; c++) {
+      var pts = data.filter(function(_, i) { return assignments[i] === c; });
+      if (pts.length) centroids[c] = centroid(pts);
+    }
+  }
+  return assignments;
+}
+
+function classifyRespondents(rows) {
+  // Attempt direct NPS classification from SATISFACT + ENPS fields
+  var AGREE_NPS = {'Strongly Disagree': 2, 'Disagree': 5, 'Agree': 7.5, 'Strongly Agree': 9.5};
+  function parseNPS(val) {
+    if (!val) return null;
+    var v = String(val).trim();
+    if (AGREE_NPS[v] !== undefined) return AGREE_NPS[v];
+    var m = v.match(/^(\d+)/);
+    if (m) { var n = parseInt(m[1]); if (n >= 0 && n <= 10) return n; }
+    var n2 = Number(v);
+    return (!isNaN(n2) && n2 >= 0 && n2 <= 10) ? n2 : null;
+  }
+  function directClass(row) {
+    var sat = parseNPS(gv(row, C.SAT)), enps = parseNPS(gv(row, C.ENPS));
+    var score = (sat != null && enps != null) ? (sat + enps) / 2 : sat != null ? sat : enps;
+    if (score === null || score === undefined) return null;
+    return score >= 9 ? 'promoter' : score >= 7 ? 'passive' : 'detractor';
+  }
+
+  var direct = rows.map(directClass);
+  var directCount = direct.filter(function(c) { return c !== null; }).length;
+
+  if (directCount >= rows.length * 0.5) {
+    return rows.map(function(r, i) { return { row: r, _npsClass: direct[i], _method: 'direct' }; });
+  }
+
+  // Fallback: k-means on Likert engagement columns
+  var FEAT_COLS = [].concat(C.SFUNC, C.SDES, C.REL, C.LEARN, C.SOC, C.WVP, C.TRADE);
+  var features = rows.map(function(r) {
+    return FEAT_COLS.map(function(col) { var n = parseLikert(gv(r, col)); return n !== null ? (n - 1) / 3 : null; });
+  });
+
+  var valid = features
+    .map(function(f, i) { return { f: f, i: i, v: f.filter(function(x) { return x !== null; }).length }; })
+    .filter(function(x) { return x.v >= FEAT_COLS.length * 0.3; });
+
+  if (valid.length < 3) {
+    return rows.map(function(r, i) { return { row: r, _npsClass: direct[i], _method: 'insufficient' }; });
+  }
+
+  var assignments = kMeans3(valid.map(function(x) { return x.f; }));
+
+  // Label clusters: highest mean engagement = promoter
+  var clusterMeans = [0, 1, 2].map(function(c) {
+    var pts = valid.filter(function(_, j) { return assignments[j] === c; });
+    var allVals = [].concat.apply([], pts.map(function(x) { return x.f.filter(function(v) { return v !== null; }); }));
+    return { c: c, mean: allVals.length ? allVals.reduce(function(s, v) { return s + v; }, 0) / allVals.length : 0.5 };
+  });
+  clusterMeans.sort(function(a, b) { return b.mean - a.mean; });
+  var LABELS = ['promoter', 'passive', 'detractor'];
+  var labelMap = {};
+  clusterMeans.forEach(function(x, i) { labelMap[x.c] = LABELS[i]; });
+
+  var classMap = {};
+  valid.forEach(function(x, j) { classMap[x.i] = labelMap[assignments[j]]; });
+  return rows.map(function(r, i) {
+    return { row: r, _npsClass: classMap[i] !== undefined ? classMap[i] : direct[i], _method: 'clustering' };
+  });
+}
+
+function calcEngagementSlope(col, promoters, passives, detractors) {
+  function groupAvg(group) {
+    var vals = group.map(function(r) { return parseLikert(gv(r, col)); }).filter(function(v) { return v !== null; });
+    return vals.length ? vals.reduce(function(s, v) { return s + v; }, 0) / vals.length / 4 : null;
+  }
+  var pa = groupAvg(promoters), sa = groupAvg(passives), da = groupAvg(detractors);
+  var groups = [
+    { x: 0, y: da, n: detractors.length },
+    { x: 1, y: sa, n: passives.length },
+    { x: 2, y: pa, n: promoters.length }
+  ].filter(function(g) { return g.y != null && g.n > 0; });
+  if (groups.length < 2) return { slope: null, pa: pa, sa: sa, da: da };
+  var totalN = groups.reduce(function(s, g) { return s + g.n; }, 0);
+  var xBar = groups.reduce(function(s, g) { return s + g.x * g.n; }, 0) / totalN;
+  var yBar = groups.reduce(function(s, g) { return s + g.y * g.n; }, 0) / totalN;
+  var num  = groups.reduce(function(s, g) { return s + g.n * (g.x - xBar) * (g.y - yBar); }, 0);
+  var den  = groups.reduce(function(s, g) { return s + g.n * Math.pow(g.x - xBar, 2); }, 0);
+  var rawSlope = den > 0 ? num / den : 0;
+  var slope = Math.min(100, Math.max(0, Math.abs(rawSlope) * 200));
+  return { slope: slope, pa: pa, sa: sa, da: da };
 }
 
 function supplyDist(rows, col) {
@@ -2822,11 +2954,13 @@ function renderSentiment() {
     { name:'Belonging & Values',   short:'Belonging', cols:[...C.WVP],                       color:'#80BBAD' },
   ];
 
-  const tierRows = { pro:[], pas:[], det:[] };
-  rows.forEach(r => {
-    const v = parseScore(gv(r, C.ENPS));
-    if (v === null) return;
-    (v >= 9 ? tierRows.pro : v >= 7 ? tierRows.pas : tierRows.det).push(r);
+  const classified = classifyRespondents(rows);
+  const clsMethod = classified.length > 0 ? classified[0]._method : 'direct';
+  const tierRows = { pro: [], pas: [], det: [] };
+  classified.forEach(c => {
+    if (c._npsClass === 'promoter') tierRows.pro.push(c.row);
+    else if (c._npsClass === 'passive') tierRows.pas.push(c.row);
+    else if (c._npsClass === 'detractor') tierRows.det.push(c.row);
   });
 
   function levelAvg(rArr, cols) {
@@ -2846,12 +2980,70 @@ function renderSentiment() {
   window._lastPyrData = pyrData;
   window._lastPyrTierN = { pro: tierRows.pro.length, pas: tierRows.pas.length, det: tierRows.det.length };
 
+  // ── Engagement Slope chart ────────────────────────────────────────────
+  const hasTiers = tierRows.pro.length > 0 || tierRows.pas.length > 0 || tierRows.det.length > 0;
+  if (hasTiers) {
+    const slopeLevels = [
+      { name:'Physical Environment', color:'#538184',
+        items: C.SFUNC.map((c,i)=>({col:c,lbl:C.SFUNC_L[i]})).concat(C.SDES.map((c,i)=>({col:c,lbl:C.SDES_L[i]}))) },
+      { name:'Connections', color:'#80BBAD',
+        items: C.REL.map((c,i)=>({col:c,lbl:C.REL_L[i]})).concat(C.LEARN.map((c,i)=>({col:c,lbl:C.LEARN_L[i]})), C.SOC.map((c,i)=>({col:c,lbl:C.SOC_L[i]}))) },
+      { name:'Belonging & Values', color:'#C0D4CB',
+        items: C.WVP.map((c,i)=>({col:c,lbl:C.WVP_L[i]})) },
+    ];
+    const slopesByLevel = slopeLevels.map(lvl => ({
+      ...lvl,
+      slopes: lvl.items
+        .map(({col,lbl}) => ({ lbl, ...calcEngagementSlope(col, tierRows.pro, tierRows.pas, tierRows.det) }))
+        .filter(s => s.slope !== null)
+        .sort((a,b) => b.slope - a.slope)
+        .slice(0, 8)
+    }));
+    let sh = `<div class="chart-card" style="margin-bottom:0.9rem">
+      <div class="chart-card-title">Engagement Slope <span>Questions that most differentiate engaged from disengaged employees</span></div>
+      <div style="font-size:0.74rem;color:var(--text-muted);margin-bottom:1.1rem;line-height:1.5">
+        Slope measures how much each question's score rises from Detractors → Passives → Promoters, scaled 0–100.
+        Higher slope = stronger signal that this aspect of workplace experience drives engagement.
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;align-items:start">`;
+    slopesByLevel.forEach(lvl => {
+      sh += `<div><div style="font-size:0.67rem;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:${lvl.color};margin-bottom:0.65rem;padding-bottom:0.35rem;border-bottom:1px solid ${lvl.color}60">${lvl.name}</div>`;
+      if (lvl.slopes.length) {
+        lvl.slopes.forEach(s => {
+          const w = Math.round(s.slope);
+          sh += `<div style="margin-bottom:0.55rem">
+            <div style="font-size:0.68rem;color:var(--text);line-height:1.25;margin-bottom:0.2rem">${esc(s.lbl)}</div>
+            <div style="display:flex;align-items:center;gap:0.4rem">
+              <div style="flex:1;height:8px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden"><div style="width:${w}%;height:100%;background:${lvl.color};border-radius:2px"></div></div>
+              <span style="font-size:0.63rem;color:var(--text-muted);min-width:24px;text-align:right">${w}</span>
+            </div>
+          </div>`;
+        });
+      } else {
+        sh += `<div style="font-size:0.72rem;color:var(--text-muted)">Insufficient data</div>`;
+      }
+      sh += `</div>`;
+    });
+    sh += `</div>
+      <div style="margin-top:0.75rem;font-size:0.65rem;color:var(--text-muted);border-top:1px solid var(--card-border);padding-top:0.5rem;line-height:1.6">
+        Weighted OLS regression across ordinal positions (Detractor=0, Passive=1, Promoter=2), weighted by group size &nbsp;·&nbsp; slope scaled ×200 to 0–100
+      </div>
+    </div>`;
+    html += sh;
+  }
+
   // ── Methodology note before pyramid ──────────────────────────────────
-  html += `<div class="derived-note">
-    <strong>Classification derived from the eNPS question.</strong>
-    Respondents scoring 9–10 are Promoters, 7–8 are Passives, and 0–6 are Detractors.
-    The pyramid breaks the workplace experience into three levels — Physical Environment, Connections, and Belonging &amp; Values — and shows how each tier scores differently across engagement groups.
-  </div>`;
+  html += clsMethod === 'clustering'
+    ? `<div class="derived-note"><strong>Derived classification via latent class analysis.</strong>
+        Fewer than 50% of respondents had direct eNPS scores, so sentiment classes were inferred via k-means clustering (k=3) on
+        ${[...C.SFUNC,...C.SDES,...C.REL,...C.LEARN,...C.SOC,...C.WVP,...C.TRADE].length} engagement questions (SFUNCTION, SDESIGN, RELATION, LEARNOPP, SOCIALOPP, WVP, TRADEOFF).
+        The cluster with the highest mean agreement score is labeled Promoter; the lowest, Detractor.
+        The pyramid below shows how each level scores across these derived engagement groups.
+      </div>`
+    : `<div class="derived-note"><strong>Classification derived from the eNPS question.</strong>
+        Respondents scoring 9–10 are Promoters, 7–8 are Passives, and 0–6 are Detractors.
+        The pyramid breaks the workplace experience into three levels — Physical Environment, Connections, and Belonging &amp; Values — and shows how each tier scores differently across engagement groups.
+      </div>`;
 
   // ── Pyramid + Tier Comparison (one unified card) ───────────────────────
   html += `<div class="chart-card">
