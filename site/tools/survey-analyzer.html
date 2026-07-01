@@ -21,6 +21,43 @@
   --card-border: rgba(255,255,255,0.08);
   --radius: 12px;
 }
+/* LIGHT THEME */
+:root[data-theme="light"] {
+  --green-deep: #EDF4F0;
+  --card-bg: rgba(255,255,255,0.78);
+  --card-border: rgba(0,63,45,0.14);
+  --text: #0D1F17;
+  --text-muted: rgba(13,31,23,0.52);
+}
+html[data-theme="light"] body::before {
+  background: radial-gradient(ellipse 80% 50% at 20% -10%, rgba(0,63,45,0.05) 0%, transparent 60%);
+}
+html[data-theme="light"] nav {
+  background: rgba(237,244,240,0.93);
+  border-bottom-color: rgba(0,63,45,0.14);
+}
+html[data-theme="light"] .tab-btn:hover { background: rgba(0,63,45,0.06); }
+html[data-theme="light"] .tab-btn.active { background: rgba(0,63,45,0.08); }
+html[data-theme="light"] .reset-btn:hover { border-color: rgba(0,63,45,0.3); }
+html[data-theme="light"] select,
+html[data-theme="light"] input[type="text"],
+html[data-theme="light"] input[type="number"] {
+  background: rgba(255,255,255,0.8); color: var(--text); border-color: rgba(0,63,45,0.22);
+}
+html[data-theme="light"] .driver-bar,
+html[data-theme="light"] .h-bar-row > div { background: rgba(0,63,45,0.09); }
+html[data-theme="light"] .upload-zone { background: rgba(255,255,255,0.5); }
+
+/* THEME BUTTON */
+.theme-btn {
+  background: none; border: 1px solid var(--card-border);
+  border-radius: 20px; padding: 0.22rem 0.8rem;
+  color: var(--text-muted); cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 0.75rem; font-weight: 500;
+  transition: border-color 0.2s, color 0.2s; flex-shrink: 0;
+}
+.theme-btn:hover { border-color: var(--accent); color: var(--text); }
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: 'DM Sans', sans-serif;
@@ -544,6 +581,7 @@ select.client-name-input option { background: #0D2B22; color: var(--text); }
   .nps-grid { grid-template-columns: 1fr; }
 }
 </style>
+<script>(function(){const t=localStorage.getItem('wt-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
 </head>
 <body>
 
@@ -551,6 +589,7 @@ select.client-name-input option { background: #0D2B22; color: var(--text); }
   <a class="nav-back" href="/cbre-workplace-tools/" style="margin-right:auto">← Back to tools</a>
   <a class="nav-logo" href="/cbre-workplace-tools/"><span>CBRE</span> Workplace Tools</a>
   <span id="clientNameBadge" style="display:none;font-size:0.78rem;font-weight:500;color:var(--text-muted);background:rgba(255,255,255,0.06);border:1px solid var(--card-border);border-radius:20px;padding:0.25rem 0.85rem;"></span>
+  <button id="themeToggle" class="theme-btn" onclick="toggleTheme()">Light mode</button>
 </nav>
 
 <div class="page">
@@ -1141,14 +1180,17 @@ function buildStackedTrack(segData) {
   return `<div class="bar-track">${segs}</div>`;
 }
 
-function stackedBar(label, d, t, a, lblClass) {
+function stackedBar(label, d, t, a, lblClass, orgAvg) {
   lblClass = lblClass || 'bar-label';
   if (!t) return `<div class="bar-row"><span class="${lblClass}">${label}</span><span style="font-size:0.72rem;color:var(--text-muted)">No data</span></div>`;
   const segData = [1,2,3,4].map((s,i) => ({
     w: pct(d[s], t), color: L5_COLORS[i], light: i === 0 || i === 3, name: L5_LABELS[i]
   }));
   const track = buildStackedTrack(segData);
-  return `<div class="bar-row"><span class="${lblClass}" title="${label}">${label}</span>${track}<span class="bar-avg">${a !== null ? a.toFixed(1) : '—'}</span></div>`;
+  const orgStr = (orgAvg != null)
+    ? `<span style="font-size:0.67rem;color:var(--text-muted);margin-left:2px">org ${orgAvg.toFixed(1)}</span>`
+    : '';
+  return `<div class="bar-row"><span class="${lblClass}" title="${label}">${label}</span>${track}<span class="bar-avg">${a !== null ? a.toFixed(1) : '—'}${orgStr}</span></div>`;
 }
 
 function supplyBar(label, c) {
@@ -1196,6 +1238,20 @@ function donutSVG(segs, size) {
 }
 
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const isLight = html.getAttribute('data-theme') === 'light';
+  const next = isLight ? 'dark' : 'light';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('wt-theme', next);
+  document.getElementById('themeToggle').textContent = next === 'light' ? 'Dark mode' : 'Light mode';
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const t = localStorage.getItem('wt-theme') || 'dark';
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = t === 'light' ? 'Dark mode' : 'Light mode';
+});
 
 // ─── DEMOGRAPHICS ─────────────────────────────────────────────────────────────
 function renderDemo() {
@@ -1315,7 +1371,8 @@ function renderSpace() {
   </div></div>`;
 
   // Functionality
-  const fd = C.SFUNC.map((col,i) => ({label:C.SFUNC_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
+  const isFiltered = filteredRows.length < allRows.length;
+  const fd = C.SFUNC.map((col,i) => ({label:C.SFUNC_L[i],...likertDist(rows,col),orgAvg:isFiltered?likertDist(allRows,col).avg:null})).sort((a,b)=>(b.avg||0)-(a.avg||0));
   window._lastFuncData = fd;
   html += `<div class="chart-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
@@ -1323,11 +1380,11 @@ function renderSpace() {
       <button class="export-btn" onclick="exportFuncPNG()">↓ Export PNG</button>
     </div>
     <div class="stacked-chart">`;
-  fd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
+  fd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg, null, d.orgAvg));
   html += `</div>${likertLegend()}</div>`;
 
   // Design
-  const dd = C.SDES.map((col,i) => ({label:C.SDES_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
+  const dd = C.SDES.map((col,i) => ({label:C.SDES_L[i],...likertDist(rows,col),orgAvg:isFiltered?likertDist(allRows,col).avg:null})).sort((a,b)=>(b.avg||0)-(a.avg||0));
   window._lastDesignData = dd;
   html += `<div class="chart-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
@@ -1335,7 +1392,7 @@ function renderSpace() {
       <button class="export-btn" onclick="exportDesignPNG()">↓ Export PNG</button>
     </div>
     <div class="stacked-chart">`;
-  dd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
+  dd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg, null, d.orgAvg));
   html += `</div>${likertLegend()}</div>`;
 
   // Vibe (numeric % split — respondents entered how to divide 100% between two env types)
@@ -1472,21 +1529,22 @@ function renderRel() {
   }
 
   // Relationships
-  const rd = C.REL.map((col,i) => ({label:C.REL_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
+  const isFilteredR = filteredRows.length < allRows.length;
+  const rd = C.REL.map((col,i) => ({label:C.REL_L[i],...likertDist(rows,col),orgAvg:isFilteredR?likertDist(allRows,col).avg:null})).sort((a,b)=>(b.avg||0)-(a.avg||0));
   html += `<div class="chart-card"><div class="chart-card-title">Workplace Relationships <span>avg 1–4</span></div><div class="stacked-chart">`;
-  rd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
+  rd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg, null, d.orgAvg));
   html += `</div>${likertLegend()}</div>`;
 
   // Learning
-  const ld = C.LEARN.map((col,i) => ({label:C.LEARN_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
+  const ld = C.LEARN.map((col,i) => ({label:C.LEARN_L[i],...likertDist(rows,col),orgAvg:isFilteredR?likertDist(allRows,col).avg:null})).sort((a,b)=>(b.avg||0)-(a.avg||0));
   html += `<div class="chart-card"><div class="chart-card-title">In-Office Activity Importance <span>how important is being in-person for each</span></div><div class="stacked-chart">`;
-  ld.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
+  ld.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg, null, d.orgAvg));
   html += `</div>${likertLegend()}</div>`;
 
   // Social
-  const sd = C.SOC.map((col,i) => ({label:C.SOC_L[i],...likertDist(rows,col)})).sort((a,b)=>(b.avg||0)-(a.avg||0));
+  const sd = C.SOC.map((col,i) => ({label:C.SOC_L[i],...likertDist(rows,col),orgAvg:isFilteredR?likertDist(allRows,col).avg:null})).sort((a,b)=>(b.avg||0)-(a.avg||0));
   html += `<div class="chart-card"><div class="chart-card-title">Social Opportunity Importance</div><div class="stacked-chart">`;
-  sd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
+  sd.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg, null, d.orgAvg));
   html += `</div>${likertLegend()}</div>`;
 
   // Hosting
@@ -1589,7 +1647,8 @@ function renderRel() {
 // ─── WVP ──────────────────────────────────────────────────────────────────────
 function renderWVP() {
   const rows = filteredRows;
-  const wvpD = C.WVP.map((col,i) => ({label:C.WVP_L[i],...likertDist(rows,col)}));
+  const isFilteredW = filteredRows.length < allRows.length;
+  const wvpD = C.WVP.map((col,i) => ({label:C.WVP_L[i],...likertDist(rows,col),orgAvg:isFilteredW?likertDist(allRows,col).avg:null}));
   const avgs = wvpD.map(d => d.avg).filter(v => v !== null);
   const comp = avgs.length ? (avg(avgs)*25).toFixed(0) : '—';
   const sorted = [...wvpD].sort((a,b)=>(b.avg||0)-(a.avg||0));
@@ -1676,7 +1735,7 @@ function renderWVP() {
       <button class="export-btn" onclick="exportWVPPNG()">↓ Export PNG</button>
     </div>
     <div class="stacked-chart">`;
-  sorted.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg));
+  sorted.forEach(d => html += stackedBar(d.label, d.d, d.t, d.avg, null, d.orgAvg));
   html += `</div>${likertLegend()}</div>`;
 
   document.getElementById('wvpContent').innerHTML = html;
@@ -3387,6 +3446,67 @@ body{font-family:'DM Sans',Arial,sans-serif;background:#fff;color:#1A2E24;font-s
     </table>
   </div>
 </div>`;
+
+  // ── Department Breakdown ──────────────────────────────────────────────────
+  {
+    const depts = [...new Set(rows.map(r => gv(r, C.DEPT)).filter(Boolean))].sort();
+    if (depts.length > 1) {
+      const deptData = depts.map(dept => {
+        const dr = rows.filter(r => gv(r, C.DEPT) === dept);
+        if (!dr.length) return null;
+        const wvpVals = C.WVP.map(col => likertDist(dr, col).avg).filter(v => v !== null);
+        const wvpComp2 = wvpVals.length ? Math.round(wvpVals.reduce((s,v)=>s+v,0)/wvpVals.length/4*100) : null;
+        let p2=0,pa2=0,d2=0,nt2=0;
+        dr.forEach(r=>{const v=parseScore(gv(r,C.ENPS));if(v===null)return;nt2++;if(v>=9)p2++;else if(v>=7)pa2++;else d2++;});
+        const nps2 = nt2 ? Math.round((p2/nt2-d2/nt2)*100) : null;
+        const satV2 = dr.map(r=>parseScore(gv(r,C.SAT))).filter(v=>v!==null);
+        const sat2 = satV2.length ? (satV2.reduce((a,b)=>a+b,0)/satV2.length).toFixed(1) : null;
+        const funcVals = C.SFUNC.flatMap(col=>dr.map(r=>parseLikert(gv(r,col))).filter(v=>v!==null));
+        const funcAvg2 = funcVals.length ? (funcVals.reduce((s,v)=>s+v,0)/funcVals.length).toFixed(1) : null;
+        return {dept, n:dr.length, wvpComp:wvpComp2, nps:nps2, sat:sat2, funcAvg:funcAvg2};
+      }).filter(Boolean).sort((a,b)=>b.n-a.n);
+
+      if (deptData.length > 1) {
+        R2 += `<div class="pb pi" style="padding-bottom:28px">
+  ${sHead('Department Breakdown','Key metrics by department — all respondents grouped by department')}
+  <table style="width:100%;border-collapse:collapse;font-size:11px">
+    <thead>
+      <tr style="background:#003F2D;color:#fff">
+        <th style="padding:9px 12px;text-align:left;font-weight:600;border-right:1px solid rgba(255,255,255,0.1)">Department</th>
+        <th style="padding:9px 12px;text-align:center;font-weight:600;border-right:1px solid rgba(255,255,255,0.1)">N</th>
+        <th style="padding:9px 12px;text-align:center;font-weight:600;border-right:1px solid rgba(255,255,255,0.1)">WVP Score</th>
+        <th style="padding:9px 12px;text-align:center;font-weight:600;border-right:1px solid rgba(255,255,255,0.1)">eNPS</th>
+        <th style="padding:9px 12px;text-align:center;font-weight:600;border-right:1px solid rgba(255,255,255,0.1)">Satisfaction</th>
+        <th style="padding:9px 12px;text-align:center;font-weight:600">Space Avg</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${deptData.map((d,i)=>{
+        const npsStr=d.nps!==null?(d.nps>=0?'+':'')+d.nps:'—';
+        const npsCol=d.nps===null?'#999':d.nps>=30?'#003F2D':d.nps>=0?'#538184':'#C0533A';
+        const wvpStr=d.wvpComp!==null?d.wvpComp+'%':'—';
+        const wvpCol=d.wvpComp===null?'#999':d.wvpComp>=70?'#003F2D':d.wvpComp>=50?'#538184':'#C0533A';
+        return `<tr style="background:${i%2?'#F2F6F4':'#fff'}">
+          <td style="padding:8px 12px;font-weight:600;color:#1A2E24;border-right:1px solid #E2EEE9">${esc(d.dept)}</td>
+          <td style="padding:8px 12px;text-align:center;color:#7A9590;border-right:1px solid #E2EEE9">${d.n}</td>
+          <td style="padding:8px 12px;text-align:center;font-weight:700;color:${wvpCol};border-right:1px solid #E2EEE9">${wvpStr}</td>
+          <td style="padding:8px 12px;text-align:center;font-weight:700;color:${npsCol};border-right:1px solid #E2EEE9">${npsStr}</td>
+          <td style="padding:8px 12px;text-align:center;border-right:1px solid #E2EEE9">${d.sat!==null?d.sat+'/10':'—'}</td>
+          <td style="padding:8px 12px;text-align:center">${d.funcAvg!==null?d.funcAvg+'/4':'—'}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>
+  <div style="margin-top:14px;font-size:9px;color:#9AB0AA;line-height:1.6">
+    <strong>WVP Score</strong> = Workplace Value Proposition composite (0–100) &nbsp;·&nbsp;
+    <strong>eNPS</strong> = Employee Net Promoter Score &nbsp;·&nbsp;
+    <strong>Satisfaction</strong> = avg rating (out of 10) &nbsp;·&nbsp;
+    <strong>Space Avg</strong> = avg functionality rating (1–4)
+  </div>
+</div>`;
+      }
+    }
+  }
 
   // ── Verbatims ─────────────────────────────────────────────────────────────
   if (posV.length || negV.length) {
