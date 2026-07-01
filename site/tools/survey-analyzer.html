@@ -376,7 +376,7 @@ select.client-name-input option { background: #0D2B22; color: var(--text); }
 .derived-note strong { color: var(--text); }
 
 /* PYRAMID */
-.pyramid-wrap { display: grid; grid-template-columns: 350px 1fr; gap: 1.5rem; align-items: center; }
+.pyramid-wrap { display: grid; grid-template-columns: max-content 1fr; gap: 1.5rem; align-items: center; overflow: visible; }
 .pyramid-slope-rows { display: flex; flex-direction: column; gap: 0.5rem; }
 .slope-labels { display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-muted); margin-bottom: 0.75rem; padding-right: 0.5rem; }
 .slope-row { display: flex; align-items: center; gap: 0.75rem; }
@@ -711,15 +711,15 @@ select.client-name-input option { background: #0D2B22; color: var(--text); }
           <span class="filter-label">Sector</span>
           <select id="sectorInput" class="client-name-input" style="width:180px" onchange="updateClientName()">
             <option value="">Select sector</option>
-            <option>Tech &amp; Media</option>
-            <option>Legal</option>
-            <option>Government</option>
-            <option>Utility</option>
             <option>Education</option>
             <option>Financial Services</option>
-            <option>Professional Services</option>
+            <option>Government</option>
             <option>Healthcare</option>
+            <option>Legal</option>
+            <option>Professional Services</option>
             <option>Retail</option>
+            <option>Tech &amp; Media</option>
+            <option>Utility</option>
           </select>
         </div>
         <div class="client-name-wrap">
@@ -1070,9 +1070,11 @@ function applyFilters() {
   const nBadge = document.getElementById('nBadge');
   if (nBadge) {
     const isFiltered = filteredRows.length < allRows.length;
+    const hc = parseInt(document.getElementById('headcountInput')?.value || '0', 10);
+    const rrStr = (hc > 0 && !isFiltered) ? ` · ${Math.round((allRows.length / hc) * 100)}% response rate` : '';
     nBadge.textContent = isFiltered
       ? `N = ${filteredRows.length} of ${allRows.length} respondents (filtered)`
-      : `N = ${filteredRows.length} respondents`;
+      : `N = ${filteredRows.length} respondents${rrStr}`;
     nBadge.style.color = isFiltered ? 'var(--accent)' : '';
   }
   renderActive();
@@ -2047,7 +2049,7 @@ function quadrantSVG(dims) {
     const ty = cy + labelR * Math.sin(lRad);
     label.forEach((line, i) => {
       const ly = ty + (i - (label.length - 1) / 2) * 12;
-      g += `<text x="${tx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="9.5" fill="rgba(242,244,243,0.55)" text-anchor="${anchor}" dominant-baseline="middle" font-family="DM Sans,sans-serif">${line}</text>`;
+      g += `<text x="${tx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="9.5" fill="rgba(242,244,243,0.9)" text-anchor="${anchor}" dominant-baseline="middle" font-family="DM Sans,sans-serif">${line}</text>`;
     });
   });
 
@@ -2099,11 +2101,13 @@ function renderAttendance() {
     return;
   }
 
+  const sortedDims = [...dims].sort((a,b) => b.score - a.score);
+
   let html = `<div class="cards-grid" style="grid-template-columns:1fr">
     <div class="stat-card"><div class="stat-card-value">${top?.name||'—'}</div><div class="stat-card-label">Top Attendance Driver</div><div class="stat-card-sub">${top?Math.round(top.score)+'% of respondents':''}</div></div>
   </div><div class="driver-cards">`;
 
-  dims.forEach(({icon,name,score,items}) => {
+  sortedDims.forEach(({icon,name,score,items}) => {
     const w = Math.round(score);
     const bc = score>60?'#17E88F':score>35?'#80BBAD':'#D2785A';
     html += `<div class="driver-card"><div class="driver-icon">${icon}</div><div class="driver-name">${name}</div>
@@ -2174,12 +2178,22 @@ function renderWorkStyles() {
   // Reference shows rows top-to-bottom: LM, NP, DQ, SU, IC
   const chartOrder = [...scales].reverse();
 
+  // ── Scale Interpretations — shown first so reader understands axes ───
+  let html = `<div class="scale-interp-grid" style="margin-bottom:1.25rem">`;
+  scales.forEach(s => {
+    html += `<div class="scale-interp-card">
+      <div class="scale-interp-title">${s.code}: ${s.low} ↔ ${s.high}</div>
+      <div class="scale-interp-desc">${s.desc}</div>
+    </div>`;
+  });
+  html += `</div>`;
+
   // ── Stat cards — same order as chart (LM→IC) ────────────────────────
-  let html = `<div class="ws-stat-row">
+  html += `<div class="ws-stat-row">
     <div class="ws-stat-card">
       <div class="ws-stat-code">RESPONDENTS</div>
       <div class="ws-stat-value">${n}</div>
-      <div class="ws-stat-sub">of ${n} total</div>
+      <div class="ws-stat-sub">surveyed</div>
     </div>`;
   chartOrder.forEach(s => {
     html += `<div class="ws-stat-card">
@@ -2201,16 +2215,6 @@ function renderWorkStyles() {
     ${personalityScalesSVG(chartOrder)}
   </div>`;
 
-  // ── Scale Interpretations ───────────────────────────────────────────
-  html += `<div class="section-heading" style="margin:1.6rem 0 0.75rem">Scale Interpretations</div>
-    <div class="scale-interp-grid">`;
-  scales.forEach(s => {
-    html += `<div class="scale-interp-card">
-      <div class="scale-interp-title">${s.code}: ${s.low} ↔ ${s.high}</div>
-      <div class="scale-interp-desc">${s.desc}</div>
-    </div>`;
-  });
-  html += `</div>`;
 
   document.getElementById('workStylesContent').innerHTML = html;
 }
@@ -2750,12 +2754,7 @@ function renderSentiment() {
     </div>`;
   }
 
-  // ── Derived note ──────────────────────────────────────────────────────
-  html += `<div class="derived-note">
-    <strong>Classification derived from the eNPS question.</strong>
-    Respondents scoring 9–10 are Promoters, 7–8 are Passives, and 0–6 are Detractors.
-    The pyramid breaks the workplace experience into three levels — Physical Environment, Connections, and Belonging &amp; Values — and shows how each tier scores differently across engagement groups.
-  </div>`;
+
 
   // ── Pyramid levels definition ─────────────────────────────────────────
   const pyramid = [
@@ -2787,6 +2786,13 @@ function renderSentiment() {
   // Store for export button
   window._lastPyrData = pyrData;
   window._lastPyrTierN = { pro: tierRows.pro.length, pas: tierRows.pas.length, det: tierRows.det.length };
+
+  // ── Methodology note before pyramid ──────────────────────────────────
+  html += `<div class="derived-note">
+    <strong>Classification derived from the eNPS question.</strong>
+    Respondents scoring 9–10 are Promoters, 7–8 are Passives, and 0–6 are Detractors.
+    The pyramid breaks the workplace experience into three levels — Physical Environment, Connections, and Belonging &amp; Values — and shows how each tier scores differently across engagement groups.
+  </div>`;
 
   // ── Pyramid + Tier Comparison (one unified card) ───────────────────────
   html += `<div class="chart-card">
@@ -3509,7 +3515,7 @@ function loadSampleData() {
     row.push(rnd(['Yes','No'],[50,50]));      // Q31
     row.push(Math.random()>0.4?String(ri(1,10)):''); // Q32
     row.push(Math.random()>0.4?String(ri(1,10)):''); // Q34
-    row.push(rnd(['Yes','No'],[55,45]));      // Q51
+    row.push(Math.random()>0.6?rnd(['More flexible seating options would help.','Quiet zones are needed — the open floor plan is too loud.','Overall a positive experience, just need better tech.','The space works well for collaboration but not for focus work.','Would love more natural light and greenery.','Parking is the biggest pain point for me.','The office vibe has improved a lot this past year.','More standing desks and ergonomic options please.','Having a dedicated space for my team would make in-office days much better.','','']):''); // Q51
     dataRows.push(row);
   }
 
