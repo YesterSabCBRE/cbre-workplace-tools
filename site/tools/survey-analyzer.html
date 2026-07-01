@@ -2129,6 +2129,8 @@ function personalityScalesSVG(chartOrder) {
   const pillW = 36, pillH = 16;
   let g = '';
 
+  const hasOrgAvg = chartOrder.some(s => s.orgPct !== null && s.orgPct !== undefined);
+
   chartOrder.forEach((s, i) => {
     const cy = topPad + i * rowH + rowH / 2;
     const rawX = padL + (s.pct / 100) * trackW;
@@ -2143,7 +2145,13 @@ function personalityScalesSVG(chartOrder) {
       const tx = padL + (pct / 100) * trackW;
       g += `<line x1="${tx.toFixed(1)}" y1="${cy - 6}" x2="${tx.toFixed(1)}" y2="${cy + 6}" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>`;
     });
-    // Pill marker
+    // Org-average diamond marker (shown when filtered)
+    if (s.orgPct !== null && s.orgPct !== undefined) {
+      const ox = padL + (s.orgPct / 100) * trackW;
+      const d = 6;
+      g += `<polygon points="${ox.toFixed(1)},${(cy - d).toFixed(1)} ${(ox + d).toFixed(1)},${cy.toFixed(1)} ${ox.toFixed(1)},${(cy + d).toFixed(1)} ${(ox - d).toFixed(1)},${cy.toFixed(1)}" fill="none" stroke="rgba(23,232,143,0.5)" stroke-width="1.5"/>`;
+    }
+    // Pill marker (filtered or overall avg)
     g += `<rect x="${pillX.toFixed(1)}" y="${(cy - pillH / 2).toFixed(1)}" width="${pillW}" height="${pillH}" rx="8" fill="rgba(242,244,243,0.72)"/>`;
     // Right label
     g += `<text x="${padL + trackW + 10}" y="${cy}" font-size="11" fill="rgba(23,232,143,0.85)" text-anchor="start" dominant-baseline="middle" font-family="DM Sans,Arial,sans-serif">${s.high}</text>`;
@@ -2158,9 +2166,19 @@ function personalityScalesSVG(chartOrder) {
 
   // Legend
   const legY = axisY + 22;
-  const legX = W / 2;
-  g += `<rect x="${(legX - 20).toFixed(1)}" y="${(legY - 7).toFixed(1)}" width="36" height="14" rx="7" fill="rgba(242,244,243,0.65)"/>`;
-  g += `<text x="${(legX + 22).toFixed(1)}" y="${(legY + 4).toFixed(1)}" font-size="9.5" fill="rgba(242,244,243,0.45)" text-anchor="start" font-family="DM Sans,Arial,sans-serif">Survey Average</text>`;
+  if (hasOrgAvg) {
+    // Two-item legend: filtered pill + org diamond
+    const legCx = W / 2 - 80;
+    g += `<rect x="${(legCx - 18).toFixed(1)}" y="${(legY - 7).toFixed(1)}" width="36" height="14" rx="7" fill="rgba(242,244,243,0.65)"/>`;
+    g += `<text x="${(legCx + 24).toFixed(1)}" y="${(legY + 4).toFixed(1)}" font-size="9.5" fill="rgba(242,244,243,0.45)" text-anchor="start" font-family="DM Sans,Arial,sans-serif">Filtered avg</text>`;
+    const ox2 = legCx + 120; const d2 = 6;
+    g += `<polygon points="${ox2.toFixed(1)},${(legY - d2).toFixed(1)} ${(ox2 + d2).toFixed(1)},${legY.toFixed(1)} ${ox2.toFixed(1)},${(legY + d2).toFixed(1)} ${(ox2 - d2).toFixed(1)},${legY.toFixed(1)}" fill="none" stroke="rgba(23,232,143,0.5)" stroke-width="1.5"/>`;
+    g += `<text x="${(ox2 + 12).toFixed(1)}" y="${(legY + 4).toFixed(1)}" font-size="9.5" fill="rgba(242,244,243,0.45)" text-anchor="start" font-family="DM Sans,Arial,sans-serif">Company avg</text>`;
+  } else {
+    const legX = W / 2;
+    g += `<rect x="${(legX - 20).toFixed(1)}" y="${(legY - 7).toFixed(1)}" width="36" height="14" rx="7" fill="rgba(242,244,243,0.65)"/>`;
+    g += `<text x="${(legX + 22).toFixed(1)}" y="${(legY + 4).toFixed(1)}" font-size="9.5" fill="rgba(242,244,243,0.45)" text-anchor="start" font-family="DM Sans,Arial,sans-serif">Survey Average</text>`;
+  }
 
   return `<svg id="personalityScalesSVG" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block;margin:0 auto;max-width:100%">${g}</svg>`;
 }
@@ -2333,39 +2351,35 @@ function renderAttendance() {
 // ─── WORK STYLES ──────────────────────────────────────────────────────────────
 function renderWorkStyles() {
   const rows = filteredRows;
+  const isFiltered = filteredRows.length < allRows.length;
 
   // ── Scale score derivations ─────────────────────────────────────────
-  // IC: % time collaborative (TIME.TOTHERS avg)
-  const ic = Math.round(avg(numVals(rows, C.TIME_O)) || 0);
-
-  // SU: % of collaborative time that is unscheduled (COLLAB.UCOLLAB avg)
-  const su = Math.round(avg(numVals(rows, C.COL_U)) || 0);
-
-  // DQ: quiet env preference — avg % time in quiet environment (VIBE.QUIET is numeric 0–100)
-  const dq = Math.round(avg(numVals(rows, 'VIBE.QUIET')) || 0);
-
-  // NP: % who require specific (not universal) tech/space needs (TECHNEED)
-  const techRows = rows.filter(r => { const v = gv(r,'TECHNEED'); return v && v.trim(); });
-  const np = techRows.length ? Math.round(techRows.filter(r => gv(r,'TECHNEED').trim().toLowerCase().includes('specific')).length / techRows.length * 100) : 0;
-
-  // LM: % of respondents working with distributed (non-colocated) teams
-  // Local = TLOCAL Yes AND MLOCAL Yes; Multiregional = at least one No
-  const lmRows = rows.filter(r => { const t=gv(r,'TLOCAL'),m=gv(r,'MLOCAL'); return t&&t.trim()&&m&&m.trim(); });
-  const lmLocal = lmRows.filter(r => gv(r,'TLOCAL').trim().toLowerCase()==='yes' && gv(r,'MLOCAL').trim().toLowerCase()==='yes');
-  const lm = lmRows.length ? Math.round((1 - lmLocal.length / lmRows.length) * 100) : 50;
+  function scaleVals(rArr) {
+    const ic2 = Math.round(avg(numVals(rArr, C.TIME_O)) || 0);
+    const su2 = Math.round(avg(numVals(rArr, C.COL_U)) || 0);
+    const dq2 = Math.round(avg(numVals(rArr, 'VIBE.QUIET')) || 0);
+    const tR = rArr.filter(r => { const v = gv(r,'TECHNEED'); return v && v.trim(); });
+    const np2 = tR.length ? Math.round(tR.filter(r => gv(r,'TECHNEED').trim().toLowerCase().includes('specific')).length / tR.length * 100) : 0;
+    const lR = rArr.filter(r => { const t=gv(r,'TLOCAL'),m=gv(r,'MLOCAL'); return t&&t.trim()&&m&&m.trim(); });
+    const lmLoc = lR.filter(r => gv(r,'TLOCAL').trim().toLowerCase()==='yes' && gv(r,'MLOCAL').trim().toLowerCase()==='yes');
+    const lm2 = lR.length ? Math.round((1 - lmLoc.length / lR.length) * 100) : 50;
+    return { ic:ic2, su:su2, dq:dq2, np:np2, lm:lm2 };
+  }
+  const { ic, su, dq, np, lm } = scaleVals(rows);
+  const org = isFiltered ? scaleVals(allRows) : null;
 
   const n = rows.length;
 
   const scales = [
-    { code:'IC', pct: ic, low:'Individual',  high:'Collaborative',
+    { code:'IC', pct: ic, orgPct: org?.ic ?? null, low:'Individual',  high:'Collaborative',
       desc:'Balance between solo focused work and team collaboration. Lower = individual preference; higher = collaborative preference.' },
-    { code:'SU', pct: su, low:'Scheduled',   high:'Unscheduled',
+    { code:'SU', pct: su, orgPct: org?.su ?? null, low:'Scheduled',   high:'Unscheduled',
       desc:'Work pattern preferences. Lower = structured, planned patterns; higher = flexible, spontaneous interactions.' },
-    { code:'DQ', pct: dq, low:'Dynamic',     high:'Quiet',
+    { code:'DQ', pct: dq, orgPct: org?.dq ?? null, low:'Dynamic',     high:'Quiet',
       desc:'Environmental preferences. Lower = bustling, energetic environments; higher = calm, quiet workspaces.' },
-    { code:'NP', pct: np, low:'Universal',   high:'Specific',
+    { code:'NP', pct: np, orgPct: org?.np ?? null, low:'Universal',   high:'Specific',
       desc:'Workspace needs. Lower = standard equipment/tech (monitors, keyboard); higher = specialized requirements (labs, unique hardware). Derived from Q25.' },
-    { code:'LM', pct: lm, low:'Local',       high:'Multiregional',
+    { code:'LM', pct: lm, orgPct: org?.lm ?? null, low:'Local',       high:'Multiregional',
       desc:'Team distribution. Lower = team and manager colocated in same office; higher = distributed team or remote manager. Derived from Q9–Q10.' },
   ];
 
